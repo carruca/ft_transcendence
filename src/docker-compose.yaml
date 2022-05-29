@@ -1,0 +1,56 @@
+services:
+    backend:
+        image: backend
+        build:
+            context: requirements/backend
+        container_name: backend
+        volumes:
+            - backend:/backend/
+        networks:
+            - transnet
+        ports:
+            - "3000:3000"
+            - "222:22"
+        depends_on:
+            - postgresql
+        restart: always
+#        stdin_open: true # docker run -i
+#        tty: true        # docker run -t
+
+    postgresql:
+        image: postgres:14.3-alpine
+        container_name: postgresql
+        volumes:
+            - postgresql:/var/lib/postgresql/data
+        networks:
+            - transnet
+        ports:
+            - "5432:5432"
+        restart: always
+
+networks:
+    transnet:
+        name: transnet
+
+volumes:
+    backend:
+        name: backend-volume
+        driver_opts:
+            o: bind
+            type: none
+            device: ${PWD}/src/requirements/backend/vol
+
+    frontend:
+        name: frontend-volume
+        driver_opts:
+            o: bind
+            type: none
+            device: ${PWD}/src/requirements/frontend/vol
+
+    postgresql:
+        name: postgresql-volume
+        driver_opts:
+            o: bind
+            type: none
+            device: ${PWD}/src/requirements/postgresql/vol
+

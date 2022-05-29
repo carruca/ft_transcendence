@@ -1,0 +1,6 @@
+apk update
+apk add vim postgresql nodejs npm git
+
+npm i -g @nestjs/cli
+
+nest new transcendence
