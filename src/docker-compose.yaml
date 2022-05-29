@@ -35,6 +35,7 @@ networks:
 volumes:
     backend:
         name: backend-volume
+        driver: local
         driver_opts:
             o: bind
             type: none
@@ -42,6 +43,7 @@ volumes:
 
     frontend:
         name: frontend-volume
+        driver: local
         driver_opts:
             o: bind
             type: none
@@ -49,6 +51,7 @@ volumes:
 
     postgresql:
         name: postgresql-volume
+        driver: local
         driver_opts:
             o: bind
             type: none
