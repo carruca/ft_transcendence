@@ -20,7 +20,7 @@ VOLUMES				=	$(addprefix	$(SRC_PATH)$(REQUIREMENTS_PATH),		\
 						)
 
 all:	$(VOLUMES)
-	docker-compose -f src/docker-compose.yaml up --build -d
+	docker-compose -f $(SRC_PATH)docker-compose.yaml up --build -d
 
 re:	clean all
 
@@ -28,7 +28,7 @@ $(VOLUMES):
 	$(MKDIR) $@
 
 clean:
-	docker-compose -f src/docker-compose.yaml down
+	docker-compose -f $(SRC_PATH)docker-compose.yaml down
 	docker volume rm frontend-volume backend-volume postgresql-volume || true
 
 print:

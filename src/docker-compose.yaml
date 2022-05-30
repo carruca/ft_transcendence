@@ -1,6 +1,6 @@
 services:
     backend:
-        image: backend
+        image: backend:dev
         build:
             context: requirements/backend
         container_name: backend
@@ -56,4 +56,3 @@ volumes:
             o: bind
             type: none
             device: ${PWD}/src/requirements/postgresql/vol
-
