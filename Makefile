@@ -29,10 +29,13 @@ $(VOLUMES):
 
 clean:
 	docker-compose -f $(SRC_PATH)docker-compose.yaml down
-	docker volume rm frontend-volume backend-volume postgresql-volume || true
+	docker volume rm $$(docker volume ls -q) || true
+
+fclean: clean
+	docker rmi $$(docker images -q)
 
 print:
 	echo $(VOLUMES)
 
-.SILENT: clean print
-.PHONY: clean re all print
+.SILENT: fclean clean print
+.PHONY: fclean clean re all print
