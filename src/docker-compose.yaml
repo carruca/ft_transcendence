@@ -1,32 +1,53 @@
+version: '3.8'
+
 services:
     backend:
         image: backend:dev
-        build:
-            context: requirements/backend
-        container_name: backend
-        volumes:
-            - backend:/backend/
-        networks:
-            - transnet
+        container_name: backend_container
+        restart: always
         ports:
             - "3000:3000"
             - "222:22"
+        build:
+            context: requirements/backend
+            context: requirements/postgresql
+        networks:
+            - transnet
         depends_on:
             - postgresql
-        restart: always
+        volumes:
+            - backend:/backend/
 #        stdin_open: true # docker run -i
 #        tty: true        # docker run -t
 
     postgresql:
         image: postgres:14.3-alpine
-        container_name: postgresql
-        volumes:
-            - postgresql:/var/lib/postgresql/data
-        networks:
-            - transnet
+        container_name: postgresql_container
+        restart: always
         ports:
             - "5432:5432"
+        environment:
+            POSTGRES_USER: root
+            POSTGRES_PASSWORD: root
+            #            POSTGRES_DB: test_db
+        networks:
+            - transnet
+        volumes:
+            - postgresql:/var/lib/postgresql/data
+
+    pgadmin:
+        image: dpage/pgadmin4
+        container_name: pgadmin4_container 
         restart: always
+        ports:
+            - "5050:80"
+        build:
+            context: requirements/postgresql
+        environment:
+            PGADMIN_DEFAULT_EMAIL: admin@admin.com
+            PGADMIN_DEFAULT_PASSWORD: root
+        networks:
+            - transnet
 
 networks:
     transnet:
