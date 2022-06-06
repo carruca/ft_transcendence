@@ -4,7 +4,8 @@ RUN apk update && apk add \
 	git \
 	openssh \
 	&& rm -f /var/cache/apk/*
-RUN npm i -g @nestjs/cli@8.2.6
+RUN npm i -g @nestjs/cli \
+	&& next update
 #	&& nest new backend --package-manager npm
 
 EXPOSE 3000 22
