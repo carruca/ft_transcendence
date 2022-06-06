@@ -1,22 +1,21 @@
-FROM node:18-alpine3.15 as dev
+FROM node:18-alpine
 RUN apk update && apk add \
-	vim \
 	git \
-	openssh \
 	&& rm -f /var/cache/apk/*
 
-WORKDIR /backend
 
-COPY ./vol/package*.json .
-#RUN npm i -g @nestjs/cli
-RUN npm install
+#COPY ./vol/package*.json ./
+#RUN npm install
+RUN npm i -g @nestjs/cli
+#	&& nest new backend --package-manager npm
 
 #RUN nest update
-#	&& nest new backend --package-manager npm
+COPY entrypoint.sh .
+WORKDIR /backend
 
 EXPOSE 3000 22
 
 #ENTRYPOINT ["/bin/sh"]
-ENTRYPOINT ["/usr/local/bin/node", "dist/main"]
+#ENTRYPOINT ["/usr/local/bin/node", "dist/main"]
+ENTRYPOINT ["sh", "/entrypoint.sh"]
 #ENTRYPOINT ["/usr/local/bin/npm", "run", "start:dev"]
-
