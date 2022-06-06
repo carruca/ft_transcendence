@@ -9,8 +9,6 @@ RUN apk update && apk add --no-cache \
 #COPY ./vol/package*.json ./
 #RUN npm install
 RUN npm i -g @nestjs/cli
-RUN npm i -g @nestjs/common
-RUN npm i -g @nestjs/core
 #	&& nest new backend --strict --package-manager npm
 
 #RUN nest update
