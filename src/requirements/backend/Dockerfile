@@ -4,13 +4,19 @@ RUN apk update && apk add \
 	git \
 	openssh \
 	&& rm -f /var/cache/apk/*
-RUN npm i -g @nestjs/cli \
-	&& next update
+
+WORKDIR /backend
+
+COPY ./vol/package*.json .
+#RUN npm i -g @nestjs/cli
+RUN npm install
+
+#RUN nest update
 #	&& nest new backend --package-manager npm
 
 EXPOSE 3000 22
-WORKDIR /backend
 
 #ENTRYPOINT ["/bin/sh"]
-ENTRYPOINT ["/usr/local/bin/npm", "run", "start:dev"]
+ENTRYPOINT ["/usr/local/bin/node", "dist/main"]
+#ENTRYPOINT ["/usr/local/bin/npm", "run", "start:dev"]
 
