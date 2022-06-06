@@ -1,3 +1,3 @@
-#! /bin/sh
-
-npm install && npm run start:dev;
+#!/bin/sh
+#npm install
+exec npm run start:dev
