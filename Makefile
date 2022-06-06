@@ -18,9 +18,10 @@ CONTAINERS			+=	$(POSTGRESQL)
 VOLUMES				=	$(addprefix	$(SRC_PATH)$(REQUIREMENTS_PATH),		\
 							$(addsuffix /$(VOLUMES_PATH), $(CONTAINERS))	\
 						)
+DOCKER_COMPOSE		= docker-compose -f $(SRC_PATH)docker-compose.yaml
 
 all:	$(VOLUMES)
-	docker-compose -f $(SRC_PATH)docker-compose.yaml up --build -d
+	$(DOCKER_COMPOSE) up --build -d
 
 re:	clean all
 
@@ -28,7 +29,7 @@ $(VOLUMES):
 	$(MKDIR) $@
 
 clean:
-	docker-compose -f $(SRC_PATH)docker-compose.yaml down
+	$(DOCKER_COMPOSE) down
 	docker volume rm $$(docker volume ls -q) || true
 
 fclean: clean
@@ -36,6 +37,12 @@ fclean: clean
 
 print:
 	echo $(VOLUMES)
+
+ps:
+	$(DOCKER_COMPOSE) ps
+
+logs:
+	$(DOCKER_COMPOSE) logs
 
 .SILENT: fclean clean print
 .PHONY: fclean clean re all print
