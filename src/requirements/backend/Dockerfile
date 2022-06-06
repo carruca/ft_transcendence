@@ -6,18 +6,12 @@ RUN apk update && apk add --no-cache \
 	npm \
 	&& rm -f /var/cache/apk/*
 
-#COPY ./vol/package*.json ./
-#RUN npm install
 RUN npm i -g @nestjs/cli
 #	&& nest new backend --strict --package-manager npm
 
-#RUN nest update
-COPY entrypoint.sh .
 WORKDIR /backend
 
 EXPOSE 3000 22
 
 #ENTRYPOINT ["/bin/sh"]
-#ENTRYPOINT ["/usr/local/bin/node", "dist/main"]
-ENTRYPOINT ["/entrypoint.sh"]
-#ENTRYPOINT ["/usr/local/bin/npm", "run", "start:dev"]
+ENTRYPOINT ["/usr/local/bin/npm", "run", "start:dev"]
