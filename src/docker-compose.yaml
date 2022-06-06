@@ -8,6 +8,7 @@ services:
             - "222:22"
         build:
             context: requirements/backend
+        command: npm install
         networks:
             - transnet
         depends_on:
