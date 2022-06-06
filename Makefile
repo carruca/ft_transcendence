@@ -34,6 +34,7 @@ clean:
 
 fclean: clean
 	docker rmi $$(docker images -q)
+	docker system prune -f
 
 print:
 	echo $(VOLUMES)

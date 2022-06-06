@@ -1,8 +1,6 @@
-FROM alpine:3.15
+FROM node:18-alpine3.15 as dev
 RUN apk update && apk add \
 	vim \
-	nodejs \
-	npm \
 	git \
 	openssh \
 	&& rm -f /var/cache/apk/*
@@ -13,5 +11,5 @@ EXPOSE 3000 22
 WORKDIR /backend
 
 #ENTRYPOINT ["/bin/sh"]
-ENTRYPOINT ["/usr/bin/npm", "run", "start:dev"]
+ENTRYPOINT ["/usr/local/bin/npm", "run", "start:dev"]
 
