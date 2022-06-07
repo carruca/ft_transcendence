@@ -2,50 +2,68 @@ services:
     backend:
         image: backend:dev
         container_name: backend_container
-#        command: >
-#          bash -c "npm install
-#          && npm run start:dev"
         restart: always
         ports:
             - "3000:3000"
-            - "222:22"
         build:
             context: requirements/backend
         networks:
             - transnet
-#        depends_on:
-#            - postgresql
+        depends_on:
+            - postgresql
         volumes:
             - backend:/backend/
-#        stdin_open: true # docker run -i
-#        tty: true        # docker run -t
+              #        stdin_open: true # docker run -i
+              #        tty: true        # docker run -t
 
-#    postgresql:
-#        image: postgres:14.3-alpine
-#        container_name: postgresql_container
-#        restart: always
-#        ports:
-#            - "5432:5432"
-#        environment:
-#            POSTGRES_USER: root
-#            POSTGRES_PASSWORD: root
-#            #            POSTGRES_DB: test_db
-#        networks:
-#            - transnet
-#        volumes:
-#            - postgresql:/var/lib/postgresql/data
+    frontend:
+        image: frontend:dev
+        container_name: frontend_container
+        restart: always
+        ports:
+            - "3030:3030"
+        build:
+            context: requirements/frontend
+        networks:
+            - transnet
+        depends_on:
+            - backend
+        volumes:
+            - frontend:/frontend/
+        #       stdin_open: true
+        #       tty: true
 
-#    pgadmin:
-#        image: dpage/pgadmin4
-#        container_name: pgadmin4_container
-#        restart: always
-#        ports:
-#            - "5050:80"
-#        environment:
-#            PGADMIN_DEFAULT_EMAIL: admin@admin.com
-#            PGADMIN_DEFAULT_PASSWORD: root
-#        networks:
-#            - transnet
+    postgresql:
+        image: postgres:14.3-alpine
+        container_name: postgresql_container
+        restart: always
+        ports:
+            - "5432:5432"
+        environment:
+            POSTGRES_USER: root
+            POSTGRES_PASSWORD: root
+            PGDATA: /var/lib/postgresql/data/db
+            #            POSTGRES_DB: test_db
+        networks:
+            - transnet
+        volumes:
+            - postgresql:/var/lib/postgresql/data
+        stdin_open: true # docker run -i
+        tty: true        # docker run -t
+        healthcheck:
+            test: ["CMD", "pg_isready", "-U", "root"]
+
+    pgadmin:
+        image: dpage/pgadmin4
+        container_name: pgadmin4_container
+        restart: always
+        ports:
+            - "5050:80"
+        environment:
+            PGADMIN_DEFAULT_EMAIL: admin@admin.com
+            PGADMIN_DEFAULT_PASSWORD: root
+        networks:
+            - transnet
 
 networks:
     transnet:

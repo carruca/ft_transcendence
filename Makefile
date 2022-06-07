@@ -35,7 +35,7 @@ clean:
 fclean: clean
 	docker rmi $$(docker images -q)
 	docker system prune -f
-	chown -R $(USER):$(USER) .
+	chown -R $(USER) .
 
 print:
 	echo $(VOLUMES)
