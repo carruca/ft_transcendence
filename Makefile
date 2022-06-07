@@ -20,6 +20,10 @@ VOLUMES				=	$(addprefix	$(SRC_PATH)$(REQUIREMENTS_PATH),		\
 						)
 DOCKER_COMPOSE		= docker-compose -f $(SRC_PATH)docker-compose.yaml
 
+POSTGRES_PATH		= src/requirements/postgresql/vol/db/
+POSTGRES_DIRS		= pg_notify pg_replslot pg_tblspc pg_twophase pg_commit_ts pg_stat_tmp pg_logical/snapshots pg_logical/mappings
+POSTGRES_DIRS	   := $(addprefix $(POSTGRES_PATH), $(POSTGRES_DIRS))
+
 all:	$(VOLUMES)
 	$(DOCKER_COMPOSE) up --build -d
 
@@ -45,6 +49,9 @@ ps:
 
 logs:
 	$(DOCKER_COMPOSE) logs
+
+postgres:
+	$(MKDIR) $(POSTGRES_DIRS)
 
 .SILENT: fclean clean print
 .PHONY: fclean clean re all print
