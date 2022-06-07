@@ -7,6 +7,7 @@ RUN apk update && apk add --no-cache \
 	&& rm -f /var/cache/apk/*
 
 RUN npm i -g @nestjs/cli
+RUN npm i -g check-installed-dependencies
 #	&& nest new backend --strict --package-manager npm
 
 COPY entrypoint.sh ./

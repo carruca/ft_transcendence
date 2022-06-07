@@ -6,15 +6,17 @@ RUN apk update && apk add --no-cache \
 	npm \
 	&& rm -f /var/cache/apk/*
 
-RUN npm i -g @nestjs/cli
-#	&& nest new backend --strict --package-manager npm
+RUN npm i -g react-scripts
+RUN npm i -g check-installed-dependencies
+RUN npm i -g create-react-app
+#	&& npm init react-app sample --use-npm
 
 COPY entrypoint.sh ./
 
-WORKDIR /backend
+WORKDIR /frontend
 
-EXPOSE 3000 22
+EXPOSE 3030
 
-#ENTRYPOINT ["/bin/sh"]
+#ENTRYPOINT ["sh"]
 ENTRYPOINT ["/entrypoint.sh"]
-#ENTRYPOINT ["npm", "run", "start:dev"]
+
