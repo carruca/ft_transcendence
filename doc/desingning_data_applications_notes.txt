@@ -1,0 +1,15 @@
+Fiabilididad/Reliability
+	- new method: fault-tolerant over preventing faults
+	- old method: redundancy of harware components to replace in case of failure
+	- a system that can tolerate machine failure can be patched one node at a time without downtime of the entire system
+
+Scalability
+	- Describe the current load on the system, e.x. users in a ircserver, resquest per second in a webserver
+	- in online systems usually more important the service's response time (time between request and response)
+	- add response time percentiles to the monitoring dashboard for your services
+	- distributed data systems will become the default in the future
+
+Maintainability
+	- operabilidad, simplicity, evolvability/evolucion/plasticity
+	- abstraction as best tool for removing accidental complexity, in the field odd distributed systems is much less clear
+	- Agile Software Development
