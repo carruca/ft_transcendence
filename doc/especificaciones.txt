@@ -1,0 +1,68 @@
+
+unica pagina
+
+una web que implementa este método:
+https://krunker.io/
+
+no hay lista de usuarios que estén en ese momento conectado.
+la única forma de poder ver la información de otro usuario es que haya aceptado
+previamente la solicitud de amistad.
+
+autenticación via SSO 42 y cookie para evitar que el usuario, al recargar la web
+vuelva a tener que autenticarse.
+
+pantalla inicial:
+	forzar voltear dispositivos moviles
+	primer plano, boton de inicio de sesión
+	segundo plano, la web completamente cargada
+
+
+pantalla perfil:
+	datos del usuario, nick, imagen, estadisticas - historial de partidas, amigos, mostrar estado
+
+	primera pestaña: datos, nick, imagen, estado
+	segunda pestaña: estadisticas - historial
+	tercera: amigos
+
+en el propio perfil, activar o desactivar MFA
+
+
+
+pantalla inicial tras la autenticación
+	pantalla grande:
+		
+
+
+lista de canales:
+	publicos con o sin clave
+
+
+chat:
+	un unico canal
+	lista de usuarios
+	mostrar estado (jugando o no)
+		- retar o ver su partida
+		- ver perfil
+		- ser amigo
+		- dejar de ser amigo
+		- mensaje privado
+
+proceso de registro:
+	debe elegir un nick
+	avatar generado o subido por el usuario
+
+
+
+perfil de usuario:
+	estadistica
+	amigos
+		- mostrar estado (online, offline, playing)
+	- guardar una copia de la información munistrada por la API de 42
+
+MFA
+
+
+
+
+funciones extra:
+	chat privado durante la partida entre los contrincantes.
