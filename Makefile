@@ -1,10 +1,15 @@
+export GID			=	$(shell id -g)
+export UID			=	$(shell id -u)
+
 MKDIR				=	mkdir -p
 
-SRC_PATH			=	./src/
+SRC_PATH			=	./src
 
-VOLUMES_PATH		=	vol/
+VOLUMES_PATH		=	vol
 
-REQUIREMENTS_PATH	=	requirements/
+REQUIREMENTS_PATH	=	requirements
+
+CONTAINER_PREFIX	=	transc-
 
 BACKEND				=	backend
 CONTAINERS			+=	$(BACKEND)
@@ -18,18 +23,21 @@ CONTAINERS			+=	$(POSTGRESQL)
 PGADMIN				=	pgadmin
 CONTAINERS			+=	$(PGADMIN)
 
-VOLUMES				=	$(addprefix	$(SRC_PATH)$(REQUIREMENTS_PATH),		\
+VOLUMES				=	$(addprefix	$(SRC_PATH)/$(REQUIREMENTS_PATH)/,		\
 							$(addsuffix /$(VOLUMES_PATH), $(CONTAINERS))	\
 						)
-DOCKER_COMPOSE		= docker-compose -f $(SRC_PATH)docker-compose.yaml
+DOCKER_COMPOSE		= docker-compose -f $(SRC_PATH)/docker-compose.yaml
+DOCKER				= docker
 
-COMMANDS			= top ps logs stop start restart pause unpause down config build events up
+COMMANDS			= top ps stop start restart pause unpause down config events up
 
-POSTGRES_PATH		= $(SRC_PATH)$(REQUIREMENTS_PATH)$(POSTGRESQL)/vol/db/
+POSTGRES_PATH		= $(SRC_PATH)/$(REQUIREMENTS_PATH)/$(POSTGRESQL)/vol/db/
 POSTGRES_DIRS		= pg_notify pg_replslot pg_tblspc pg_twophase pg_commit_ts pg_stat_tmp pg_logical/snapshots pg_logical/mappings
 POSTGRES_DIRS	   := $(addprefix $(POSTGRES_PATH), $(POSTGRES_DIRS))
 
-all:	$(VOLUMES) $(POSTGRES_DIRS)
+all:	build
+
+build:	$(VOLUMES) | $(POSTGRES_DIRS)
 	$(DOCKER_COMPOSE) up --build -d
 
 re:	clean all
@@ -38,23 +46,30 @@ $(VOLUMES):
 	$(MKDIR) $@
 
 $(POSTGRES_DIRS):
-	$(MKDIR) $@
+	$(MKDIR) $@ || true
 
 clean:
-	$(DOCKER_COMPOSE) down
-	docker volume rm $$(docker volume ls -q) || true
+	$(DOCKER_COMPOSE) down -v
 
 fclean: clean
-	docker rmi $$(docker images -q)
-	docker system prune -f
-	chown -R $(USER) .
+	$(DOCKER_COMPOSE) rm -v
 
 print:
 	echo $(VOLUMES)
+	echo $(CONTAINERS)
+	echo $(UID)
+	echo $(GID)
+
+
+logs:
+	$(DOCKER_COMPOSE) $@ -f
+
+$(CONTAINERS):
+	$(DOCKER) exec -ti $(addprefix $(CONTAINER_PREFIX), $@) sh
 
 $(COMMANDS):
 #	$(DOCKER_COMPOSE) $@ $(filter-out $@, $(MAKECMDGOALS))
 	$(DOCKER_COMPOSE) $@
 
-.SILENT: fclean clean print $(COMMANDS)
+.SILENT: fclean clean print $(COMMANDS) $(CONTAINERS)
 .PHONY: fclean clean re all print $(COMMANDS)

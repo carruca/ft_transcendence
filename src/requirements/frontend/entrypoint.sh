@@ -3,4 +3,4 @@ check-installed-dependencies
 if [ "$?" -eq 1 ]; then
 	npm ci
 fi
-exec npm start
+exec npm run dev -- --host

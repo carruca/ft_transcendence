@@ -1,4 +1,4 @@
-FROM alpine:3.15
+FROM alpine:3.17
 RUN apk update && apk add --no-cache \
 	vim \
 	git \
@@ -14,6 +14,6 @@ COPY entrypoint.sh ./
 
 WORKDIR /backend
 
-EXPOSE 3000
+#EXPOSE 3000
 
 ENTRYPOINT ["/entrypoint.sh"]

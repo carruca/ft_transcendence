@@ -1,105 +1,112 @@
 services:
-    backend:
-        image: backend:dev
-        container_name: backend_container
-        restart: always
-        ports:
-            - "3000:3000"
-        build:
-            context: requirements/backend
-        networks:
-            - transnet
-        depends_on:
-            - postgresql
-        volumes:
-            - backend:/backend/
-              #        stdin_open: true # docker run -i
-              #        tty: true        # docker run -t
+  backend:
+    image: backend:dev
+    container_name: transc-backend
+    restart: always
+    ports:
+      - "3000:3000"
+    build:
+      context: requirements/backend
+    networks:
+      - transc
+    depends_on:
+      - postgresql
+    volumes:
+      - backend:/backend/
+      #        stdin_open: true # docker run -i
+      #        tty: true        # docker run -t
+      #    profiles:
+      #- donotstart
 
-    frontend:
-        image: frontend:dev
-        container_name: frontend_container
-        restart: always
-        ports:
-            - "3030:3000"
-        build:
-            context: requirements/frontend
-        networks:
-            - transnet
-        depends_on:
-            - backend
-        volumes:
-            - frontend:/frontend/
-        stdin_open: true
-        tty: true
+  frontend:
+    image: frontend:dev
+    container_name: transc-frontend
+      #user: "${UID}:${GID}"
+    restart: always
+    ports:
+      - "3030:5173"
+    build:
+      context: requirements/frontend
+    networks:
+      - transc
+    depends_on:
+      - backend
+    volumes:
+      - frontend:/frontend/
+    stdin_open: true
+    tty: true
+      #profiles:
+      #- donotstart
 
-    postgresql:
-        image: postgres:14.3-alpine
-        container_name: postgresql_container
-        restart: always
-        ports:
-            - "5432:5432"
-        environment:
-            POSTGRES_USER: root
-            POSTGRES_PASSWORD: root
-            PGDATA: /var/lib/postgresql/data/db
-            #            POSTGRES_DB: test_db
-        networks:
-            - transnet
-        volumes:
-            - postgresql:/var/lib/postgresql/data
-        stdin_open: true # docker run -i
-        tty: true        # docker run -t
-        healthcheck:
-            test: ["CMD", "pg_isready", "-U", "root"]
+  postgresql:
+    image: postgres:14.3-alpine
+    container_name: transc-postgresql
+    user: "${UID}:${GID}"
+    restart: always
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: root
+      PGDATA: /var/lib/postgresql/data/db
+      # POSTGRES_DB: test_db
+    networks:
+      - transc
+    volumes:
+      - postgresql:/var/lib/postgresql/data
+    stdin_open: true # docker run -i
+    tty: true        # docker run -t
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "root"]
 
-    pgadmin:
-        image: dpage/pgadmin4
-        container_name: pgadmin4_container
-        restart: always
-        ports:
-            - "5050:80"
-        environment:
-            PGADMIN_DEFAULT_EMAIL: admin@admin.com
-            PGADMIN_DEFAULT_PASSWORD: root
-        networks:
-            - transnet
-        volumes:
-            - pgadmin:/var/lib/pgadmin
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: transc-pgadmin4
+    restart: always
+    ports:
+      - "5050:80"
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: root
+    networks:
+      - transc
+        # volumes:
+      #- pgadmin:/var/lib/pgadmin
 
 networks:
-    transnet:
-        name: transnet
+  transc:
+    name: transc
 
 volumes:
-    backend:
-        name: backend-volume
-        driver: local
-        driver_opts:
-            o: bind
-            type: none
-            device: ${PWD}/src/requirements/backend/vol
+  backend:
+    name: transc-backend
+    driver: local
+    driver_opts:
+      o: bind
+      type: none
+      device: ${PWD}/src/requirements/backend/vol
 
-    frontend:
-        name: frontend-volume
-        driver: local
-        driver_opts:
-            o: bind
-            type: none
-            device: ${PWD}/src/requirements/frontend/vol
+  frontend:
+    name: transc-frontend
+    driver: local
+    driver_opts:
+      o: bind
+      type: none
+      device: ${PWD}/src/requirements/frontend/vol
 
-    postgresql:
-        name: postgresql-volume
-        driver: local
-        driver_opts:
-            o: bind
-            type: none
-            device: ${PWD}/src/requirements/postgresql/vol
+  postgresql:
+    name: transc-postgresql
+    driver: local
+    driver_opts:
+      o: bind
+      type: none
+      device: ${PWD}/src/requirements/postgresql/vol
 
-    pgadmin:
-        name: pgadmin-volume
-        driver: local
-        driver_opts:
-            o: bind
-            type: none
-            device: ${PWD}/src/requirements/pgadmin/vol
+  pgadmin:
+    name: transc-pgadmin
+    driver: local
+    driver_opts:
+      o: bind
+      type: none
+      device: ${PWD}/src/requirements/pgadmin/vol
+
