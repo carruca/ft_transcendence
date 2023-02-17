@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "vue": "^3.2.45",
+    "vue-3-ts-socket.io": "^1.0.3",
     "vue-router": "^4.1.6"
   },
   "devDependencies": {

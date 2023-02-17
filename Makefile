@@ -71,4 +71,4 @@ $(COMMANDS):
 	$(DOCKER_COMPOSE) $@
 
 .SILENT: fclean clean print $(COMMANDS) $(CONTAINERS)
-.PHONY: fclean clean re all print $(COMMANDS)
+.PHONY: fclean clean re all print $(COMMANDS) $(CONTAINERS)
