@@ -4,7 +4,7 @@ import { ChatService } from './chat.service';
 import { Server } from 'socket.io';
 
 @Module({
-  providers: [
+  	providers: [
 		ChatGateway,
 		ChatService,
 		Server,

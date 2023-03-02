@@ -11,6 +11,7 @@
     "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts --fix --ignore-path .gitignore"
   },
   "dependencies": {
+    "vite-plugin-html": "^3.2.0",
     "vue": "^3.2.45",
     "vue-3-ts-socket.io": "^1.0.3",
     "vue-router": "^4.1.6"
