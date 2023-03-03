@@ -4,7 +4,7 @@
 
 <template>
   <div class="splash__div">
-    <img src="/favicon.ico" alt="">
+    <img src="/favicon.png" alt="">
     <h1>ft_transcendence</h1>
   </div>
 </template>
@@ -17,16 +17,16 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  background: rgb(108, 53, 164);
+  background: var(--bg-color);
 }
 
 .splash__div img {
-  width: 100px;
-  height: 100px;
+  width: 256px;
+  height: 256px;
 }
 
 .splash__div h1 {
-  color: white;
+  color: var(--h1-color);
   font-size: 2rem;
 }
 </style>
