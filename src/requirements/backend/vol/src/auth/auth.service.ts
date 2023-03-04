@@ -11,7 +11,6 @@ export class AuthService {
     this.authMethods = {
       'intra': IntraService
     };
-    console.log({ authMethods: this.authMethods });
   }
 
   async getUser(authMethod: string, token: string): Promise<any> {

@@ -20,7 +20,6 @@ try {
     SwaggerModule.setup('/docs/api', app, document);
 
     app.use(cookieParser(process.env.NEST_COOKIE_SECRET));
-    console.log(process.env.NEST_FRONT_URL);
     app.enableCors({
       credentials: true,
       origin: process.env.NEST_FRONT_URL,
