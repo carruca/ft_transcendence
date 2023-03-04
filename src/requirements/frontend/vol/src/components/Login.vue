@@ -4,23 +4,21 @@ const has_code = () => {
   const urlParams = new URLSearchParams(window.location.search);
   return urlParams.has("code");
 }
-if (has_code()) {
-  const urlParams = new URLSearchParams(window.location.search);
-  const code = urlParams.get("code");
-  fetch(`${import.meta.env.VITE_BACKEND_URL}/api/v1/auth/42`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      code: code,
-    }),
-  }).then((response) => {
-    if (response.status === 200) {
-      window.location.href = "/";
+(async () => {
+    if (has_code()) {
+        const urlParams = new URLSearchParams(window.location.search);
+        const code = urlParams.get("code");
+        const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/auth/intra/callback?code=${code}`, {
+            method: "GET",
+            headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+            },
+            credentials: 'include'
+        });
+        if (!response.ok) throw new Error('Nope')
+        window.location.href = '/'
     }
-  });
-}
+})()
 </script>
 
 <template>

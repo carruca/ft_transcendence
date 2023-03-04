@@ -6,11 +6,12 @@ import Splash from "../components/Splash.vue";
 
 const loggedIn = async (): Promise<boolean | undefined> => {
   try {
-    const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/v1/auth/logged_in`, {
+    const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/auth`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
       },
+      credentials: 'include'
     });
     if (response.status === 200) {
       return true;
