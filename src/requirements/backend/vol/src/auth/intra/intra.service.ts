@@ -31,7 +31,7 @@ export class IntraService {
 
   async getUser(token: string): Promise<any> {
     try {
-      const response = await fetch('${process.env.NEST_INTRA_API_URL}/v2/me', {
+      const response = await fetch(`${process.env.NEST_INTRA_API_URL}/v2/me`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
