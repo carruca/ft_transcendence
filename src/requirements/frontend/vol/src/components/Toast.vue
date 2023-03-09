@@ -50,7 +50,7 @@ export default defineComponent({
 <template>
   <div class="toast">
     <div class="toast__content">
-      <img v-if="image" :src="image" />
+      <slot />
       <p>{{ errorMessage }}</p>
     </div>
   </div>
@@ -81,6 +81,7 @@ export default defineComponent({
   flex-direction: row;
   align-items: center;
   flex-wrap: nowrap;
+  gap: 1rem;
 }
 
 .toast__content img {

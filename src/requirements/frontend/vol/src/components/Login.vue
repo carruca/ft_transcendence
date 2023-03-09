@@ -42,7 +42,9 @@ let error: string | undefined = undefined;
 </script>
 
 <template>
-  <Toast v-if="error" :error-message="error" />
+  <Toast v-if="error" :error-message="error">
+    <i class="material-icons">error</i>
+  </Toast>
   <fieldset v-if="!hasParam('code')">
     <legend>42 Login</legend>
     <a :href="intra_login">
@@ -51,3 +53,9 @@ let error: string | undefined = undefined;
   </fieldset>
   <p v-else>Login you in...</p>
 </template>
+
+<style scoped>
+.toast .material-icons {
+  color: #fff;
+}
+</style>
