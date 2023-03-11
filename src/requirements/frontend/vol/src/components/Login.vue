@@ -14,8 +14,16 @@ let error: string | undefined = undefined;
     if (hasParam("code")) {
       const urlParams = new URLSearchParams(window.location.search);
       const code = urlParams.get("code");
+      const mock = urlParams.get("mock");
+      const params = {
+        code: code as string,
+        mock: import.meta.env.VITE_MOCK_LOGIN ? mock as string : 'false',
+      }
       const response = await fetch(
-        `${import.meta.env.VITE_BACKEND_URL}/auth/intra/callback?code=${code}`,
+        (
+          `${import.meta.env.VITE_BACKEND_URL}/auth/intra/callback?` +
+          new URLSearchParams(params)
+        ),
         {
           method: "GET",
           headers: {
