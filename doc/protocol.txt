@@ -1,0 +1,72 @@
+CHAT / GAME
+
+
+Packet format
+--------------------------------------------------
+Lenght		short		Lenght of Command_ID + Data
+Command_ID	byte
+Data		byte_array	
+--------------------------------------------------
+
+
+field type	size	Encodes							notes
+-----------------------------------------------------------------------------------------
+boolean		1		Either true or false			True is encoded as 0x01 false as 0x00
+byte		1		An integer between -128 and 127	Signed 8-bit integer
+short		2		An integer between 0 and 65535	Unsigned 16-bit integer
+-----------------------------------------------------------------------------------------
+
+Client game
+-----------
+//handshake			client version, uuid, verification code (cookie)
+message				send message to channel/client
+//ping
+pong
+join_channel		join or create new channel
+part_channel		part exisiting channel
+kick_channel		kick user from channel
+pass_channel
+
+match
+-----
+join_match			join as spectator
+part_match			part as spectator
+invite_match		send match invite to other player
+accept_match		accept an invite
+decline_match		
+join_queue			join matchmaking queue
+part_queue
+player_position
+
+
+Server
+-------
+//handshake			server version, [ok, ko]
+ping
+//pong
+join_channel		join user to channel
+part_channel		part user from channel
+
+match
+-----
+position			send position of any object id
+scale				send vector2 scale of any object id
+spawn				create object id with properties
+despawn				destroy object id
+update				update properties of any object id
+
+
+Connect:
+C->S:	handshake - version - uuid - cookie
+
+
+Accept:
+S->C:	version ok
+S->C:	join general channel
+
+Error:
+S->C:	(disconnect)
+
+Ping: like IRC
+
+
