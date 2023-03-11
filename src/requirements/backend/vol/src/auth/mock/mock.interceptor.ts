@@ -41,7 +41,8 @@ export class MockCallbackInterceptor implements NestInterceptor {
           sameSite: secure ? 'none' : 'lax',
           maxAge: 3600000,
           secure
-        });
+        }
+      );
       return data;
     }
     return next.handle();
