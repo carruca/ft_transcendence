@@ -1,6 +1,7 @@
 'use strict'
 import { Injectable } from '@nestjs/common';
 import { IntraService } from './intra/intra.service';
+import { MockService } from './mock/mock.service';
 
 @Injectable()
 export class AuthService {
@@ -9,7 +10,8 @@ export class AuthService {
 
   constructor() {
     this.authMethods = {
-      'intra': IntraService
+      'intra': IntraService,
+      'mock': process.env.NEST_AUTH_MOCK === 'true' ? MockService : null
     };
   }
 
