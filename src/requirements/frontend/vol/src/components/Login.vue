@@ -2,6 +2,7 @@
 import Toast from "@/components/Toast.vue";
 
 const intra_login = import.meta.env.VITE_URL_42;
+const mock_login = import.meta.env.VITE_MOCK_LOGIN;
 const hasParam = (paramName: string) => {
   const urlParams = new URLSearchParams(window.location.search);
   return urlParams.has(paramName);
@@ -17,7 +18,7 @@ let error: string | undefined = undefined;
       const mock = urlParams.get("mock");
       const params = {
         code: code as string,
-        mock: import.meta.env.VITE_MOCK_LOGIN ? mock as string : 'false',
+        mock: mock_login ? mock as string : 'false',
       }
       const response = await fetch(
         (
@@ -47,12 +48,31 @@ let error: string | undefined = undefined;
     error = err as string;
   }
 })();
+
+const mockUsers = [  // TODO: id should be the same as the intra id
+  {
+    id: 'madrona',
+    name: 'madorna-'
+  },
+  {
+    id: 'dpoveda',
+    name: 'dpoveda-'
+  }
+]
+
 </script>
 
 <template>
   <Toast v-if="error" :error-message="error">
     <i class="material-icons">error</i>
   </Toast>
+  <ul v-if="mock_login === 'true'">
+    <li v-for="user in mockUsers" :key="user.id">
+      <a :href="`?code=${user.id}&mock=true`">
+        {{ user.name }}
+      </a>
+    </li>
+  </ul>
   <fieldset v-if="!hasParam('code')">
     <legend>42 Login</legend>
     <a :href="intra_login">
