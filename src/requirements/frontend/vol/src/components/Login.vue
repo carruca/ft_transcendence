@@ -3,8 +3,9 @@ import Toast from "@/components/Toast.vue";
 
 const intra_login = import.meta.env.VITE_URL_42;
 const mock_login = import.meta.env.VITE_MOCK_LOGIN;
-const hasParam = (paramName: string) => {
+const hasParam = (paramName: string, value: string | undefined = undefined) => {
   const urlParams = new URLSearchParams(window.location.search);
+  if (value) return urlParams.get(paramName) === value;
   return urlParams.has(paramName);
 };
 
@@ -18,13 +19,11 @@ let error: string | undefined = undefined;
       const mock = urlParams.get("mock");
       const params = {
         code: code as string,
-        mock: mock_login ? mock as string : 'false',
-      }
+        mock: mock_login ? (mock as string) : "false",
+      };
       const response = await fetch(
-        (
-          `${import.meta.env.VITE_BACKEND_URL}/auth/intra/callback?` +
-          new URLSearchParams(params)
-        ),
+        `${import.meta.env.VITE_BACKEND_URL}/auth/intra/callback?` +
+          new URLSearchParams(params),
         {
           method: "GET",
           headers: {
@@ -39,9 +38,8 @@ let error: string | undefined = undefined;
     if (hasParam("error")) {
       const urlParams = new URLSearchParams(window.location.search);
       const error = urlParams.get("error_description");
-      if (error)
-        throw error;
-      throw "Error while logging in, please try again"
+      if (error) throw error;
+      throw "Error while logging in, please try again";
     }
   } catch (err) {
     console.error(err);
@@ -49,24 +47,24 @@ let error: string | undefined = undefined;
   }
 })();
 
-const mockUsers = [  // TODO: id should be the same as the intra id
+const mockUsers = [
+  // TODO: id should be the same as the intra id
   {
-    id: 'madrona',
-    name: 'madorna-'
+    id: "madrona",
+    name: "madorna-",
   },
   {
-    id: 'dpoveda',
-    name: 'dpoveda-'
-  }
-]
-
+    id: "dpoveda",
+    name: "dpoveda-",
+  },
+];
 </script>
 
 <template>
   <Toast v-if="error" :error-message="error">
     <i class="material-icons">error</i>
   </Toast>
-  <ul v-if="mock_login === 'true'">
+  <ul v-if="mock_login === 'true' && hasParam('mock', 'true')">
     <li v-for="user in mockUsers" :key="user.id">
       <a :href="`?code=${user.id}&mock=true`">
         {{ user.name }}
