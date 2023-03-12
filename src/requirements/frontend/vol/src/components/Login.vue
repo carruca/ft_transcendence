@@ -32,7 +32,7 @@ let error: string | undefined = undefined;
           credentials: "include",
         }
       );
-      if (!response.ok) throw "Nope";
+      if (!response.ok) throw response.statusText;
       window.location.href = "/";
     }
     if (hasParam("error")) {
@@ -48,14 +48,25 @@ let error: string | undefined = undefined;
 })();
 
 const mockUsers = [
-  // TODO: id should be the same as the intra id
   {
-    id: "madrona",
-    name: "madorna-",
+    id: "91166",
+    login: "dpoveda-",
   },
   {
-    id: "dpoveda",
-    name: "dpoveda-",
+    id: "70715",
+    login: "madorna-",
+  },
+  {
+    id: "69693",
+    login: "pmira-pe",
+  },
+  {
+    id: "69584",
+    login: "rnavarre",
+  },
+  {
+    id: "63923",
+    login: "tsierra-",
   },
 ];
 </script>
@@ -67,12 +78,17 @@ const mockUsers = [
   <ul v-if="mock_login === 'true' && hasParam('mock', 'true')">
     <li v-for="user in mockUsers" :key="user.id">
       <a :href="`?code=${user.id}&mock=true`">
-        {{ user.name }}
+        {{ user.login }}
       </a>
     </li>
   </ul>
   <fieldset v-if="!hasParam('code')">
-    <legend>42 Login</legend>
+    <legend>
+      42 Login
+      {{
+        mock_login === "true" && hasParam("mock", "true") ? "(Not mocked)" : ""
+      }}
+    </legend>
     <a :href="intra_login">
       <button type="submit">Login with 42</button>
     </a>
