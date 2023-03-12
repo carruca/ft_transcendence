@@ -11,8 +11,8 @@ export class AuthController {
 
   @Get()
   @ApiOperation({ description: 'Returns if the user is logged in or not, using signedCookies.auth_method and signedCookies.token' })
-  @ApiResponse({status: 200, description: 'User is logged in'})
-  @ApiResponse({status: 401, description: 'User is not logged in'})
+  @ApiResponse({ status: 200, description: 'User is logged in' })
+  @ApiResponse({ status: 401, description: 'User is not logged in' })
   async getAuth(@Req() req: Request, @Res({passthrough: true}) res: Response): Promise<Response> {
     try {
       const data = await this.authService.getUser(

@@ -15,6 +15,7 @@ try {
     .setDescription('API docs')
     .setVersion('1.0')
     .addTag('auth')
+    .addCookieAuth('token')
     .build();
     const document = SwaggerModule.createDocument(app, config);
     SwaggerModule.setup('/docs/api', app, document);
