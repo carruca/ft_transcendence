@@ -1,10 +1,11 @@
-<script lang="ts">
+<script setup lang="ts">
 import router from "@/router";
-import { defineComponent } from "vue";
-import Login from "../components/Login.vue";
 import Splash from "../components/Splash.vue";
+import { onMounted, ref } from "vue";
 
-const loggedIn = async (): Promise<boolean | undefined> => {
+const loggedIn = ref<boolean | undefined>(false);
+
+const loggedInFn = async (): Promise<boolean | undefined> => {
   try {
     const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/auth`, {
       method: "GET",
@@ -19,30 +20,13 @@ const loggedIn = async (): Promise<boolean | undefined> => {
   } catch (error) {
     console.error(error);
   }
-  document.cookie = "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
   router.push("/login");
-}
+  return undefined;
+};
 
-export default defineComponent({
-  props: {
-    loggedIn: {
-      type: Boolean as () => boolean,
-      required: false,
-    },
-  },
-  data() {
-    return {
-      loggedIn: false,
-    };
-  },
-  mounted: async function () {
-    this.loggedIn = await loggedIn() as any;
-  },
-  components: {
-    Login,
-    Splash,
-  },
-})
+onMounted(async () => {
+  loggedIn.value = await loggedInFn();
+});
 
 </script>
 

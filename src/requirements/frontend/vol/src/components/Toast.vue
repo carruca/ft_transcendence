@@ -1,54 +1,51 @@
 <script lang="ts">
-import { defineComponent } from "vue";
+export const DEFAULT_TIMEOUT = 3 * 1000; // 3 seconds in ms
+</script>
 
-const DEFAULT_TIMEOUT = 3 * 1000;  // 3 seconds
+<script setup lang="ts">
+import { onMounted, ref } from "vue";
 
-export default defineComponent({
-  props: {
-    errorMessage: {
-      type: String as () => string,
-      required: true,
-    },
-    timeout: {
-      type: Number as () => number,
-      required: false,
-      default: DEFAULT_TIMEOUT,
-    },
-    transitionTimeout: {
-      type: String as () => string,
-      required: false,
-      default: "1s",
-    },
-    background: {
-      type: String as () => string,
-      required: false,
-      default: "#f00",
-    },
-    color: {
-      type: String as () => string,
-      required: false,
-      default: "#fff",
-    },
-    image: {
-      type: String as () => string,
-      required: false,
-      default: "",
-    },
-  },
-  mounted: function () {
+const toast = ref<HTMLElement | null>(null);
+
+onMounted(function () {
+  window.setTimeout(() => {
+    toast.value!!.style.opacity = "0";
     window.setTimeout(() => {
-      this.$el.style.opacity = "0";
-      window.setTimeout(() => {
-        this.$el.remove();
-      }, parseInt(this.transitionTimeout) * 1000);
-    }, this.timeout);
-  },
+      toast.value!!.remove();
+    }, parseInt(props.transitionTimeout) * 1000);
+  }, props.timeout);
 });
 
+const props = defineProps({
+  errorMessage: {
+    type: String,
+    required: true,
+  },
+  timeout: {
+    type: Number,
+    default: DEFAULT_TIMEOUT,
+  },
+  transitionTimeout: {
+    type: String,
+    default: "1s",
+  },
+  background: {
+    type: String,
+    default: "#f44336",
+  },
+  color: {
+    type: String,
+    default: "#fafafa",
+  },
+  image: {
+    type: String,
+    default: "",
+  },
+});
 </script>
 
 <template>
-  <div class="toast">
+  <div class="toast" ref="toast">
     <div class="toast__content">
       <slot />
       <p>{{ errorMessage }}</p>
@@ -57,7 +54,6 @@ export default defineComponent({
 </template>
 
 <style scoped>
-
 .toast {
   position: absolute;
   top: 0;
@@ -95,5 +91,4 @@ export default defineComponent({
   text-align: left;
   color: v-bind(color);
 }
-
 </style>
