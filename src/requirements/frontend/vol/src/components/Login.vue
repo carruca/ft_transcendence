@@ -72,32 +72,89 @@ const mockUsers = [
 </script>
 
 <template>
-  <Toast v-if="error" :error-message="error">
-    <i class="material-icons">error</i>
-  </Toast>
-  <ul v-if="mock_login === 'true' && hasParam('mock', 'true')">
-    <li v-for="user in mockUsers" :key="user.id">
-      <a :href="`?code=${user.id}&mock=true`">
-        {{ user.login }}
+  <section>
+    <Toast v-if="error" :error-message="error">
+      <i class="material-icons">error</i>
+    </Toast>
+    <ul v-if="mock_login === 'true' && hasParam('mock', 'true')">
+      <li v-for="user in mockUsers" :key="user.id">
+        <a :href="`?code=${user.id}&mock=true`">
+          {{ user.login }}
+        </a>
+      </li>
+    </ul>
+    <fieldset v-if="!hasParam('code')">
+      <legend>
+        Login
+        {{
+          mock_login === "true" && hasParam("mock", "true")
+            ? "(Not mocked)"
+            : ""
+        }}
+      </legend>
+      <a :href="intra_login">
+        <button type="submit">
+          <svg>
+            <image
+              xlink:href="/42logo.svg"
+            />
+          </svg>
+        </button>
       </a>
-    </li>
-  </ul>
-  <fieldset v-if="!hasParam('code')">
-    <legend>
-      42 Login
-      {{
-        mock_login === "true" && hasParam("mock", "true") ? "(Not mocked)" : ""
-      }}
-    </legend>
-    <a :href="intra_login">
-      <button type="submit">Login with 42</button>
-    </a>
-  </fieldset>
-  <p v-else>Login you in...</p>
+    </fieldset>
+    <p v-else>Login you in...</p>
+  </section>
 </template>
 
 <style scoped>
 .toast .material-icons {
   color: #fff;
+}
+
+section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+}
+
+fieldset {
+  border: none;
+}
+
+fieldset button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  width: 4em;
+  height: 4em;
+  padding: 0;
+}
+
+fieldset button svg {
+  width: 4em;
+  height: 4em;
+  filter: invert(1);
+  transition: filter 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+fieldset button:hover svg {
+  filter: invert(0) drop-shadow(0 0 0.5rem #000000);
+}
+
+@media (prefers-color-scheme: dark) {
+  fieldset button svg {
+    filter: invert(0);
+  }
+
+  fieldset button:hover svg {
+    filter: invert(1) drop-shadow(0 0 0.5rem #fff);
+  }
+}
+
+fieldset button svg image {
+  width: 4em;
+  height: 4em;
 }
 </style>
