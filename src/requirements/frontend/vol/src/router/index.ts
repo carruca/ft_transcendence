@@ -4,16 +4,16 @@ import NotFound from '../views/NotFound.vue';
 import Login from '../components/Login.vue';
 
 const routes = [
-    {
-        path: '/', component: HomeView,
-    },
-    {
-        path: '/login', component: Login,
-    },
-    // 404 -> Always at the end!
-    {
-        path: '/:pathMatch(.*)*', component: NotFound,
-    },
+  {
+    path: '/', component: HomeView,
+  },
+  {
+    path: '/login', component: Login,
+  },
+  // 404 -> Always at the end!
+  {
+    path: '/:pathMatch(.*)*', component: NotFound,
+  },
 ];
 
 const history = createWebHistory();
