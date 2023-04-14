@@ -1,3 +1,4 @@
+'use strict'
 import {
 	SubscribeMessage,
 	WebSocketGateway,
@@ -14,7 +15,7 @@ import { ChatService } from './chat.service';
 
 @WebSocketGateway({
 	cors: {
-		origin: 'http://localhost:3030',
+		origin: process.env.NEST_FRONT_URL,
 	},
 })
 export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
@@ -25,11 +26,11 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 
 	constructor(private chatService: ChatService) {}
 
-	afterInit(server: Server) {
+	afterInit(_server: Server) {
 		this.logger.log('WebSocketGateway initialized');
 	}
 
-	handleConnection(client: Socket, ...args: any[]) {
+	handleConnection(client: Socket, ..._args: any[]) {
 		this.logger.log(`Client connected: ${client.id}`);
 	}
 
@@ -39,7 +40,7 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 
   @SubscribeMessage('message')
   handleMessage(@MessageBody() message: RecvMessageDto) {
-		this.logger.log(`Message received "${message.content}" from user: ${message.user}`);
+		this.logger.debug(`Message received "${message.content}" from user: ${message.user}`);
 		this.server.emit('message', message);
   }
 }

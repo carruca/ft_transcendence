@@ -1,9 +1,49 @@
 <script setup lang="ts">
-import TheWelcome from "../components/TheWelcome.vue";
+import router from "@/router";
+import Splash from "../components/Splash.vue";
+import { onMounted, ref } from "vue";
+
+const loggedIn = ref<boolean | undefined>(false);
+
+const loggedInFn = async (): Promise<boolean | undefined> => {
+  try {
+    const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/auth`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      credentials: 'include'
+    });
+    if (response.ok) {
+      return true;
+    }
+  } catch (error) {
+    console.error(error);
+  }
+  router.push("/login");
+  return undefined;
+};
+
+onMounted(async () => {
+  loggedIn.value = await loggedInFn();
+});
+
 </script>
 
 <template>
-  <main>
-    <TheWelcome />
+  <main class="main_content">
+    <Splash v-if="!loggedIn" />
+    <p v-else>Estás dentro</p>
   </main>
 </template>
+
+<style>
+.main_content {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+</style>

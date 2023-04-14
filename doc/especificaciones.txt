@@ -1,5 +1,5 @@
 
-unica pagina
+unica pagina, con opción de usar las flechas del navegador para usar el historial
 
 una web que implementa este método:
 https://krunker.io/
