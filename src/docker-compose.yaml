@@ -84,7 +84,7 @@ volumes:
     driver_opts:
       o: bind
       type: none
-      device: ${PWD}/src/requirements/backend/vol
+      device: ./requirements/backend/vol
 
   frontend:
     name: transc-frontend
@@ -92,7 +92,7 @@ volumes:
     driver_opts:
       o: bind
       type: none
-      device: ${PWD}/src/requirements/frontend/vol
+      device: ./requirements/frontend/vol
 
   postgresql:
     name: transc-postgresql
@@ -100,7 +100,7 @@ volumes:
     driver_opts:
       o: bind
       type: none
-      device: ${PWD}/src/requirements/postgresql/vol
+      device: ./requirements/postgresql/vol
 
   pgadmin:
     name: transc-pgadmin
@@ -108,5 +108,5 @@ volumes:
     driver_opts:
       o: bind
       type: none
-      device: ${PWD}/src/requirements/pgadmin/vol
+      device: ./requirements/pgadmin/vol
 

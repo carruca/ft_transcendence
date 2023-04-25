@@ -26,7 +26,7 @@ CONTAINERS			+=	$(PGADMIN)
 VOLUMES				=	$(addprefix	$(SRC_PATH)/$(REQUIREMENTS_PATH)/,		\
 							$(addsuffix /$(VOLUMES_PATH), $(CONTAINERS))	\
 						)
-DOCKER_COMPOSE		= docker-compose -f $(SRC_PATH)/docker-compose.yaml
+DOCKER_COMPOSE		= docker compose -f $(SRC_PATH)/docker-compose.yaml
 DOCKER				= docker
 
 COMMANDS			= top ps stop start restart pause unpause down config events up images
