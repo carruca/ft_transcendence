@@ -15,9 +15,9 @@ export class AuthService {
     };
   }
 
-  async getUser(authMethod: string, token: string): Promise<any> {
+  async getUser(authMethod: string, token: string, refresh_token: string): Promise<any> {
     try {
-      const data = new this.authMethods[authMethod]().getUser(token);
+      const data = new this.authMethods[authMethod]().getUser(token, refresh_token);
       return data;
     } catch (error) {
       if (error instanceof TypeError) {

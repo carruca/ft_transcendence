@@ -17,7 +17,8 @@ export class AuthController {
     try {
       const data = await this.authService.getUser(
         req.signedCookies.auth_method,
-        req.signedCookies.token
+        req.signedCookies.token,
+        req.signedCookies.refresh_token
       );
       if (data) {
         return res.status(HttpStatus.OK).json({

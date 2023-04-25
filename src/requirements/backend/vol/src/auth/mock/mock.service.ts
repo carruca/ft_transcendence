@@ -34,7 +34,7 @@ export class MockService {
     return response.json();
   }
 
-  async getUser(token: string): Promise<any> {
+  async getUser(token: string, _refresh_token: string): Promise<any> {
     try {
       const { access_token } = await this.intraBearer();
       const response = await fetch(`${process.env.NEST_INTRA_API_URL}/v2/users/${token}`, {

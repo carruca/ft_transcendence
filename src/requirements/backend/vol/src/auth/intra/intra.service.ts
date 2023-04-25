@@ -1,5 +1,6 @@
 'use strict'
 import { Injectable } from '@nestjs/common';
+import { IntraToken } from './intra.interceptor';
 
 @Injectable()
 export class IntraService {
@@ -20,16 +21,17 @@ export class IntraService {
         }),
       });
       if (!response.ok) {
-        throw new Error(response.statusText);
+        throw response;
       }
       return response.json();
     } catch (error) {
-      console.error(error);
-      throw new Error(error);
+      console.error(error.statusText);
+      throw error;
     }
   }
 
-  async getUser(token: string): Promise<any> {
+  @IntraToken()
+  async getUser(token: string, refresh_token: string): Promise<any> {
     try {
       const response = await fetch(`${process.env.NEST_INTRA_API_URL}/v2/me`, {
         method: 'GET',
@@ -39,12 +41,36 @@ export class IntraService {
         },
       });
       if (!response.ok) {
-        throw new Error(response.statusText);
+        throw response;
       }
       return response.json();
     } catch (error) {
-      console.error(error);
-      throw new Error(error);
+      console.error(error.statusText);
+      throw error;
+    }
+  }
+
+  async refreshToken(refresh_token: string): Promise<any> {
+    try {
+      const response = await fetch(`${process.env.NEST_INTRA_API_URL}/oauth/token`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: new URLSearchParams({
+          grant_type: 'refresh_token',
+          client_id: `${process.env.NEST_INTRA_UID}`,
+          client_secret: `${process.env.NEST_INTRA_SECRET}`,
+          refresh_token,
+        })
+      })
+      if (response.ok) {
+        return await response.json()
+      }
+      throw response
+    } catch (error) {
+      console.error(error)
+      throw error
     }
   }
 }
