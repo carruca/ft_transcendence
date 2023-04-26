@@ -53,6 +53,7 @@ clean:
 
 fclean: clean
 	$(DOCKER_COMPOSE) rm -v
+	$(DOCKER_COMPOSE) down --rmi all
 
 print:
 	echo $(VOLUMES)
