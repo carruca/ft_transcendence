@@ -7,7 +7,7 @@ RUN apk update && apk add --no-cache \
 	&& rm -f /var/cache/apk/*
 
 #RUN npm i -g react-scripts
-#RUN npm i -g check-installed-dependencies
+RUN npm i -g check-installed-dependencies
 #RUN npm i -g create-react-app
 #	&& npm init react-app sample --use-npm
 
