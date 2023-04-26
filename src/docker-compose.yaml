@@ -39,7 +39,7 @@ services:
     #- donotstart
 
   postgresql:
-    image: postgres:14.3-alpine
+    image: postgres:15.2-alpine3.17
     container_name: transc-postgresql
     user: "${UID}:${GID}"
     restart: always
