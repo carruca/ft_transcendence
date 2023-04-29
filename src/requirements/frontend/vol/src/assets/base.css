@@ -1,13 +1,19 @@
 :root {
 	--bg-color: #f0f0f0;
+	--topbar-bg-color: #606060;
+	--navbar-bg-color: #909090;
 	--h1-color: #0f0f0f;
+	--p-color: #0d0d0d;
 }
 
 @media (prefers-color-scheme: dark)
 {
 	:root {
+		--topbar-bg-color: #090909;
+		--navbar-bg-color: #090909;
 		--bg-color: #0f0f0f;
 		--h1-color: #f0f0f0;
+		--p-color: #d0d0d0;
 	}
 }
 

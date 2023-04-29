@@ -2,6 +2,7 @@
 import router from "@/router";
 import Splash from "../components/Splash.vue";
 import { onMounted, ref } from "vue";
+import HomeVue from "../components/Home.vue";
 
 const loggedIn = ref<boolean | undefined>(false);
 
@@ -33,7 +34,7 @@ onMounted(async () => {
 <template>
   <main class="main_content">
     <Splash v-if="!loggedIn" />
-    <p v-else>Estás dentro</p>
+    <HomeVue v-else/>
   </main>
 </template>
 
