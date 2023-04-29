@@ -3,6 +3,7 @@ import HomeView from '../views/HomeView.vue';
 import NotFound from '../views/NotFound.vue';
 import Login from '../components/Login.vue';
 import About from '../views/AboutView.vue';
+import Logout from '../components/Logout.vue';
 
 const routes = [
   {
@@ -45,7 +46,7 @@ const routes = [
   {
     path: '/logout',
     name: 'Logout',
-    component: undefined,
+    component: Logout,
   },
   // 404 -> Always at the end!
   {

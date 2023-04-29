@@ -1,5 +1,6 @@
 <script setup lang="ts">
 document.addEventListener('DOMContentLoaded', () => {
+
   const profilePic = document.querySelector('.profile__pic') as HTMLDivElement;
   const dropdown = document.querySelector('.dropdown') as HTMLDivElement;
 
@@ -200,4 +201,5 @@ main {
 .profile__pic:hover .dropdown,
 .dropdown:hover {
   display: block;
-}</style>
+}
+</style>
