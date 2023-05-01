@@ -8,6 +8,11 @@ import { AuthService } from './auth/auth.service';
 import { AuthModule } from './auth/auth.module';
 import { IntraModule as IntraAuthModule } from './auth/intra/intra.module';
 import { RouterModule } from '@nestjs/core';
+import { ConfigModule } from '@nestjs/config';
+import { validate } from './config/env.validation';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { TypeOrmConfigService } from './config/typeorm-config.service';
+import { UsersModule } from './users/users.module';
 
 const routes = [
   {
@@ -24,9 +29,17 @@ const routes = [
 
 @Module({
   imports: [
+		ConfigModule.forRoot({
+			validate,
+			isGlobal: true,
+		}),
+		TypeOrmModule.forRootAsync({
+			useClass: TypeOrmConfigService,
+		}),
     RouterModule.register(routes),
     ChatModule,
-    AuthModule
+    AuthModule,
+		UsersModule,
   ],
   controllers: [AppController, AuthController],
   providers: [AppService, AuthService],
