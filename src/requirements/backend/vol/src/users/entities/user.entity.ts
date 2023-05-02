@@ -15,12 +15,12 @@ export class User {
   @Column({ unique: true })
   name: string;
 
-	@Column({ unique: true })
-	email: string;
-
   @Column()
   avatar: string;
 
-	@Column()
+	@Column({ nullable: true })
+	nickname: string;
+
+	@Column({ nullable: true })
 	status: number;
 }
