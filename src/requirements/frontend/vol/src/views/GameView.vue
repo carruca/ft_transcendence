@@ -37,6 +37,11 @@
         </div>
       </div>
       <div class="overlay-text" :class="{ 'active': button1Pressed || button2Pressed }">{{ overlayText }}</div>
+      <!-- FIXME remove -->
+      <input v-model="inputText" type="text" placeholder="Enter id here" />
+      <br/>
+      <button @click="spectate(inputText)">Spectate</button>
+      <!-- .FIXME remove -->
     </div>
     <div v-if="showBottomButton" class="bottom-button-wrapper" :style="bottomButtonWrapperStyle">
       <button
@@ -354,10 +359,10 @@ let resize_canvas = function() {
     // set scale appropriately
     scale = width.value / org_width;
     // move exit button
-    bottomButtonWrapperStyle.value = {
-      bottom: `${((container.value.clientHeight - height.value) / 2) + 20}px`,
+    /*bottomButtonWrapperStyle.value = {
+      //bottom: `${((container.value.clientHeight - height.value) / 2) + 20}px`,
       //transform: `translateY(-100%)`,
-    };
+    };*/
     // move menu
     menuContainerStyle.value = {
       width: `${width.value}px`,
@@ -442,13 +447,13 @@ socket.on('delete', (id: number) => {
 });
 
 // TODO this is rnavarre42 part hardcoded
-/*const spectate = (id: string) => {
+const spectate = (id: string) => {
   socket.emit('get-room', id);
 };
 socket.on('room', (code: string) => {
   console.log("got room: " + code + ", joining...");
   socket.emit('join-room', code);
-});*/
+});
 
 /** EVENTS ------------------------------------- */
 
@@ -856,9 +861,11 @@ canvas {
 }
 
 .bottom-button-wrapper {
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  transform: translateY(calc(-100% - 10px));
 }
 .bottom-button {
   background-color: #f45050;
