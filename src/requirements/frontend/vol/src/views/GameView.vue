@@ -2,7 +2,7 @@
   <div id="preload">.</div>
   <div class="container" ref="container">
     <canvas id="canvas" ref="canvas" v-bind:width="width" v-bind:height="height"></canvas>
-    <div v-if="showMenu" class="menu-container">
+    <div v-if="showMenu" class="menu-container" :style="menuContainerStyle">
       <h1 class="title-text">PONG</h1>
       <div class="button-container">
         <div class="button-wrapper">
@@ -72,6 +72,8 @@ let height = ref(525);
 const org_width: number = width.value;
 const org_height: number = height.value;
 let scale: number = width.value / org_width;
+
+const menuContainerStyle = ref({});
 
 const button1DefText: string = "Normal";
 const button2DefText: string = "Special";
@@ -353,6 +355,12 @@ let resize_canvas = function() {
     // move exit button
     bottomButtonWrapperStyle.value = {
       bottom: `${((container.value.clientHeight - height.value) / 2) + 20}px`,
+      //transform: `translateY(-100%)`,
+    };
+    // move menu
+    menuContainerStyle.value = {
+      width: `${width.value}px`,
+      height: `${height.value}px`,
     };
   }
 };
@@ -755,9 +763,8 @@ canvas {
 
 .menu-container {
   position: relative;
-  top: -50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
+  transform: translateY(-100%);
+  margin: auto;
   display: flex;
   flex-direction: column;
   justify-content: center;
