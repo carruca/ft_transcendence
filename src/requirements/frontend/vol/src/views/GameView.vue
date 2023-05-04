@@ -188,13 +188,14 @@ class Engine {
   public static draw(): void {
     Engine.clear();
     if (this.started) {
-      this.drawLine();
       this.drawBorder();
+      this.drawLine();
       this.drawEntities();
       this.drawScore();
       this.drawNames();
     }
     if (this.text !== undefined) {
+      this.drawBorder();
       this.drawText(this.text, this.textSize, org_width / 2, org_height / 2 + this.textSize / 2);
     }
   }
@@ -296,7 +297,7 @@ class Engine {
     ctx.stroke();
   }
 
-  private static drawBorder(): void {
+  public static drawBorder(): void {
     if (ctx === null) return;
 
     const borderWidth = 4 * scale;
@@ -413,6 +414,7 @@ socket.on('stop', (winText: string) => {
   const waitForMenu = async (): Promise<void> => {
     await new Promise(resolve => setTimeout(resolve, 3000));
     Engine.reset();
+    Engine.drawMenu();
     displayMenu();
     game.changeStatus(Status.MENU);
   };
@@ -421,6 +423,7 @@ socket.on('stop', (winText: string) => {
   showBottomButton.value = false;
   es.clear();
   Engine.clear();
+  Engine.drawBorder();
   Engine.drawScore();
   Engine.drawText(winText, 36, org_width / 2, org_height / 2);
   waitForMenu();
@@ -480,6 +483,7 @@ onMounted(() => {
   ctx = canvas.value!.getContext("2d");
   // resize before drawing
   resize_canvas();
+  Engine.drawMenu();
   // load font and start loop when loaded
   const pixel = new FontFace('pixel', 'url(https://dl.dropboxusercontent.com/s/hsdwvz761xqphhb/pixel.ttf)');
   pixel.load().then((font) => {
@@ -625,7 +629,7 @@ class GameController {
   private game_interval_id: number | null = null;
 
   constructor() {
-    // FIXME unncomment for release, this is just so i can look at multiple games :")
+    // FIXME uncomment this
     //window.addEventListener('blur', this.onBlur.bind(this));
     //window.addEventListener('focus', this.onFocus.bind(this));
   }
