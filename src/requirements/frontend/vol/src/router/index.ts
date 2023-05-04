@@ -4,6 +4,7 @@ import NotFound from '../views/NotFound.vue';
 import Login from '../components/Login.vue';
 import About from '../views/AboutView.vue';
 import Logout from '../components/Logout.vue';
+import GameView from '../views/GameView.vue';
 
 const routes = [
   {
@@ -18,7 +19,7 @@ const routes = [
       {
         path: 'game',
         name: 'Game',
-        component: undefined,
+        component: GameView,
       },
       {
         path: 'chat',
