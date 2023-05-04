@@ -5,9 +5,11 @@ import { onMounted, ref } from "vue";
 import HomeVue from "../components/Home.vue";
 
 const loggedIn = ref<boolean | undefined>(false);
+const user = ref<Object | undefined>(undefined);
 
 const loggedInFn = async (): Promise<boolean | undefined> => {
   try {
+    // NOTE: /auth will be deprecated soon
     const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/auth`, {
       method: "GET",
       headers: {
@@ -16,6 +18,14 @@ const loggedInFn = async (): Promise<boolean | undefined> => {
       credentials: 'include'
     });
     if (response.ok) {
+      // user.value = await response.json();
+      // TODO: Get current user
+      user.value = {
+        image: {
+          link:
+            'https://cdn.intra.42.fr/users/ac38c59ead3bbafe14cf205835c4b46e/castela.jpg',
+        }
+      }
       return true;
     }
   } catch (error) {
@@ -34,7 +44,7 @@ onMounted(async () => {
 <template>
   <main class="main_content">
     <Splash v-if="!loggedIn" />
-    <HomeVue v-else/>
+    <HomeVue :user="user" v-else/>
   </main>
 </template>
 
