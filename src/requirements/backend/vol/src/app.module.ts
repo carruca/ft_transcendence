@@ -1,5 +1,9 @@
 'use strict'
-import { Module } from '@nestjs/common';
+import {
+	Module,
+	NestModule,
+	MiddlewareConsumer,
+} from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { ChatModule } from './chat/chat.module';
@@ -13,6 +17,7 @@ import { validate } from './config/env.validation';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { TypeOrmConfigService } from './config/typeorm-config.service';
 import { UsersModule } from './users/users.module';
+import { AuthMiddleware } from './auth/auth.middleware';
 
 const routes = [
   {
@@ -44,4 +49,10 @@ const routes = [
   controllers: [AppController, AuthController],
   providers: [AppService, AuthService],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+	configure(consumer: MiddlewareConsumer) {
+		consumer
+			.apply(AuthMiddleware)
+			.forRoutes('users')
+	}
+}
