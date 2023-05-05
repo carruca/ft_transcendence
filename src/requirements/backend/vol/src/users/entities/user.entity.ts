@@ -12,15 +12,12 @@ export class User {
   @Column({ unique: true })
 	intraId: number;
 
-  @Column({ unique: true })
+  @Column()
   name: string;
 
   @Column()
-  avatar: string;
+	login: string;
 
 	@Column({ nullable: true })
 	nickname: string;
-
-	@Column({ nullable: true })
-	status: number;
 }

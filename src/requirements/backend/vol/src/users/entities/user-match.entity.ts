@@ -4,8 +4,8 @@ import {
   PrimaryGeneratedColumn,	
 	OneToOne,
 } from 'typeorm';
-import { User } from './user.entity'; 
-import { Match } from './match.entity'; 
+import { User } from './user.entity';
+import { Match } from '../../matches/entities/match.entity';
 
 @Entity()
 export class UserMatch {

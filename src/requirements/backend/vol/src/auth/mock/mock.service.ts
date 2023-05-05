@@ -47,7 +47,9 @@ export class MockService {
       if (!response.ok) {
         throw new Error(response.statusText);
       }
-      return response.json();
+			const data = await response.json();
+			console.log(data);
+      return data;
     } catch (error) {
       console.error(error);
       throw new Error(error);

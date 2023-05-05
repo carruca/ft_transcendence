@@ -20,38 +20,12 @@ export class UsersService {
   ) {}
 
   async create(createUserDto: CreateUserDto): Promise<User> {
-		const user = await this.usersRepository.findOneBy({ intraId: createUserDto.id });
-		if (!user) {
-			const newUser = new User();
-			newUser.intraId = createUserDto.id;
-			newUser.name = createUserDto.name;
-			newUser.avatar = createUserDto.avatar;
-			return this.usersRepository.save(newUser);
-		}
-		return user;
+		const newUser = new User();
+		newUser.intraId = createUserDto.id;
+		newUser.name = createUserDto.name;
+		newUser.login = createUserDto.login;
+		return this.usersRepository.save(newUser);
   }
-
-	async uploadAvatar(@UploadedFile() file: Express.Multer.File, id: number): Promise<void> {
-    const user = await this.usersRepository.findOneBy({ intraId: id });
-		if (user) {
-			user.avatar = file.buffer.toString('base64');
-	//		console.log(user.avatar);
-			await this.usersRepository.save(user);
-		}
-	}
-
-	async getAvatar(id: number): Promise<StreamableFile | void> {
-    const user = await this.findOne(id);
-		if (user && user.avatar) {
-			const buffer = Buffer.from(user.avatar, 'base64');
-	//		console.log(buffer);
-			const stream = new Readable();
-			stream.push(buffer);
-			stream.push(null);
-		//	console.log(stream);
-			return new StreamableFile(stream);
-		}
-	}
 
   findAll(): Promise<User[]> {
     return this.usersRepository.find();

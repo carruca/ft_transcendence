@@ -18,6 +18,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { TypeOrmConfigService } from './config/typeorm-config.service';
 import { UsersModule } from './users/users.module';
 import { AuthMiddleware } from './auth/auth.middleware';
+import { MatchesModule } from './matches/matches.module';
 
 const routes = [
   {
@@ -45,6 +46,7 @@ const routes = [
     ChatModule,
     AuthModule,
 		UsersModule,
+		MatchesModule,
   ],
   controllers: [AppController, AuthController],
   providers: [AppService, AuthService],

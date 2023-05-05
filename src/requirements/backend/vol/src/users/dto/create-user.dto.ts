@@ -7,5 +7,5 @@ export class CreateUserDto {
   name: string;
 
 	@IsString()
-  avatar: string;
+  login: string;
 }

@@ -18,7 +18,7 @@ export class AuthMiddleware implements NestMiddleware {
                 req.user = data;
 								const user = await this.usersService.findOne(data);
 								if (!user) {
-						}
+								}
 								// User data is now available via req.user :)
                 // TODO: Check if user is on our DataBase
                 next();

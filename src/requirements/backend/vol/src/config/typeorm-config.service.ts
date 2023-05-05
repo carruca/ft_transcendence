@@ -3,8 +3,8 @@ import { TypeOrmOptionsFactory, TypeOrmModuleOptions } from '@nestjs/typeorm';
 import { ConfigService } from '@nestjs/config';
 import { User } from '../users/entities/user.entity';
 import { UserMatch } from '../users/entities/user-match.entity';
-import { Match } from '../users/entities/match.entity';
-import { MatchType } from '../users/entities/match-type.entity';
+import { Match } from '../matches/entities/match.entity';
+import { MatchType } from '../matches/entities/match-type.entity';
 
 @Injectable()
 export class TypeOrmConfigService implements TypeOrmOptionsFactory {
