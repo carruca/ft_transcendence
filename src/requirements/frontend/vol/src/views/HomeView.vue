@@ -2,11 +2,14 @@
 import router from "@/router";
 import Splash from "../components/Splash.vue";
 import { onMounted, ref } from "vue";
+import HomeVue from "../components/Home.vue";
 
 const loggedIn = ref<boolean | undefined>(false);
+const user = ref<Object | undefined>(undefined);
 
 const loggedInFn = async (): Promise<boolean | undefined> => {
   try {
+    // NOTE: /auth will be deprecated soon
     const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/auth`, {
       method: "GET",
       headers: {
@@ -15,6 +18,14 @@ const loggedInFn = async (): Promise<boolean | undefined> => {
       credentials: 'include'
     });
     if (response.ok) {
+      // user.value = await response.json();
+      // TODO: Get current user
+      user.value = {
+        image: {
+          link:
+            'https://cdn.intra.42.fr/users/ac38c59ead3bbafe14cf205835c4b46e/castela.jpg',
+        }
+      }
       return true;
     }
   } catch (error) {
@@ -33,7 +44,7 @@ onMounted(async () => {
 <template>
   <main class="main_content">
     <Splash v-if="!loggedIn" />
-    <p v-else>Estás dentro</p>
+    <HomeVue :user="user" v-else/>
   </main>
 </template>
 

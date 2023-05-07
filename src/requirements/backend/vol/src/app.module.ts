@@ -7,6 +7,7 @@ import {
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { ChatModule } from './chat/chat.module';
+import { GameModule } from './game/game.module';
 import { AuthController } from './auth/auth.controller';
 import { AuthService } from './auth/auth.service';
 import { AuthModule } from './auth/auth.module';
@@ -44,9 +45,10 @@ const routes = [
 		}),
     RouterModule.register(routes),
     ChatModule,
-    AuthModule,
 		UsersModule,
 		MatchesModule,
+    GameModule,
+    AuthModule,
   ],
   controllers: [AppController, AuthController],
   providers: [AppService, AuthService],
