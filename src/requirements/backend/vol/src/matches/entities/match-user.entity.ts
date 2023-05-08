@@ -2,7 +2,7 @@ import {
   Entity,
   Column,
   PrimaryGeneratedColumn,	
-	OneToOne,
+	ManyToOne,
 	JoinColumn
 } from 'typeorm';
 import { User } from '../../users/entities/user.entity';
@@ -20,7 +20,7 @@ export class MatchUser {
 	@Column()
 	userId: number;
 
-	@OneToOne(() => Match)
-	@JoinColumn()
+	@ManyToOne(() => Match, (match) => match.users)
+//	@JoinColumn()
 	match: Match;
 }

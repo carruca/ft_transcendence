@@ -16,21 +16,25 @@ export class MatchesService {
     private matchUsersRepository: Repository<MatchUser>,
   ) {}
 
-  async create(createMatchDto: CreateMatchDto): Promise<Match> {
+  async create(createMatchDto: CreateMatchDto): Promise<void> {
 		const match = new Match();
 		match.type = createMatchDto.mode;
 		match.start = createMatchDto.start;
 		match.end = createMatchDto.end;
+		match.users = [];
+		const promise = await this.matchesRepository.save(match);
 		for (let i = 0; i < createMatchDto.users.length; ++i) {
 			const matchUser = new MatchUser();
 			matchUser.score = createMatchDto.users[i].score;
 			matchUser.userId = createMatchDto.users[i].id;
 			matchUser.match = match;
+			console.log(matchUser);
 			const result = await this.matchUsersRepository.save(matchUser);
-			console.log(result);
+			match.users.push(result);
 		}
-		//return promise;
-		return this.matchesRepository.save(match);
+		console.log(promise);
+		return ;
+	//	return this.matchesRepository.save(match);
   }
 
   async findAll(): Promise<Match[]> {

@@ -2,9 +2,9 @@ import {
   Entity,
   PrimaryGeneratedColumn,
   Column,
-	OneToOne
+	OneToMany,
 } from 'typeorm';
-//import { MatchType } from './match-type.entity';
+import { MatchUser } from './match-user.entity';
 
 @Entity()
 export class Match {
@@ -19,8 +19,9 @@ export class Match {
 
 	@Column()
 	end: Date;
-/*
-	@OneToOne(() => MatchType)
-	type:	MatchType;
-*/
+
+	@OneToMany(() => MatchUser, (matchUser) => matchUser.match, {
+		eager: true,
+	})
+	users: MatchUser[];
 }
