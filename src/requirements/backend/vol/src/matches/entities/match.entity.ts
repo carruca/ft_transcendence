@@ -13,10 +13,14 @@ export class Match {
 
 	@Column()
 	type: string;
+
+	@Column()
+	start: Date;
+
+	@Column()
+	end: Date;
 /*
 	@OneToOne(() => MatchType)
 	type:	MatchType;
 */
-	@Column()
-	end: Date;
 }
