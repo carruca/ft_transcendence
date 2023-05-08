@@ -1,4 +1,4 @@
-interface UserScore {
+export interface UserScore {
 	id: number;
 	score: number;
 }
