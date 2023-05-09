@@ -10,7 +10,7 @@ import { Match } from './match.entity';
 
 @Entity()
 export class MatchUser {
-	@PrimaryGeneratedColumn()
+	@PrimaryGeneratedColumn('uuid')
 	id: number;
 
 	@Column()

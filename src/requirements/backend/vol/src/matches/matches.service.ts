@@ -28,11 +28,11 @@ export class MatchesService {
 			matchUser.score = createMatchDto.users[i].score;
 			matchUser.userId = createMatchDto.users[i].id;
 			matchUser.match = match;
-			console.log(matchUser);
+	//		console.log(matchUser);
 			const result = await this.matchUsersRepository.save(matchUser);
 			match.users.push(result);
 		}
-		console.log(promise);
+//		console.log(promise);
 		return ;
 	//	return this.matchesRepository.save(match);
   }
@@ -41,39 +41,15 @@ export class MatchesService {
     return this.matchesRepository.find();
   }
 
-	async history(id: number): Promise<MatchUser[]> {
-    const matchUsers = await this.matchUsersRepository.find({
-      where: { userId: id },
-      relations: ['match'],
+	async history(id: number): Promise<Match[]> {
+		const matchUsers = await this.matchUsersRepository.find({
+			where: { userId: id },
+			relations: ['match'],
     });
-		console.log(matchUsers);
-		matchUsers.map(matchUser => {
-      const newMatchUser = new MatchUser();
-      newMatchUser.id = matchUser.id;
-      newMatchUser.score = matchUser.score;
-      newMatchUser.userId = matchUser.userId;
-      newMatchUser.match = matchUser.match;
-      return newMatchUser;
-    });
-		return matchUsers;
+//		console.log(matchUsers);
+		const matchHistory = matchUsers.map(matchUser => matchUser.match);
+		return matchHistory.sort((a,b) => b.start.getTime() - a.start.getTime());
   }
-	/*	const userMatches = await this.matchUsersRepository.findBy({ userId: id });
-		console.log(userMatches);
-		let matchHistory = new Array<MatchUser>();
-const prueba = await this.matchUsersRepository.find({
-  where: { userId: id },
-  relations: ['match']
-});
-		console.log(prueba);*/
-/*		for (const userMatch of userMatches) {
-  		const match = await this.matchesRepository.findOne(userMatch.matchId);
-  		matchHistory.push({ match, score: userMatch.score, userId: userMarch.userId });
-		}
-	*/	/*for (let i = 0; i < userMatches.length; ++i) {
-			matchHistory.concat(await this.matchUsersRepository.findBy({ match: userMatches[i].match }));
-		}
-		console.log(matchHistory);
-	*//*	return matchHistory;*/
 
   findOne(id: number) {
     return `This action returns a #${id} match`;
