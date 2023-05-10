@@ -1,2 +1,9 @@
 @import './base.css';
 @import url('https://fonts.googleapis.com/icon?family=Material+Icons');
+@import url('https://fonts.googleapis.com/css2?family=Oswald');
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue');
+
+@font-face {
+    font-family: 'Retro Stereo Wide';
+    src: url('./Retro\ Stereo\ Wide.ttf') format('truetype');
+}

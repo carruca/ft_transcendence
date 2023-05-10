@@ -89,7 +89,7 @@ const button2Pressed = ref(false);
 const button1Hovered = ref(false);
 const button2Hovered = ref(false);
 const overlayText = ref<string>('In queue...');
-const showMenu = ref(true);
+const showMenu = ref(false);
 
 const showBottomButton = ref(false);
 const bottomButtonText = ref('Exit');
@@ -495,6 +495,7 @@ onMounted(() => {
     document.fonts.add(font);
     console.log('Font loaded');
     // game loop
+    displayMenu();
     game.changeStatus(Status.MENU);
   });
 });
