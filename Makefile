@@ -26,32 +26,36 @@ CONTAINERS			+=	$(PGADMIN)
 VOLUMES				=	$(addprefix	$(SRC_PATH)/$(REQUIREMENTS_PATH)/,		\
 							$(addsuffix /$(VOLUMES_PATH), $(CONTAINERS))	\
 						)
-DOCKER_COMPOSE		= docker-compose -f $(SRC_PATH)/docker-compose.yaml
-DOCKER				= docker
+DOCKER_COMPOSE		= 	docker-compose -f $(SRC_PATH)/docker-compose.yaml
+DOCKER				= 	docker
 
-COMMANDS			= top ps stop start restart pause unpause down config events up images
+COMMANDS			= 	top ps stop start restart pause unpause down config events up images
 
-POSTGRES_PATH		= $(SRC_PATH)/$(REQUIREMENTS_PATH)/$(POSTGRESQL)/vol/db/
-POSTGRES_DIRS		= pg_notify pg_replslot pg_tblspc pg_twophase pg_commit_ts pg_stat_tmp pg_logical/snapshots pg_logical/mappings
-POSTGRES_DIRS	   := $(addprefix $(POSTGRES_PATH), $(POSTGRES_DIRS))
+POSTGRES_PATH		= 	$(SRC_PATH)/$(REQUIREMENTS_PATH)/$(POSTGRESQL)/vol/db/
+POSTGRES_DIRS		= 	pg_notify pg_replslot pg_tblspc pg_twophase pg_commit_ts pg_stat_tmp pg_logical/snapshots pg_logical/mappings
+POSTGRES_DIRS		:= 	$(addprefix $(POSTGRES_PATH), $(POSTGRES_DIRS))
 
-all:	build
+DATABASE 			= 	$(shell cat src/.env 2> /dev/null | grep "TRANSC_DATABASE" | awk -F"TRANSC_DATABASE=" '{print $$2;}')
 
-build:	$(VOLUMES) | $(POSTGRES_DIRS)
+all:			build
+
+-include config.mk
+
+build:			$(VOLUMES)
 	$(DOCKER_COMPOSE) up --build -d
 
-re:	clean all
+re: 			clean all
 
 $(VOLUMES):
 	$(MKDIR) $@
 
 $(POSTGRES_DIRS):
-	$(MKDIR) $@ || true
+#	$(MKDIR) $@ || true
 
 clean:
 	$(DOCKER_COMPOSE) down -v
 
-fclean: clean
+fclean: 		clean
 	$(DOCKER_COMPOSE) rm -v
 	$(DOCKER_COMPOSE) down --rmi all
 
@@ -60,16 +64,23 @@ print:
 	echo $(CONTAINERS)
 	echo $(UID)
 	echo $(GID)
+	echo $(DATABASE)
 
 logs:
 	$(DOCKER_COMPOSE) $@ -f
+
+import:
+	$(DOCKER_COMPOSE) exec -u root -t $(POSTGRESQL) pg_restore -d $(DATABASE)
+
+export:
+	$(DOCKER_COMPOSE) exec -u root -t $(POSTGRESQL) pg_dump $(DATABASE) --data-only
 
 $(CONTAINERS):
 	$(DOCKER) exec -ti $(addprefix $(CONTAINER_PREFIX), $@) sh
 
 $(COMMANDS):
-#	$(DOCKER_COMPOSE) $@ $(filter-out $@, $(MAKECMDGOALS))
 	$(DOCKER_COMPOSE) $@
+#	$(DOCKER_COMPOSE) $@ $(filter-out $@, $(MAKECMDGOALS))
 
 .SILENT: fclean clean print $(COMMANDS) $(CONTAINERS)
 .PHONY: fclean clean re all print $(COMMANDS) $(CONTAINERS)
