@@ -5,6 +5,8 @@ import { Match } from './entities/match.entity';
 import { MatchUser } from './entities/match-user.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { PaginationOptionsDto } from './dto/pagination-options.dto';
+import { PaginationDto } from './dto/pagination.dto';
 
 @Injectable()
 export class MatchesService {
@@ -50,6 +52,23 @@ export class MatchesService {
 		const matchHistory = matchUsers.map(matchUser => matchUser.match);
 		return matchHistory.sort((a,b) => b.start.getTime() - a.start.getTime());
   }
+
+	async paginate(
+		id: number,
+		options: PaginationOptionsDto,
+	): Promise<PaginationDto<Match>> {
+		const [ results, total ] = await this.matchUsersRepository.findAndCount({
+			where: { userId: id },
+			relations: ['match'],
+			take: options.limit,
+			skip: options.page * options.limit
+		});
+		return {
+			data: results.map(matchUser => matchUser.match),
+			currentPage: options.page,
+			total: total,
+		};
+	}
 
   findOne(id: number) {
     return `This action returns a #${id} match`;

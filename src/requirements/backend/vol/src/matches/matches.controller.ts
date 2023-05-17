@@ -1,4 +1,13 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+	Controller,
+	Get,
+	Post,
+	Body,
+	Patch,
+	Param,
+	Delete,
+	Query,
+} from '@nestjs/common';
 import { MatchesService } from './matches.service';
 import { CreateMatchDto } from './dto/create-match.dto';
 import { UpdateMatchDto } from './dto/update-match.dto';
@@ -20,8 +29,15 @@ export class MatchesController {
   }
 
 	@Get('history/:id')
-	history(@Param('id') id: number) {
-		return this.matchesService.history(id);
+	history(
+		@Param('id') id: number,
+		@Query('page') page: number,
+		@Query('limit') limit: number
+	) {
+		return this.matchesService.paginate(id, {
+			limit: limit,
+			page: page,
+		});
 	}
 
 
