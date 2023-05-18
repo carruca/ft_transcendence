@@ -11,7 +11,7 @@ import {
 import { MatchesService } from './matches.service';
 import { CreateMatchDto } from './dto/create-match.dto';
 import { UpdateMatchDto } from './dto/update-match.dto';
-import { ApiTags } from '@nestjs/swagger';
+import { ApiTags, ApiQuery } from '@nestjs/swagger';
 
 @ApiTags('matches')
 @Controller('matches')
@@ -29,14 +29,16 @@ export class MatchesController {
   }
 
 	@Get('history/:id')
+	@ApiQuery({ name: 'page', required: false })
+	@ApiQuery({ name: 'limit', required: false })
 	history(
 		@Param('id') id: number,
-		@Query('page') page: number,
-		@Query('limit') limit: number
+		@Query('page') page?: number,
+		@Query('limit') limit?: number
 	) {
 		return this.matchesService.paginate(id, {
-			limit: limit,
-			page: page,
+			limit: limit || 10,
+			page: page || 0,
 		});
 	}
 

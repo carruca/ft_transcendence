@@ -61,7 +61,12 @@ export class MatchesService {
 			where: { userId: id },
 			relations: ['match'],
 			take: options.limit,
-			skip: options.page * options.limit
+			skip: options.page * options.limit,
+			order: {
+				match: {
+					start: "DESC",
+				}
+			}
 		});
 		return {
 			data: results.map(matchUser => matchUser.match),
