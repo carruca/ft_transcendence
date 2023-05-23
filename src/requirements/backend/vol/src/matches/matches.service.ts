@@ -57,7 +57,13 @@ export class MatchesService {
 		id: number,
 		options: PaginationOptionsDto,
 	): Promise<PaginationDto<Match>> {
-		const [ results, total ] = await this.matchUsersRepository.findAndCount({
+			const [ results, total ] = await this.matchUsersRepository.createQueryBuilder('matchUser')
+				.where('matchUser.userId = :userId', { userId: id })
+				.orderBy('matchUser.match.start', 'DESC')
+				.take(options.limit)
+				.skip(options.page * options.limit)
+				.getManyAndCount();
+/*		const [ results, total ] = await this.matchUsersRepository.findAndCount({
 			where: { userId: id },
 			relations: ['match'],
 			take: options.limit,
@@ -68,6 +74,7 @@ export class MatchesService {
 				}
 			}
 		});
+*/
 		return {
 			data: results.map(matchUser => matchUser.match),
 			currentPage: options.page,
