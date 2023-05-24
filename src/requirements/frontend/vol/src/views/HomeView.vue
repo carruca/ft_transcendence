@@ -9,23 +9,22 @@ const user = ref<Object | undefined>(undefined);
 
 const loggedInFn = async (): Promise<boolean | undefined> => {
   try {
-    // NOTE: /auth will be deprecated soon
-    const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/auth`, {
+    const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/users/me`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
       },
       credentials: 'include'
     });
-    if (response.ok) {
-      // user.value = await response.json();
-      // TODO: Get current user
-      user.value = {
-        image: {
-          link:
-            'https://cdn.intra.42.fr/users/ac38c59ead3bbafe14cf205835c4b46e/castela.jpg',
-        }
+    if (response.status === 401) {
+      const data = await response.json();
+      if ('message' in data && data.message === 'No nickname') {
+        router.replace("/setup");
+        return true;
       }
+    }
+    if (response.ok) {
+      user.value = await response.json();
       return true;
     }
   } catch (error) {

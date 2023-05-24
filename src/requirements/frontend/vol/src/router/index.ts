@@ -6,6 +6,7 @@ import Profile from '@/components/Profile/Profile.vue';//@ its from root
 import About from '../views/AboutView.vue';
 import Logout from '../components/Logout.vue';
 import GameView from '../views/GameView.vue';
+import Setup from '@/components/Setup/Setup.vue'
 
 const routes = [
   {
@@ -36,7 +37,7 @@ const routes = [
         path: 'settings',
         name: 'Settings',
         component: undefined,
-      },
+      }
       // TODO: Add routes that must display the navbar and sidebar here
     ],
   },
@@ -49,6 +50,11 @@ const routes = [
     path: '/logout',
     name: 'Logout',
     component: Logout,
+  },
+  {
+    path: '/setup',
+    name: 'Setup',
+    component: Setup,
   },
   // 404 -> Always at the end!
   {

@@ -3,4 +3,4 @@ check-installed-dependencies
 if [ "$?" -eq 1 ]; then
 	npm i
 fi
-exec npm run start:dev
+exec npm run start:debug

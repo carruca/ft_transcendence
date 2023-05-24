@@ -6,6 +6,7 @@ services:
     restart: always
     ports:
       - "${BACKEND_PORT}:3000"
+      - 9229:9229 # debug
     build:
       context: requirements/backend
     environment:
