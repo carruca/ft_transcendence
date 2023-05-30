@@ -53,7 +53,7 @@ services:
     networks:
       - transc
     volumes:
-       - postgresql:/var/lib/postgresql/data
+      - postgresql:/var/lib/postgresql/data
     stdin_open: true # docker run -i
     tty: true        # docker run -t
     healthcheck:
