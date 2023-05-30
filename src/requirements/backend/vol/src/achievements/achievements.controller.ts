@@ -21,16 +21,16 @@ export class AchievementsController {
 
   @Get(':id')
   findOne(@Param('id') id: string) {
-    return this.achievementsService.findOne(+id);
+    return this.achievementsService.findOne(Math.abs(Number(id)));
   }
 
   @Patch(':id')
   update(@Param('id') id: string, @Body() updateAchievementDto: UpdateAchievementDto) {
-    return this.achievementsService.update(+id, updateAchievementDto);
+    return this.achievementsService.update(Math.abs(Number(id)), updateAchievementDto);
   }
 
   @Delete(':id')
   remove(@Param('id') id: string) {
-    return this.achievementsService.remove(+id);
+    return this.achievementsService.remove(Math.abs(Number(id)));
   }
 }
