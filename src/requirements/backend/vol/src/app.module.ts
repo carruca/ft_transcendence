@@ -1,8 +1,9 @@
 'use strict'
 import {
-	Module,
-	NestModule,
-	MiddlewareConsumer,
+  Module,
+  NestModule,
+  MiddlewareConsumer,
+  RequestMethod,
 } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -21,6 +22,7 @@ import { UsersModule } from './users/users.module';
 import { AuthMiddleware } from './auth/auth.middleware';
 import { MatchesModule } from './matches/matches.module';
 import { AchievementsModule } from './achievements/achievements.module';
+import { ServeStaticModule } from '@nestjs/serve-static/dist/serve-static.module';
 
 const routes = [
   {
@@ -37,17 +39,20 @@ const routes = [
 
 @Module({
   imports: [
-		ConfigModule.forRoot({
-			validate,
-			isGlobal: true,
-		}),
-		TypeOrmModule.forRootAsync({
-			useClass: TypeOrmConfigService,
-		}),
+    ServeStaticModule.forRoot({
+      rootPath: `${__dirname}/../public`,
+    }),
+    ConfigModule.forRoot({
+      validate,
+      isGlobal: true,
+    }),
+    TypeOrmModule.forRootAsync({
+      useClass: TypeOrmConfigService,
+    }),
     RouterModule.register(routes),
     ChatModule,
-		UsersModule,
-		MatchesModule,
+    UsersModule,
+    MatchesModule,
     GameModule,
     AuthModule,
     AchievementsModule,
@@ -56,9 +61,11 @@ const routes = [
   providers: [AppService, AuthService],
 })
 export class AppModule implements NestModule {
-	configure(consumer: MiddlewareConsumer) {
-		consumer
-			.apply(AuthMiddleware)
-			.forRoutes('users')
-	}
+  configure(consumer: MiddlewareConsumer) {
+    (consumer
+      .apply(AuthMiddleware)
+      .exclude()
+    )
+      .forRoutes('users')
+  }
 }

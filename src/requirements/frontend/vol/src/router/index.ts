@@ -2,9 +2,11 @@ import { createRouter, createWebHistory } from 'vue-router';
 import HomeView from '../views/HomeView.vue';
 import NotFound from '../views/NotFound.vue';
 import Login from '../components/Login.vue';
+import Profile from '@/components/Profile/Profile.vue';//@ its from root
 import About from '../views/AboutView.vue';
 import Logout from '../components/Logout.vue';
 import GameView from '../views/GameView.vue';
+import Setup from '@/components/Setup/Setup.vue'
 
 const routes = [
   {
@@ -29,13 +31,13 @@ const routes = [
       {
         path: 'profile',
         name: 'Profile',
-        component: undefined,
+        component: Profile,
       },
       {
         path: 'settings',
         name: 'Settings',
         component: undefined,
-      },
+      }
       // TODO: Add routes that must display the navbar and sidebar here
     ],
   },
@@ -48,6 +50,11 @@ const routes = [
     path: '/logout',
     name: 'Logout',
     component: Logout,
+  },
+  {
+    path: '/setup',
+    name: 'Setup',
+    component: Setup,
   },
   // 404 -> Always at the end!
   {

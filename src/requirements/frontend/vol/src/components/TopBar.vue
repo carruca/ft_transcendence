@@ -5,17 +5,11 @@ const DROPDOWN_ANIMATION_DURATION: number = 200; // ms
 const props = defineProps({
   user: {
     type: Object,
-    required: true,
-    default: {
-      image: {
-        link:
-          'https://cdn.intra.42.fr/users/ac38c59ead3bbafe14cf205835c4b46e/castela.jpg',
-      }
-    }
+    required: true
   }
 })
 
-const bgImage = ref(`url('${props.user.image.link}')`);
+const bgImage = ref(`url('${import.meta.env.VITE_BACKEND_URL}/avatars/${props.user.nickname}.png')`);
 
 onMounted(() => {
   const profilePic = document.querySelector('.profile__pic') as HTMLDivElement;
@@ -46,7 +40,6 @@ onMounted(() => {
   
   const animateOut = (e: Event) => {
     if (profilePicContainer.matches(':hover')) return;
-    // if the last hovered element is the dropdown, then we don't want to animate out
     if (lastHoveredElement === null) return;
     dropdown.removeEventListener('mouseleave', animateOut);
     profilePic.removeEventListener('mouseleave', animateOut);

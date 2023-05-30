@@ -21,6 +21,6 @@ html {
 	background-color: var(--bg-color);
 }
 
-h1, legend, p {
+h1, legend, p, label {
 	color: var(--h1-color);
 }
