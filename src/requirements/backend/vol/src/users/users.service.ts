@@ -24,6 +24,7 @@ export class UsersService {
 		newUser.intraId = createUserDto.id;
 		newUser.name = createUserDto.name;
 		newUser.login = createUserDto.login;
+		newUser.achievements = [];
 		return this.usersRepository.save(newUser);
   }
 

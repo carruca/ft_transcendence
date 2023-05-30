@@ -4,9 +4,10 @@ import { UpdateMatchDto } from './dto/update-match.dto';
 import { Match } from './entities/match.entity';
 import { MatchUser } from './entities/match-user.entity';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, In } from 'typeorm';
 import { PaginationOptionsDto } from './dto/pagination-options.dto';
 import { PaginationDto } from './dto/pagination.dto';
+import { User } from '../users/entities/user.entity';
 
 @Injectable()
 export class MatchesService {
@@ -16,27 +17,32 @@ export class MatchesService {
 
     @InjectRepository(MatchUser)
     private matchUsersRepository: Repository<MatchUser>,
+
+    @InjectRepository(User)
+    private usersRepository: Repository<User>,
   ) {}
 
   async create(createMatchDto: CreateMatchDto): Promise<void> {
 		const match = new Match();
+
 		match.type = createMatchDto.mode;
 		match.start = createMatchDto.start;
 		match.end = createMatchDto.end;
 		match.users = [];
+
 		const promise = await this.matchesRepository.save(match);
+
 		for (let i = 0; i < createMatchDto.users.length; ++i) {
 			const matchUser = new MatchUser();
+
 			matchUser.score = createMatchDto.users[i].score;
 			matchUser.userId = createMatchDto.users[i].id;
 			matchUser.match = match;
-	//		console.log(matchUser);
+
 			const result = await this.matchUsersRepository.save(matchUser);
+
 			match.users.push(result);
 		}
-//		console.log(promise);
-		return ;
-	//	return this.matchesRepository.save(match);
   }
 
   async findAll(): Promise<Match[]> {
@@ -48,8 +54,9 @@ export class MatchesService {
 			where: { userId: id },
 			relations: ['match'],
     });
-//		console.log(matchUsers);
+
 		const matchHistory = matchUsers.map(matchUser => matchUser.match);
+
 		return matchHistory.sort((a,b) => b.start.getTime() - a.start.getTime());
   }
 
@@ -68,11 +75,41 @@ export class MatchesService {
 				}
 			}
 		});
+
 		return {
 			results: results.map(matchUser => matchUser.match),
 			currentPage: options.page,
 			total: total,
 		};
+	}
+
+	async updateEloRating(winners: number[], losers: number[]): Promise<void> {
+		const winningUsers = await this.usersRepository.find({
+			where: {
+				id: In(winners),
+			},
+		});
+		const losingUsers = await this.usersRepository.find({
+			where: {
+				id: In(losers),
+			},
+		});
+
+		const ratingDifference = losingUsers.reduce((total, loser) => {
+			return total + (loser.rating - 100);
+		}, 0);
+
+		const pointsGained = Math.round(32 * (1 - 1 / (1 + Math.pow(10, ratingDifference / 400))));
+
+		winningUsers.forEach((winner) => {
+			winner.rating += pointsGained;
+		});
+
+		losingUsers.forEach((loser) => {
+			loser.rating -= pointsGained;
+		});
+
+		await this.usersRepository.save([...winningUsers, ...losingUsers]);
 	}
 
   findOne(id: number) {

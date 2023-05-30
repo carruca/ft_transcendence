@@ -20,6 +20,7 @@ import { TypeOrmConfigService } from './config/typeorm-config.service';
 import { UsersModule } from './users/users.module';
 import { AuthMiddleware } from './auth/auth.middleware';
 import { MatchesModule } from './matches/matches.module';
+import { AchievementsModule } from './achievements/achievements.module';
 
 const routes = [
   {
@@ -49,6 +50,7 @@ const routes = [
 		MatchesModule,
     GameModule,
     AuthModule,
+    AchievementsModule,
   ],
   controllers: [AppController, AuthController],
   providers: [AppService, AuthService],

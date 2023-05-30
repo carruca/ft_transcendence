@@ -1,8 +1,10 @@
 import {
   Entity,
   PrimaryGeneratedColumn,
-  Column
+  Column,
+	OneToMany,
 } from 'typeorm';
+import { AchievementUser } from '../../achievements/entities/achievement-user.entity';
 
 @Entity()
 export class User {
@@ -18,6 +20,14 @@ export class User {
   @Column()
 	login: string;
 
-	@Column({ nullable: true })
+	@Column({ nullable: true, unique: true })
 	nickname: string;
+
+	@Column({ default: 100 })
+	rating: number;
+
+	@OneToMany(() => AchievementUser, (achievementUser) => achievementUser.achievement, {
+		eager: true,
+	})
+	achievements: AchievementUser[];
 }

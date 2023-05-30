@@ -1,5 +1,5 @@
 export class PaginationDto<EntityType> {
-	data: EntityType[];
+	results: EntityType[];
 	currentPage: number;
 	total: number;
 }
