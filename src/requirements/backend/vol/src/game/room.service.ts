@@ -5,6 +5,9 @@ import { Interval } from '@nestjs/schedule';
 import { Mode, Options, Axis, Player, State, Room } from './game.interface';
 import { GameService } from './game.service';
 
+import { UserScore, CreateMatchDto } from '../matches/dto/create-match.dto';
+import { MatchesService } from '../matches/matches.service';
+
 const WIDTH = 858;
 const HEIGHT = 525;
 
@@ -20,6 +23,7 @@ const isValidMode = (mode: string): boolean => {
 export class RoomService {
   constructor(
     private readonly game: GameService,
+    private readonly matches: MatchesService,
   ) {}
 
   //queue: Array<Socket | undefined> = [];
@@ -120,7 +124,8 @@ export class RoomService {
       ball_pos: { x: (WIDTH / 2) - 5, y: (HEIGHT / 2) - 5 }, // minus half the scale :)
       ball_scale: { x: 10, y: 10 },
       ball_speed: { x: 5, y: 5 },
-      score: 5,
+      // FIXME set to 5 for final version
+      score: 1,
     };
     // special modes changes
     if (mode === "special") {
@@ -251,7 +256,20 @@ export class RoomService {
     // TODO add `.user` to get the user of loser and change type
     //const loser: Player | undefined = room.players.find((player) => player.socket!.id != winner.socket!.id,);
 
-    // TODO send score, winners and losers to API (remember each player has the score on their interface data)
+    // send score, winners and losers to API
+    const userScores: UserScore[] = room.players.map((player: Player) => {
+      return {
+        id: player.id,
+        score: player.score,
+      };
+    });
+    const match: CreateMatchDto = {
+      mode: (room.options.mode === 0 ? "normal" : "special"),
+      start: new Date(), // FIXME -> record start date
+      end: new Date(),
+      users: userScores,
+    }
+    this.matches.create(match);
 
     // create win text
     let winText: string;

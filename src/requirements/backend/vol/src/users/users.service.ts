@@ -27,6 +27,7 @@ export class UsersService {
 		// This is because I have TOCs
 		newUser.name = createUserDto.displayname.replace(/[\p{L}]\S*/gu, (w) => (w.replace(/^\p{L}/u, (c) => c.toUpperCase())));
 		newUser.login = createUserDto.login;
+		newUser.achievements = [];
 		return this.usersRepository.save(newUser);
 	}
 
