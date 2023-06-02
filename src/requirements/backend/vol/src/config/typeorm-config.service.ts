@@ -26,9 +26,9 @@ export class TypeOrmConfigService implements TypeOrmOptionsFactory {
 				Achievement,
 				AchievementUser,
 			],
-			migrations: [
+/*			migrations: [
 				CreateDefaultAchievements1621900000000,
-			],
+			],*/
 			migrationsRun: true,
 			synchronize: true,
 		};
