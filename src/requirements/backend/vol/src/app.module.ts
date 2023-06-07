@@ -23,6 +23,7 @@ import { AuthMiddleware } from './auth/auth.middleware';
 import { MatchesModule } from './matches/matches.module';
 import { AchievementsModule } from './achievements/achievements.module';
 import { ServeStaticModule } from '@nestjs/serve-static/dist/serve-static.module';
+import { ChannelsModule } from './channels/channels.module';
 
 const routes = [
   {
@@ -56,6 +57,7 @@ const routes = [
     GameModule,
     AuthModule,
     AchievementsModule,
+		ChannelsModule,
   ],
   controllers: [AppController, AuthController],
   providers: [AppService, AuthService],

@@ -4,11 +4,13 @@ import { UsersController } from './users.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { User } from './entities/user.entity';
 import { AchievementUser } from '../achievements/entities/achievement-user.entity';
+import { Channel } from '../channels/entities/channel.entity';
 
 @Module({
   imports: [TypeOrmModule.forFeature([
 		User,
 		AchievementUser,
+		Channel,
 	])],
   controllers: [UsersController],
   providers: [UsersService],

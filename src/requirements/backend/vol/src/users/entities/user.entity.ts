@@ -3,8 +3,10 @@ import {
   PrimaryGeneratedColumn,
   Column,
 	OneToMany,
+	ManyToMany,
 } from 'typeorm';
 import { AchievementUser } from '../../achievements/entities/achievement-user.entity';
+import { Channel } from '../../channels/entities/channel.entity';
 
 @Entity()
 export class User {
@@ -30,4 +32,8 @@ export class User {
 		eager: true,
 	})
 	achievements: AchievementUser[];
+
+	@ManyToMany(() => Channel, (channel) => channel.users, {
+	})
+	channels: Channel[];
 }
