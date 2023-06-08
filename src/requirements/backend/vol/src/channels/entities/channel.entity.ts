@@ -4,6 +4,7 @@ import {
   Column,
 	ManyToMany,
 	ManyToOne,
+	CreateDateColumn,
 } from 'typeorm';
 import { User } from '../../users/entities/user.entity';
 
@@ -12,7 +13,7 @@ export class Channel {
 	@PrimaryGeneratedColumn('uuid')
 	id: string;
 
-	@Column()
+	@Column({ unique: true })
 	name: string;
 
 	@ManyToOne(() => User)
@@ -21,8 +22,14 @@ export class Channel {
 	@ManyToOne(() => User)
 	successor?: User;
 
+	@CreateDateColumn()
+	createdDate: Date;
+
 	@Column()
 	topic?: string;
+
+	@Column()
+	topicSetDate?: Date;
 
 	@Column()
 	password?: string;

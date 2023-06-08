@@ -26,6 +26,10 @@ export class ChannelsService {
 		return channel;
 	}
 
+	async	findAll(): Promise<Channel[]> {
+		return this.channelsRepository.find();
+	}
+
 	async remove(channelId: string): Promise<void> {
 		const channel = await this.findOneById(channelId);
 		await this.channelsRepository.remove(channel);
@@ -35,6 +39,7 @@ export class ChannelsService {
 		const channel = await this.findOneById(channelId);
 
 		channel.topic = topic;
+		channel.topicSetDate = new Date();
 		return this.channelsRepository.save(channel);
 	}
 
