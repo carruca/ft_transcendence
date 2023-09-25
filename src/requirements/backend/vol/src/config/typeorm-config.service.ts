@@ -7,6 +7,7 @@ import { MatchUser } from '../matches/entities/match-user.entity';
 import { Achievement } from '../achievements/entities/achievement.entity';
 import { AchievementUser } from '../achievements/entities/achievement-user.entity';
 import { CreateDefaultAchievements1621900000000 } from '../achievements/migrations/createDefaultAchievements.migration';
+import { Channel } from '../channels/entities/channel.entity';
 
 @Injectable()
 export class TypeOrmConfigService implements TypeOrmOptionsFactory {
@@ -25,12 +26,13 @@ export class TypeOrmConfigService implements TypeOrmOptionsFactory {
 				MatchUser,
 				Achievement,
 				AchievementUser,
+				Channel,
 			],
-/*			migrations: [
-				CreateDefaultAchievements1621900000000,
-			],*/
 			migrationsRun: true,
 			synchronize: true,
+		/*	migrations: [
+				CreateDefaultAchievements1621900000000,
+			],*/
 		};
 	}
 }
