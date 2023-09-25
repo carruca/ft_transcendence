@@ -5,8 +5,10 @@ import { Interval } from '@nestjs/schedule';
 import { Mode, Options, Axis, Player, State, Room } from './game.interface';
 import { GameService } from './game.service';
 
-import { UserScore, CreateMatchDto } from '../matches/dto/create-match.dto';
+import { UserStats, CreateMatchDto } from '../matches/dto/create-match.dto';
 import { MatchesService } from '../matches/matches.service';
+
+import { AchievementsService } from '../achievements/achievements.service';
 
 const WIDTH = 858;
 const HEIGHT = 525;
@@ -24,6 +26,7 @@ export class RoomService {
   constructor(
     private readonly game: GameService,
     private readonly matches: MatchesService,
+    private readonly achievementsService: AchievementsService,
   ) {}
 
   //queue: Array<Socket | undefined> = [];
@@ -89,13 +92,23 @@ export class RoomService {
       if (room.spectators.indexOf(socket) != -1) {
         room.spectators.splice(room.spectators.indexOf(socket), 1);
       }
-      for (const player of room.players) {
-        if (socket.id == player.socket!.id) {
-          const winners = room.players.filter(player => player.socket!.id !== socket.id);
-          const losers = room.players.filter(player => player.socket!.id === socket.id);
-          this.stop(room, winners, losers);
-          break;
-        }
+      // find disconnected player
+      const disconnected_player = room.players.find(player => socket.id === player.socket!.id);
+      if (disconnected_player) {
+        const disconnected_player_id = disconnected_player.id;
+        const is_odd = disconnected_player_id % 2 === 1;
+        // separate winners and losers based on the disconnected player's team (odd or even)
+        const winners = room.players.filter(player => (is_odd ? player.id % 2 === 0 : player.id % 2 === 1));
+        const losers = room.players.filter(player => (is_odd ? player.id % 2 === 1 : player.id % 2 === 0));
+        // assign the room's score to the winners
+        winners.forEach(winner => {
+          winner.stats.score = room.options.score;
+        });
+        losers.forEach(loser => {
+          loser.stats.rival_score = room.options.score;
+        });
+        this.stop(room, winners, losers);
+        break;
       }
     }
   }
@@ -114,6 +127,7 @@ export class RoomService {
     let options: Options = {
       canvas: { width: WIDTH, height: HEIGHT },
       mode: Mode.NORMAL,
+      mode_name: mode,
       players: 2,
       player_pos: {
               y: HEIGHT / 2,
@@ -142,6 +156,7 @@ export class RoomService {
       players: [],
       spectators: [],
       options: Object.assign({}, options),
+      start: new Date(0),
     }
     this.rooms.set(code, ret)
     return ret;
@@ -151,11 +166,20 @@ export class RoomService {
       const player: Player = {
         id: room.players.length + 1,
         socket: socket,
-        score: 0,
         room: room,
         ready: false,
         pos: { x: 0, y: 0 }, scale: { x: 1, y: 1 }, speed: { x: 0, y: 0 },
         axis: { x: Axis.NONE, y: Axis.NONE },
+        stats: {
+          score: 0,
+          rival_score: 0,
+          come_back: false,
+          double_tap: 0,
+          blocker: 0,
+          streak: false,
+          first_point: false,
+          precision: 0,
+        }
       }
       room.players.push(player);
       if (room.players.length == room.options.players) room.state = State.STARTING;
@@ -170,7 +194,7 @@ export class RoomService {
       const team2: string[] = room.players.map((player) => player.socket!.id).filter((_, index) => index % 2 === 0);
       socket!.emit('players', team2, team1);
 
-      socket!.emit('score', room.players[0].score, room.players[1].score);
+      socket!.emit('score', room.players[0].stats.score, room.players[1].stats.score);
 
       console.log("sending spectator ready: " + room.code);
     }
@@ -257,19 +281,52 @@ export class RoomService {
     //const loser: Player | undefined = room.players.find((player) => player.socket!.id != winner.socket!.id,);
 
     // send score, winners and losers to API
-    const userScores: UserScore[] = room.players.map((player: Player) => {
+    // TODO centralize  this in a function that receives the players[] and returns the UserScore[]
+    const winners_stats: UserStats[] = winners.map((player: Player) => {
       return {
         id: player.id,
-        score: player.score,
+        score: player.stats.score,
+        winRatio: 0,
+        rivalScore: player.stats.rival_score,
+        rivalWinRatio: 0,
+        comeBack: player.stats.come_back,
+        doubleTap: player.stats.double_tap,
+        blocker: player.stats.blocker,
+        winningStreak: player.stats.streak,
+        firstPoint: player.stats.first_point,
+        precision: player.stats.precision,
       };
     });
+    const losers_stats: UserStats[] = losers.map((player: Player) => {
+      return {
+        id: player.id,
+        score: player.stats.score,
+        winRatio: 0,
+        rivalScore: player.stats.rival_score,
+        rivalWinRatio: 0,
+        comeBack: player.stats.come_back,
+        doubleTap: player.stats.double_tap,
+        blocker: player.stats.blocker,
+        winningStreak: player.stats.streak,
+        firstPoint: player.stats.first_point,
+        precision: player.stats.precision,
+      };
+    });
+    // TODO send new CreateMatchDto object
     const match: CreateMatchDto = {
       mode: (room.options.mode === 0 ? "normal" : "special"),
-      start: new Date(), // FIXME -> record start date
+      start: room.start,
       end: new Date(),
-      users: userScores,
+      winners: winners_stats,
+      losers: losers_stats,
     }
     this.matches.create(match);
+
+    // check archievements
+    const userStats = [...winners_stats, ...losers_stats];
+    for (const user of userStats) {
+      this.achievementsService.verifyByUser(user);
+		}
 
     // create win text
     let winText: string;

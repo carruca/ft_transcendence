@@ -50,22 +50,27 @@ export class UsersController {
   }
 
   @Put('me')
-	@UseInterceptors(FileInterceptor('avatar'))
+  @UseInterceptors(FileInterceptor('avatar'))
   updateMe(@Req() req: Request, @Body() body: UpdateUserDto, @UploadedFile() avatar: Express.Multer.File) {
     return this.usersService.update(req.user?.id, body, avatar);
   }
 
-	@Put('me/avatar')
-	@UseInterceptors(FileInterceptor('avatar'))
-	async updateAvatar(@Req() req: Request, @UploadedFile() avatar: Express.Multer.File) {
-		const user = await this.usersService.findOne(req.user?.id);
-		if (!user) {
-			throw new HttpException('User not found', HttpStatus.NOT_FOUND);
-		}
-		const avatarPath = `public/avatars/${user.nickname}.png`;
-		await this.usersService.saveAvatar(avatar, avatarPath);
-		return this.usersService.update(req.user?.id, user);
-	}
+  @Put('me/avatar')
+  @UseInterceptors(FileInterceptor('avatar'))
+  async updateAvatar(@Req() req: Request, @UploadedFile() avatar: Express.Multer.File) {
+    const user = await this.usersService.findOne(req.user?.id);
+    if (!user) {
+      throw new HttpException('User not found', HttpStatus.NOT_FOUND);
+    }
+    const avatarPath = `public/avatars/${user.nickname}.png`;
+    await this.usersService.saveAvatar(avatar, avatarPath);
+    return this.usersService.update(req.user?.id, user);
+  }
+
+  @Get('me/achievements')
+  findAchievementsUser(@Req() req: Request) {
+    return this.usersService.findAchievementsUser(req.user?.id);
+  }
 
   @Get(':id')
   findOne(@Param('id') id: number) {

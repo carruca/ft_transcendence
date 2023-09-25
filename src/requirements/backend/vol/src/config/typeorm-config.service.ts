@@ -1,18 +1,41 @@
 import { Injectable } from '@nestjs/common';
-import { TypeOrmOptionsFactory, TypeOrmModuleOptions } from '@nestjs/typeorm';
+import {
+	TypeOrmOptionsFactory,
+	TypeOrmModuleOptions,
+} from '@nestjs/typeorm';
+import { createConnection } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
 import { User } from '../users/entities/user.entity';
 import { Match } from '../matches/entities/match.entity';
 import { MatchUser } from '../matches/entities/match-user.entity';
 import { Achievement } from '../achievements/entities/achievement.entity';
 import { AchievementUser } from '../achievements/entities/achievement-user.entity';
-import { CreateDefaultAchievements1621900000000 } from '../achievements/migrations/createDefaultAchievements.migration';
+import { CreateDefaultAchievement1686824989874 } from '../achievements/migrations/1686824989874-createDefaultAchievement';
 import { Channel } from '../channels/entities/channel.entity';
 
 @Injectable()
 export class TypeOrmConfigService implements TypeOrmOptionsFactory {
 	constructor(private configService: ConfigService) {}
-	createTypeOrmOptions(): TypeOrmModuleOptions {
+	async createTypeOrmOptions(): Promise<TypeOrmModuleOptions> {
+		const connection = await createConnection({
+			type: 'postgres',
+			host: this.configService.get('POSTGRES_HOST'),
+			port: +this.configService.get('POSTGRES_PORT'),
+			username: this.configService.get('POSTGRES_USER'),
+			password: this.configService.get('POSTGRES_PASSWORD'),
+			database: this.configService.get('POSTGRES_DB'),
+			entities: [
+				User,
+				Match,
+				MatchUser,
+				Achievement,
+				AchievementUser,
+				Channel,
+			],
+			migrationsRun: true,
+			synchronize: true,
+		});
+
 		return {
 			type: 'postgres',
 			host: this.configService.get('POSTGRES_HOST'),
@@ -30,9 +53,9 @@ export class TypeOrmConfigService implements TypeOrmOptionsFactory {
 			],
 			migrationsRun: true,
 			synchronize: true,
-		/*	migrations: [
-				CreateDefaultAchievements1621900000000,
-			],*/
+			migrations: [
+				CreateDefaultAchievement1686824989874 
+			],
 		};
 	}
 }

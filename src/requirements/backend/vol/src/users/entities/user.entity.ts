@@ -2,8 +2,8 @@ import {
   Entity,
   PrimaryGeneratedColumn,
   Column,
-	OneToMany,
-	ManyToMany,
+  OneToMany,
+  ManyToMany,
 } from 'typeorm';
 import { AchievementUser } from '../../achievements/entities/achievement-user.entity';
 import { Channel } from '../../channels/entities/channel.entity';
@@ -14,26 +14,29 @@ export class User {
   id: number;
 
   @Column({ unique: true })
-	intraId: number;
+  intraId: number;
 
   @Column()
   name: string;
 
   @Column()
-	login: string;
+  login: string;
 
-	@Column({ nullable: true, unique: true })
-	nickname: string;
+  @Column({ nullable: true, unique: true })
+  nickname: string;
 
-	@Column({ default: 100 })
-	rating: number;
+  @Column({ default: 100 })
+  rating: number;
 
-	@OneToMany(() => AchievementUser, (achievementUser) => achievementUser.achievement, {
-		eager: true,
-	})
-	achievements: AchievementUser[];
+	@Column()
+	permits: number;
 
-	@ManyToMany(() => Channel, (channel) => channel.users, {
-	})
-	channels: Channel[];
+  @OneToMany(() => AchievementUser, achievementUser => achievementUser.user, {
+    eager: true,
+  })
+  achievements: AchievementUser[];
+
+  @ManyToMany(() => Channel, (channel) => channel.users, {
+  })
+  channels: Channel[];
 }

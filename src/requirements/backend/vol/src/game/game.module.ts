@@ -6,8 +6,14 @@ import { ScheduleModule } from '@nestjs/schedule';
 
 import { MatchesModule } from '../matches/matches.module';
 
+import { AchievementsModule } from '../achievements/achievements.module';
+
 @Module({
-  imports: [ScheduleModule.forRoot(), MatchesModule],
+  imports: [
+    ScheduleModule.forRoot(),
+    MatchesModule,
+    AchievementsModule,
+  ],
   providers: [GameGateway, RoomService, GameService]
 })
 export class GameModule {}

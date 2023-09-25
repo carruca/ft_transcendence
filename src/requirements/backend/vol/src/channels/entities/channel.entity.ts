@@ -2,49 +2,52 @@ import {
   Entity,
   PrimaryGeneratedColumn,
   Column,
-	ManyToMany,
-	ManyToOne,
-	CreateDateColumn,
+  ManyToMany,
+  ManyToOne,
+  CreateDateColumn,
 } from 'typeorm';
 import { User } from '../../users/entities/user.entity';
 
 @Entity()
 export class Channel {
-	@PrimaryGeneratedColumn('uuid')
-	id: string;
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
 
-	@Column({ unique: true })
-	name: string;
+  @Column({ unique: true })
+  name: string;
 
-	@ManyToOne(() => User)
-	owner: User;
+  @ManyToOne(() => User)
+  owner: User;
 
-	@ManyToOne(() => User)
-	successor?: User;
+  @ManyToOne(() => User)
+  successor?: User;
 
-	@CreateDateColumn()
-	createdDate: Date;
+  @CreateDateColumn()
+  createdDate: Date;
 
-	@Column()
-	topic?: string;
+  @Column()
+  topic?: string;
 
-	@Column()
-	topicSetDate?: Date;
+  @Column()
+  topicSetDate?: Date;
 
-	@Column()
-	password?: string;
+  @Column()
+  topicUser?: string;
 
-	@ManyToMany(() => User, (user) => user.channels, {
-		cascade: true
-	})
-	users: User[];
+  @Column()
+  password?: string;
 
-	@ManyToMany(() => User)
-	admins: User[]; 
+  @ManyToMany(() => User, (user) => user.channels, {
+    cascade: true
+  })
+  users: User[];
 
-	@ManyToMany(() => User)
-	banned: User[];
+  @ManyToMany(() => User)
+  admins: User[]; 
 
-	@ManyToMany(() => User)
-	muted: User[];
+  @ManyToMany(() => User)
+  banned: User[];
+
+  @ManyToMany(() => User)
+  muted: User[];
 }

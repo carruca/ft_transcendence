@@ -188,7 +188,9 @@ class Engine {
   }
   public static clear(): void {
     ctx!.fillStyle = colorBlack;
-    ctx!.fillRect(0, 0, canvas.value!.width, canvas.value!.height);
+    if (canvas && canvas.value) {
+      ctx!.fillRect(0, 0, canvas.value!.width, canvas.value!.height);
+    }
   }
   public static draw(): void {
     Engine.clear();
@@ -485,7 +487,9 @@ window.addEventListener('keydown', onKeyDown);
 
 onMounted(() => {
   // load context
-  ctx = canvas.value!.getContext("2d");
+  if (canvas && canvas.value) {
+    ctx = canvas.value!.getContext("2d");
+  }
   // resize before drawing
   resize_canvas();
   Engine.drawMenu();

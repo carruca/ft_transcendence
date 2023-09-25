@@ -2,25 +2,33 @@ import {
   Entity,
   Column,
   PrimaryGeneratedColumn,	
-	ManyToOne,
-	JoinColumn
+  ManyToOne,
 } from 'typeorm';
 import { User } from '../../users/entities/user.entity';
 import { Match } from './match.entity';
 
 @Entity()
 export class MatchUser {
-	@PrimaryGeneratedColumn('uuid')
-	id: number;
+  constructor(
+    score: number,
+	userId: number,
+	match: Match,
+  ) {
+    this.score = score;
+	this.userId = userId;
+	this.match = match;
+  }
 
-	@Column()
-	score: number;
+  @PrimaryGeneratedColumn('uuid')
+  id: number;
 
-//	@OneToOne(() => User)
-	@Column()
-	userId: number;
+  @Column()
+  score: number;
 
-	@ManyToOne(() => Match, (match) => match.users)
-//	@JoinColumn()
-	match: Match;
+//@OneToOne(() => User)
+  @Column()
+  userId: number;
+
+  @ManyToOne(() => Match, (match) => match.users)
+  match: Match;
 }

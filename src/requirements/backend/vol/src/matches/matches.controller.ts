@@ -1,12 +1,12 @@
 import {
-	Controller,
-	Get,
-	Post,
-	Body,
-	Patch,
-	Param,
-	Delete,
-	Query,
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  Query,
 } from '@nestjs/common';
 import { MatchesService } from './matches.service';
 import { CreateMatchDto } from './dto/create-match.dto';
@@ -28,29 +28,23 @@ export class MatchesController {
     return this.matchesService.findAll();
   }
 
-	@Get('history/:id')
-	@ApiQuery({ name: 'page', required: false })
-	@ApiQuery({ name: 'limit', required: false })
-	history(
-		@Param('id') id: number,
-		@Query('page') page?: number,
-		@Query('limit') limit?: number
-	) {
-		return this.matchesService.paginate(id, {
-			limit: limit || 10,
-			page: page || 0,
-		});
-	}
-
+  @Get('history/:id')
+  @ApiQuery({ name: 'page', required: false })
+  @ApiQuery({ name: 'limit', required: false })
+  history(
+    @Param('id') id: number,
+    @Query('page') page?: number,
+    @Query('limit') limit?: number
+  ) {
+    return this.matchesService.paginate(id, {
+      limit: limit || 10,
+	  page: page || 0,
+    });
+  }
 
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.matchesService.findOne(+id);
-  }
-
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateMatchDto: UpdateMatchDto) {
-    return this.matchesService.update(+id, updateMatchDto);
   }
 
   @Delete(':id')

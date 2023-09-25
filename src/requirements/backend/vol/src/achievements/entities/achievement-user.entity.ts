@@ -3,21 +3,32 @@ import {
   PrimaryGeneratedColumn,
   Column,
 	ManyToOne,
+	CreateDateColumn,
 } from 'typeorm';
 import { Achievement } from './achievement.entity';
 import { User } from '../../users/entities/user.entity';
 
 @Entity()
 export class AchievementUser {
+	constructor(user: User, achievement: Achievement) {
+		this.user = user;
+		this.achievement = achievement;
+	}
+
 	@PrimaryGeneratedColumn('uuid')
 	id: number;
 
-	@ManyToOne(() => User, (user) => user.achievements)
+	@ManyToOne(() => User, (user) => user.achievements, {
+		cascade: true,
+	})
 	user: User;
 
-	@ManyToOne(() => Achievement, (achievement) => achievement.users)
+	@ManyToOne(() => Achievement, (achievement) => achievement.users, {
+		cascade: true,
+		eager: true,
+	})
 	achievement: Achievement;
 
-	@Column()
-	timestamp: Date;
+	@CreateDateColumn()
+	createDate: Date;
 }

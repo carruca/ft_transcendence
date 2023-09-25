@@ -44,6 +44,8 @@ export class GameService {
       player.scale = room.options.player_scale;
       player.speed = room.options.player_speed;
     }
+    // record start time
+    room.start = new Date();
   }
   public reset_ball(room: Room, left: boolean = false): void {
     function getRandomNumber(min: number, max: number): number {
@@ -132,13 +134,25 @@ export class GameService {
     return null;
   }
   private check_score_col(room: Room): number {
-    // return id of scorer
+    let scorer: number;
+
+    // get id of scorer
     if (room.ball.pos.x < 0) {
-      return 0;
+      scorer = 0;
     } else if (room.ball.pos.x > room.options.canvas.width) {
-      return 1;
+      scorer = 1;
+    } else {
+      return -1;
     }
-    return -1;
+    // stat: precision
+    let rad: number = 25;
+    if (room.ball.pos.y > room.options.canvas.height - rad || room.ball.pos.y < 0 + rad) {
+      for (let i = scorer; i < room.players.length; i += 2) {
+        room.players[i].stats.precision++;
+      }
+    }
+
+    return scorer;
   }
 
   private normalPlayer(room: Room) {
@@ -166,13 +180,36 @@ export class GameService {
   private normalBall(room: Room) {
     let scorer = this.check_score_col(room);
     if (scorer >= 0) {
-      for (let i = scorer; i < room.players.length; i += 2) room.players[i].score++;
+      // stats: first point
+      if (room.players[0].stats.score == 0 && room.players[1].stats.score == 0) {
+        for (let i = scorer; i < room.players.length; i += 2) {
+          room.players[i].stats.first_point = true;
+        }
+      }
+      // stats: streak
+      if (room.players[scorer].stats.score == 0) {
+        for (let i = scorer; i < room.players.length; i += 2) {
+          room.players[i].stats.streak = true;
+        }
+      }
+      if (room.players[scorer == 0 ? 1 : 0].stats.streak == true) {
+        for (let i = (scorer == 0 ? 1 : 0); i < room.players.length; i += 2) {
+          room.players[i].stats.streak = false;
+        }
+      }
+      // update score
+      for (let i = scorer; i < room.players.length; i += 2) {
+        room.players[i].stats.score++;
+      }
+      for (let i = (scorer == 0 ? 1 : 0); i < room.players.length; i += 2) {
+        room.players[i].stats.rival_score++;
+      }
 
-      console.log("score 0: " + room.players[0].socket!.id + " - " + room.players[0].score);
-      console.log("score 1: " + room.players[1].socket!.id + " - " + room.players[1].score);
-      RoomService.update(room, 'score', room.players[0].score, room.players[1].score);
-      const winners = room.players.filter(player => player.score === room.options.score);
-      const losers = room.players.filter(player => player.score !== room.options.score);
+      console.log("score 0: " + room.players[0].socket!.id + " - " + room.players[0].stats.score);
+      console.log("score 1: " + room.players[1].socket!.id + " - " + room.players[1].stats.score);
+      RoomService.update(room, 'score', room.players[0].stats.score, room.players[1].stats.score);
+      const winners = room.players.filter(player => player.stats.score === room.options.score);
+      const losers = room.players.filter(player => player.stats.score !== room.options.score);
       if (winners.length > 0) {
         this.roomService.stop(room, winners, losers);
         return;
