@@ -28,7 +28,7 @@ export class User {
   @Column({ default: 100 })
   rating: number;
 
-	@Column()
+	@Column({ default: 0 })
 	permits: number;
 
   @OneToMany(() => AchievementUser, achievementUser => achievementUser.user, {
