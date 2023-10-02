@@ -25,7 +25,7 @@ export class MatchUser {
   @Column()
   score: number;
 
-//@OneToOne(() => User)
+//@ManyToOne(() => User)
   @Column()
   userId: number;
 

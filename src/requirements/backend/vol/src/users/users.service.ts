@@ -14,6 +14,7 @@ import { Readable } from 'stream';
 import * as fs from 'fs';
 import * as path from 'path';
 import { AchievementUser } from '../achievements/entities/achievement-user.entity';
+import { RatingUserDto } from './dto/rating-user.dto';
 
 @Injectable()
 export class UsersService {
@@ -81,5 +82,29 @@ export class UsersService {
       throw new HttpException('User not found', HttpStatus.NOT_FOUND);
     }
     return user.achievements;
+  }
+
+  async getRatingUsers() : Promise<User[]> {
+    return this.usersRepository
+      .createQueryBuilder('user')
+  //    .select(['user.nickname', 'user.rating'])
+			.orderBy('user.rating', 'DESC')
+			.limit(10)
+			.getMany();
+  }
+
+  async getLeaderboard() : Promise<RatingUserDto[]> {
+    const users = await this.usersRepository.find({
+      select: ['nickname', 'rating'],
+      order: {
+        rating: 'DESC',
+      },
+      take: 10,
+    });
+		console.log(users);
+    return users.map(user => ({
+      nickname: user.nickname,
+      rating: user.rating,
+    }));
   }
 }

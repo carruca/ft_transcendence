@@ -57,7 +57,7 @@ const routes = [
     GameModule,
     AuthModule,
     AchievementsModule,
-		ChannelsModule,
+    ChannelsModule,
   ],
   controllers: [AppController, AuthController],
   providers: [AppService, AuthService],

@@ -28,11 +28,14 @@ export class User {
   @Column({ default: 100 })
   rating: number;
 
-	@Column({ default: 0 })
-	permits: number;
+  @Column({ default: 0 })
+  status: number;
+
+  @Column({ default: 0 })
+  permits: number;
 
   @OneToMany(() => AchievementUser, achievementUser => achievementUser.user, {
-    eager: true,
+    //eager: true,
   })
   achievements: AchievementUser[];
 
