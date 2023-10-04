@@ -76,21 +76,18 @@ export class UsersService {
     fs.writeFileSync(filePath, file.buffer);
   }
 
-  async findAchievementsUser(id: number): Promise<AchievementUser[]> {
-    const user = await this.usersRepository.findOneBy({ id });
+  async findAchievementsUser(userId: number): Promise<AchievementUser[]> {
+    const user = await this.usersRepository.findOne({
+      relations: ['achievements'],
+      where: {
+        id: userId,
+      },
+    });
     if (!user) {
       throw new HttpException('User not found', HttpStatus.NOT_FOUND);
     }
-    return user.achievements;
-  }
 
-  async getRatingUsers() : Promise<User[]> {
-    return this.usersRepository
-      .createQueryBuilder('user')
-  //    .select(['user.nickname', 'user.rating'])
-			.orderBy('user.rating', 'DESC')
-			.limit(10)
-			.getMany();
+    return user.achievements;
   }
 
   async getLeaderboard() : Promise<RatingUserDto[]> {
@@ -101,7 +98,7 @@ export class UsersService {
       },
       take: 10,
     });
-		console.log(users);
+
     return users.map(user => ({
       nickname: user.nickname,
       rating: user.rating,
