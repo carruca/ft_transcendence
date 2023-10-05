@@ -72,6 +72,11 @@ export class UsersController {
     return this.usersService.findAchievementsUser(req.user?.id);
   }
 
+  @Get('leaderboard')
+  async getLeaderboard() {
+    return this.usersService.getLeaderboard();
+  }
+
   @Get(':id')
   findOne(@Param('id') id: number) {
     return this.usersService.findOne(id);

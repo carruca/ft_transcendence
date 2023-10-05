@@ -8,7 +8,6 @@ import { Repository, In } from 'typeorm';
 import { PaginationOptionsDto } from './dto/pagination-options.dto';
 import { PaginationDto } from './dto/pagination.dto';
 import { User } from '../users/entities/user.entity';
-//import { AchievementsService } from '../achievements/achievements.service';
 
 @Injectable()
 export class MatchesService {
@@ -21,8 +20,6 @@ export class MatchesService {
 
     @InjectRepository(User)
     private usersRepository: Repository<User>,
-
-//    private readonly achievementsService: AchievementsService,
   ) {}
 
   async createMatchUsers(match: Match, users: UserStats[]): Promise<void> {
@@ -33,7 +30,6 @@ export class MatchesService {
         match,
 	    );
       match.users.push(matchUser);
-//      await this.achievementsService.verifyByUser(matchUser.userId);
     }
   }
 
@@ -56,6 +52,7 @@ export class MatchesService {
       match.winners.push(user.id)
     }
     await this.matchesRepository.save(match);
+    await this.updateEloRating(createMatchDto.winners[0].id, createMatchDto.losers[0].id);
   }
 
   async findAll(): Promise<Match[]> {
@@ -95,8 +92,24 @@ export class MatchesService {
     };
   }
 
-  async updateEloRating(winners: number[], losers: number[]): Promise<void> {
+  getMockUser(id: number): string {
+    if (id == 1)
+      return 'paco';
+    return 'jones';
+  }
+
+  async updateEloRating(winner: number, loser: number): Promise<void> {
     const winningUsers = await this.usersRepository.find({
+      where: {
+        nickname: this.getMockUser(winner),
+      }
+    });
+    const losingUsers = await this.usersRepository.find({
+      where: {
+        nickname: this.getMockUser(loser),
+      }
+    });
+/*    const winningUsers = await this.usersRepository.find({
       where: {
         id: In(winners),
       },
@@ -106,7 +119,7 @@ export class MatchesService {
         id: In(losers),
       },
     });
-
+*/
     const ratingDifference = losingUsers.reduce((total, loser) => {
       return total + (loser.rating - 100);
     }, 0);

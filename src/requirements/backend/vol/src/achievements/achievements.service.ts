@@ -96,7 +96,12 @@ export class AchievementsService {
   }
 
   async verifyByUser(userStats: UserStats): Promise<void> {
-    const user = await this.usersRepository.findOneBy({ nickname: this.getMockUser(userStats.id) });
+    const user = await this.usersRepository.findOne({
+      relations: ['achievements'],
+      where: {
+        nickname: this.getMockUser(userStats.id),
+      },
+    });
     if (!user) {
       throw new HttpException('User not found', HttpStatus.NOT_FOUND);
     }
