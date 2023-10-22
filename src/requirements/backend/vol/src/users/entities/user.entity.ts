@@ -29,6 +29,12 @@ export class User {
   rating: number;
 
   @Column({ default: 0 })
+  wins: number;
+
+  @Column({ default: 0 })
+  losses: number;
+
+  @Column({ default: 0 })
   status: number;
 
   @Column({ default: 0 })

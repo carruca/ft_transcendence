@@ -8,10 +8,10 @@ import { Channel } from '../channels/entities/channel.entity';
 
 @Module({
   imports: [TypeOrmModule.forFeature([
-		User,
-		AchievementUser,
-		Channel,
-	])],
+    User,
+    AchievementUser,
+    Channel,
+  ])],
   controllers: [UsersController],
   providers: [UsersService],
   exports: [UsersService]

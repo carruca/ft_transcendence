@@ -92,7 +92,12 @@ export class UsersService {
 
   async getLeaderboard() : Promise<RatingUserDto[]> {
     const users = await this.usersRepository.find({
-      select: ['nickname', 'rating'],
+      select: [
+        'nickname',
+        'rating',
+        'wins',
+        'losses',
+      ],
       order: {
         rating: 'DESC',
       },
@@ -102,6 +107,8 @@ export class UsersService {
     return users.map(user => ({
       nickname: user.nickname,
       rating: user.rating,
+      wins: user.wins,
+      losses: user.losses,
     }));
   }
 }

@@ -5,8 +5,13 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+
 import { Channel } from './entities/channel.entity';
+import { ChannelUser } from './entities/channel-user.entity';
+
 import { CreateChannelDto } from './dto/create-channel.dto';
+import { CreateChannelUserDto } from './dto/create-channel-user.dto';
+
 import { User } from '../users/entities/user.entity';
 import * as bcrypt from 'bcrypt';
 
@@ -15,11 +20,15 @@ export class ChannelsService {
   constructor(
     @InjectRepository(Channel)
     private readonly channelsRepository: Repository<Channel>,
+
+    @InjectRepository(ChannelUser)
+    private readonly channelUsersRepository: Repository<ChannelUser>,
+
     //TODO: private chat: Chat,
   ) {}
 
   async create(createChannelDto: CreateChannelDto): Promise<Channel> {
-    const newChannel = this.channelsRepository.create(createChannelDto);
+    const newChannel = new Channel(createChannelDto);
     return this.channelsRepository.save(newChannel);
   }
 
@@ -36,7 +45,44 @@ export class ChannelsService {
   }
 
   async remove(id: string) {
-	await this.channelsRepository.delete(id);
+    await this.channelsRepository.delete(id);
+  }
+
+  async createChannelUser(createChannelUserDto: CreateChannelUserDto): Promise<ChannelUser> {
+    const channel = await this.findOneById(createChannelUserDto.channelId);
+    const channelUser = new ChannelUser(
+      channel,
+	  createChannelUserDto.userId,
+	  createChannelUserDto.admin,
+    );
+    await this.channelUsersRepository.save(channelUser);
+
+    channel.users.push(channelUser);
+    await this.channelsRepository.save(channel);
+
+    return channelUser;
+  }
+
+  async removeChannelUser(channelId: string, userId: number): Promise<Channel> {
+	const channel = await this.findOneById(channelId);
+    const channelUser = await this.findChannelUserById(channel, userId);
+
+	await this.channelUsersRepository.delete(channelUser);
+	channel.users = channel.users.filter(user => user.id !== userId);
+	return this.channelsRepository.save(channel);
+  }
+
+  async findChannelUserById(channel: Channel, userId: number) : Promise<ChannelUser> {
+    const channelUser = await this.channelUsersRepository.findOne({
+      where: {
+        channel,
+        userId,
+      },
+    });
+    if (!channelUser) {
+      throw new HttpException('ChannelUser not found', HttpStatus.NOT_FOUND);
+    }
+    return channelUser;
   }
 
   async setChannelTopic(channelId: string, userId: string, topic: string): Promise<Channel> {
@@ -60,7 +106,6 @@ export class ChannelsService {
 
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
-
     channel.password = hashedPassword;
     return this.channelsRepository.save(channel);
   }
@@ -78,55 +123,54 @@ export class ChannelsService {
     if (!channel.password) {
       return true;
     }
-
     return await bcrypt.compare(password, channel.password);
   }
-	
-  async addUserToChannel(channelId: string, user: User): Promise<Channel> {
-    const channel = await this.findOneById(channelId);
-    channel.users.push(user);
-    return this.channelsRepository.save(channel);
+
+  async setAdminToChannelUser(channelId: string, userId: number): Promise<ChannelUser> {
+	const channel = await this.findOneById(channelId);
+    const channelUser = await this.findChannelUserById(channel, userId);
+
+	channelUser.admin = true;
+    return this.channelUsersRepository.save(channelUser);
   }
 
-  async removeUserFromChannel(channelId: string, userId: number): Promise<Channel> {
-    const channel = await this.findOneById(channelId);
-    channel.users = channel.users.filter((user) => user.id !== userId);
-    return this.channelsRepository.save(channel);
+  async unsetAdminToChannelUser(channelId: string, userId: number): Promise<ChannelUser> {
+	const channel = await this.findOneById(channelId);
+    const channelUser = await this.findChannelUserById(channel, userId);
+
+	channelUser.admin = false;
+    return this.channelUsersRepository.save(channelUser);
   }
 
-  async addAdminToChannel(channelId: string, admin: User): Promise<Channel> {
-    const channel = await this.findOneById(channelId);
-    channel.admins.push(admin);
-    return this.channelsRepository.save(channel);
+  async setBannedToChannelUser(channelId: string, userId: number): Promise<ChannelUser> {
+	const channel = await this.findOneById(channelId);
+    const channelUser = await this.findChannelUserById(channel, userId);
+
+	channelUser.banned = true;
+    return this.channelUsersRepository.save(channelUser);
   }
 
-  async removeAdminFromChannel(channelId: string, adminId: number): Promise<Channel> {
-    const channel = await this.findOneById(channelId);
-    channel.admins = channel.admins.filter((admin) => admin.id !== adminId);
-    return this.channelsRepository.save(channel);
+  async unsetBannedToChannelUser(channelId: string, userId: number): Promise<ChannelUser> {
+	const channel = await this.findOneById(channelId);
+    const channelUser = await this.findChannelUserById(channel, userId);
+
+	channelUser.banned = false;
+    return this.channelUsersRepository.save(channelUser);
   }
 
-  async addBannedUserToChannel(channelId: string, bannedUser: User): Promise<Channel> {
-    const channel = await this.findOneById(channelId);
-    channel.banned.push(bannedUser);
-    return this.channelsRepository.save(channel);
+  async setMutedToChannelUser(channelId: string, userId: number): Promise<ChannelUser> {
+	const channel = await this.findOneById(channelId);
+    const channelUser = await this.findChannelUserById(channel, userId);
+
+	channelUser.muted = true;
+    return this.channelUsersRepository.save(channelUser);
   }
 
-  async removeBannedUserFromChannel(channelId: string, bannedUserId: number): Promise<Channel> {
-    const channel = await this.findOneById(channelId);
-    channel.banned = channel.banned.filter((user) => user.id !== bannedUserId);
-    return this.channelsRepository.save(channel);
-  }
+  async unsetMutedToChannelUser(channelId: string, userId: number): Promise<ChannelUser> {
+	const channel = await this.findOneById(channelId);
+    const channelUser = await this.findChannelUserById(channel, userId);
 
-  async addMutedUserToChannel(channelId: string, mutedUser: User): Promise<Channel> {
-    const channel = await this.findOneById(channelId);
-    channel.muted.push(mutedUser);
-    return this.channelsRepository.save(channel);
-  }
-
-  async removeMutedUserToChannel(channelId: string, mutedUserId: number): Promise<Channel> {
-    const channel = await this.findOneById(channelId);
-    channel.muted = channel.muted.filter((user) => user.id !== mutedUserId);
-    return this.channelsRepository.save(channel);
+	channelUser.muted = false;
+    return this.channelUsersRepository.save(channelUser);
   }
 }

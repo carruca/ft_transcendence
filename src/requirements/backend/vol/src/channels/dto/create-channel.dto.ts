@@ -1,9 +1,9 @@
 import { User } from '../../users/entities/user.entity';
 
 export class CreateChannelDto {
-  uuid?: string;
+  id?: string;
   name: string;
-  owner?: User;
+  owner: string;
   topic?: string;
   password?: string;
 }

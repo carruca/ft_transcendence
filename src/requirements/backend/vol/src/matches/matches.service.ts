@@ -109,6 +109,7 @@ export class MatchesService {
         nickname: this.getMockUser(loser),
       }
     });
+	//TODO: change to actual users
 /*    const winningUsers = await this.usersRepository.find({
       where: {
         id: In(winners),
@@ -128,10 +129,12 @@ export class MatchesService {
 
     winningUsers.forEach((winner) => {
       winner.rating += pointsGained;
+      ++winner.wins;
     });
 
     losingUsers.forEach((loser) => {
       loser.rating -= pointsGained;
+      ++loser.losses;
     });
 
     await this.usersRepository.save([...winningUsers, ...losingUsers]);

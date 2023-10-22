@@ -10,8 +10,8 @@ import {
   UseInterceptors,
   UploadedFile,
   Req,
-	HttpStatus,
-	HttpException,
+  HttpStatus,
+  HttpException,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
