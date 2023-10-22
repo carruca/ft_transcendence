@@ -24,6 +24,7 @@ import { MatchesModule } from './matches/matches.module';
 import { AchievementsModule } from './achievements/achievements.module';
 import { ServeStaticModule } from '@nestjs/serve-static/dist/serve-static.module';
 import { ChannelsModule } from './channels/channels.module';
+import { FriendsModule } from './friends/friends.module';
 
 const routes = [
   {
@@ -58,6 +59,7 @@ const routes = [
     AuthModule,
     AchievementsModule,
     ChannelsModule,
+    FriendsModule,
   ],
   controllers: [AppController, AuthController],
   providers: [AppService, AuthService],

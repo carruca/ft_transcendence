@@ -22,6 +22,14 @@ export class ChannelUser {
   @PrimaryGeneratedColumn('uuid')
   id: number;
 
+//TODO:
+//@ManyToOne(() => User, (user) => user.channels)
+  @Column()
+  userId: number;
+
+  @ManyToOne(() => Channel, (channel) => channel.users)
+  channel: Channel;
+
   @Column({ default: false})
   admin: boolean;
 
@@ -30,12 +38,4 @@ export class ChannelUser {
 
   @Column({ default: false})
   muted: boolean;
-
-//TODO:
-//@ManyToOne(() => User, (user) => user.channels)
-  @Column()
-  userId: number;
-
-  @ManyToOne(() => Channel, (channel) => channel.users)
-  channel: Channel;
 }

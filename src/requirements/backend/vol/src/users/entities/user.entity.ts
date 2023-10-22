@@ -7,6 +7,8 @@ import {
 } from 'typeorm';
 import { AchievementUser } from '../../achievements/entities/achievement-user.entity';
 import { Channel } from '../../channels/entities/channel.entity';
+import { ChannelUser } from '../../channels/entities/channel-user.entity';
+import { Friend } from '../../friends/entities/friend.entity';
 
 @Entity()
 export class User {
@@ -40,12 +42,13 @@ export class User {
   @Column({ default: 0 })
   permits: number;
 
-  @OneToMany(() => AchievementUser, achievementUser => achievementUser.user, {
-    //eager: true,
-  })
+  @OneToMany(() => AchievementUser, (achievementUser) => achievementUser.user)
   achievements: AchievementUser[];
+/*
+  @OneToMany(() => ChannelUser, (channelUser) => channelUser.user)
+  channels: ChannelUser[];
+*/
 
-  @ManyToMany(() => Channel, (channel) => channel.users, {
-  })
-  channels: Channel[];
+  @ManyToMany(() => Friend, (friend) => friend.users)
+  friends: Friend[];
 }
