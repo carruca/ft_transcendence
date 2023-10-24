@@ -127,50 +127,50 @@ export class ChannelsService {
   }
 
   async setAdminToChannelUser(channelId: string, userId: number): Promise<ChannelUser> {
-	const channel = await this.findOneById(channelId);
+	  const channel = await this.findOneById(channelId);
     const channelUser = await this.findChannelUserById(channel, userId);
 
-	channelUser.admin = true;
+    channelUser.admin = true;
     return this.channelUsersRepository.save(channelUser);
   }
 
   async unsetAdminToChannelUser(channelId: string, userId: number): Promise<ChannelUser> {
-	const channel = await this.findOneById(channelId);
+	  const channel = await this.findOneById(channelId);
     const channelUser = await this.findChannelUserById(channel, userId);
 
-	channelUser.admin = false;
+	  channelUser.admin = false;
     return this.channelUsersRepository.save(channelUser);
   }
 
   async setBannedToChannelUser(channelId: string, userId: number): Promise<ChannelUser> {
-	const channel = await this.findOneById(channelId);
+	  const channel = await this.findOneById(channelId);
     const channelUser = await this.findChannelUserById(channel, userId);
 
-	channelUser.banned = true;
+	  channelUser.banned = true;
     return this.channelUsersRepository.save(channelUser);
   }
 
   async unsetBannedToChannelUser(channelId: string, userId: number): Promise<ChannelUser> {
-	const channel = await this.findOneById(channelId);
+	  const channel = await this.findOneById(channelId);
     const channelUser = await this.findChannelUserById(channel, userId);
 
-	channelUser.banned = false;
+	  channelUser.banned = false;
     return this.channelUsersRepository.save(channelUser);
   }
 
   async setMutedToChannelUser(channelId: string, userId: number): Promise<ChannelUser> {
-	const channel = await this.findOneById(channelId);
+	  const channel = await this.findOneById(channelId);
     const channelUser = await this.findChannelUserById(channel, userId);
 
-	channelUser.muted = true;
+	  channelUser.muted = true;
     return this.channelUsersRepository.save(channelUser);
   }
 
   async unsetMutedToChannelUser(channelId: string, userId: number): Promise<ChannelUser> {
-	const channel = await this.findOneById(channelId);
+	  const channel = await this.findOneById(channelId);
     const channelUser = await this.findChannelUserById(channel, userId);
 
-	channelUser.muted = false;
+    channelUser.muted = false;
     return this.channelUsersRepository.save(channelUser);
   }
 }

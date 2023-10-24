@@ -1,13 +1,13 @@
 import { FriendStatus } from '../entities/friend.entity';
 import {
-  IsString,
-  IsNumber,
+  IsUUID,
+  IsEnum,
 } from 'class-validator';
 
-export class ReplyFriendDto {
-  @IsString()
+export class UpdateFriendDto {
+  @IsUUID()
   friendId: string;
 
-  @IsNumber()
+  @IsEnum(FriendStatus)
   status: FriendStatus;
 }

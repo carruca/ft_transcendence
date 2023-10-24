@@ -4,8 +4,8 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { CreateFriendDto } from './dto/create-friend.dto';
+import { UpdateFriendDto } from './dto/update-friend.dto';
 import { ReturnFriendDto } from './dto/return-friend.dto';
-import { ReplyFriendDto } from './dto/reply-friend.dto';
 
 import {
   Repository,
@@ -62,10 +62,17 @@ export class FriendsService {
     };
   }
 
-  //TODO: reply (accepted/rejected) friendship
-  async reply(replyFriendDto: ReplyFriendDto) : Promise<void> {
-    const friend = await this.friendsRepository.find();
-    return ;
+  async updateStatus(updateFriendDto: UpdateFriendDto) : Promise<Friend> {
+    const friend = await this.friendsRepository.findOne({
+      where: {
+        id: updateFriendDto.friendId,
+      },
+    });
+    if (!friend) {
+      throw new HttpException('Friend not found', HttpStatus.NOT_FOUND);
+    }
+    friend.status = updateFriendDto.status;
+    return this.friendsRepository.save(friend);
   }
 
   async findAll() : Promise<Friend[]> {

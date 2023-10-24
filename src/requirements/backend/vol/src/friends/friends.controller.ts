@@ -2,6 +2,7 @@ import {
   Controller,
   Get,
   Post,
+  Put,
   Body,
   Patch,
   Param,
@@ -9,6 +10,7 @@ import {
 } from '@nestjs/common';
 import { FriendsService } from './friends.service';
 import { CreateFriendDto } from './dto/create-friend.dto';
+import { UpdateFriendDto } from './dto/update-friend.dto';
 import { ApiTags } from '@nestjs/swagger';
 
 @ApiTags('friends')
@@ -19,6 +21,11 @@ export class FriendsController {
   @Post()
   create(@Body() createFriendDto: CreateFriendDto) {
     return this.friendsService.create(createFriendDto);
+  }
+
+  @Put()
+  update(@Body() updateFriendDto: UpdateFriendDto) {
+    return this.friendsService.updateStatus(updateFriendDto);
   }
 
   @Get()
