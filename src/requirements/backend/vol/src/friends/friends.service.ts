@@ -4,7 +4,8 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { CreateFriendDto } from './dto/create-friend.dto';
-import { UpdateFriendDto } from './dto/update-friend.dto';
+import { ReturnFriendDto } from './dto/return-friend.dto';
+import { ReplyFriendDto } from './dto/reply-friend.dto';
 
 import {
   Repository,
@@ -24,28 +25,48 @@ export class FriendsService {
     private usersRepository: Repository<User>,
   ) {}
 
-  async create(createFriendDto: CreateFriendDto) : Promise<Friend> {
+  getMockUser(id: number): string {
+    if (id == 1)
+      return 'paco';
+    return 'jones';
+  }
+
+  async create(createFriendDto: CreateFriendDto) : Promise<ReturnFriendDto> {
     const users = await this.usersRepository.find({
+      relations: ['friends'],
       where: {
-        id: In([ createFriendDto.receiverId, createFriendDto.senderId ]),
-      }
+        nickname: In([
+          this.getMockUser(createFriendDto.receiverId),
+          this.getMockUser(createFriendDto.senderId),
+        ]),
+      },
     });
     if (!users || users.length === 1) {
       throw new HttpException('Users not found', HttpStatus.NOT_FOUND);
     }
 
-    const friend = new Friend(
+    const newFriend = new Friend(
       users,
       createFriendDto.receiverId,
       FriendStatus.requested,
     );
+    await this.friendsRepository.save(newFriend);
     users.forEach((user) => {
-      user.friends.push(friend);
+      user.friends.push(newFriend);
     });
-    return friend;
+    await this.usersRepository.save(users);
+    return {
+      id: newFriend.id,
+      receiverId: newFriend.receiverId,
+      status: newFriend.status,
+    };
   }
 
   //TODO: reply (accepted/rejected) friendship
+  async reply(replyFriendDto: ReplyFriendDto) : Promise<void> {
+    const friend = await this.friendsRepository.find();
+    return ;
+  }
 
   async findAll() : Promise<Friend[]> {
     return this.friendsRepository.find();

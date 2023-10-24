@@ -4,6 +4,7 @@ import {
   Column,
   OneToMany,
   ManyToMany,
+  JoinTable,
 } from 'typeorm';
 import { AchievementUser } from '../../achievements/entities/achievement-user.entity';
 import { Channel } from '../../channels/entities/channel.entity';
@@ -48,7 +49,7 @@ export class User {
   @OneToMany(() => ChannelUser, (channelUser) => channelUser.user)
   channels: ChannelUser[];
 */
-
   @ManyToMany(() => Friend, (friend) => friend.users)
+  @JoinTable()
   friends: Friend[];
 }
