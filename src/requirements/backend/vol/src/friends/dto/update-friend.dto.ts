@@ -1,8 +1,8 @@
-import { FriendStatus } from '../entities/friend.entity';
 import {
   IsUUID,
   IsEnum,
 } from 'class-validator';
+import { FriendStatus } from '../entities/friend.entity';
 
 export class UpdateFriendDto {
   @IsUUID()

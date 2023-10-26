@@ -1,4 +1,11 @@
-export interface UserStats {
+import {
+  IsString,
+  IsDate,
+  IsArray,
+} from 'class-validator';
+import { Type } from 'class-transformer';
+
+export class UserStats {
 	id: number; // FIXME this should be the username (string)
 	score: number;
 	winRatio: number; // no tienes que trabajar con el ella, la voy a modificar yo pero quiero que se copie desde el User que la tendra almacenada en la db.
@@ -13,9 +20,20 @@ export interface UserStats {
 }
 
 export class CreateMatchDto {
+  @IsString()
 	mode: string;
+
+  @IsDate()
 	start: Date;
+
+  @IsDate()
 	end: Date;
+
+  @IsArray()
+  @Type(() => UserStats)
 	winners: Array<UserStats>;
+
+  @IsArray()
+  @Type(() => UserStats)
 	losers: Array<UserStats>;
 }
