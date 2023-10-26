@@ -15,6 +15,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { AchievementUser } from '../achievements/entities/achievement-user.entity';
 import { RatingUserDto } from './dto/rating-user.dto';
+import { Friend, FriendStatus } from '../friends/entities/friend.entity';
 
 @Injectable()
 export class UsersService {
@@ -29,6 +30,7 @@ export class UsersService {
     newUser.name = createUserDto.displayname.replace(/[\p{L}]\S*/gu, (w) => (w.replace(/^\p{L}/u, (c) => c.toUpperCase())));
     newUser.login = createUserDto.login;
     newUser.achievements = [];
+    newUser.friends = [];
     return this.usersRepository.save(newUser);
 }
 
@@ -88,6 +90,23 @@ export class UsersService {
     }
 
     return user.achievements;
+  }
+
+  async findFriendsUser(userId: number, status?: FriendStatus) : Promise<Friend[]> {
+    console.log(userId);
+    const user = await this.usersRepository.findOne({
+      relations: ['friends'],
+      where: {
+        id: userId,
+      },
+    });
+    if (!user) {
+      throw new HttpException('User not found', HttpStatus.NOT_FOUND);
+    }
+    if (status) {
+      return user.friends.filter(friend => friend.status === status);
+    }
+    return user.friends;
   }
 
   async getLeaderboard() : Promise<RatingUserDto[]> {

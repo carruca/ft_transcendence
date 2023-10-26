@@ -82,8 +82,8 @@ services:
       #POSTGRES_DB: test_db
     networks:
       - transc
-    #volumes:
-    #  - postgresql:/var/lib/postgresql/data
+    volumes:
+      - postgresql:/var/lib/postgresql/data
     #stdin_open: true # docker run -i
     #tty: true        # docker run -t
     healthcheck:
@@ -101,8 +101,8 @@ services:
       PGADMIN_DEFAULT_PASSWORD: root
     networks:
       - transc
-    #volumes:
-    #  - pgadmin:/var/lib/pgadmin
+    volumes:
+      - pgadmin:/var/lib/pgadmin
 
 networks:
   transc:
@@ -125,16 +125,16 @@ volumes:
       type: none
       device: ${PWD}/src/requirements/frontend/vol
 
-  #postgresql:
-  #  name: transc-postgresql
+  postgresql:
+    name: transc-postgresql
   #  driver: local
   #  driver_opts:
   #    o: bind
   #    type: none
   #    device: ${PWD}/src/requirements/postgresql/vol
 
-  #pgadmin:
-  #  name: transc-pgadmin
+  pgadmin:
+    name: transc-pgadmin
   #  driver: local
   #  driver_opts:
   #    o: bind

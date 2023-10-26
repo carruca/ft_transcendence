@@ -8,8 +8,6 @@ import {
   Delete
 } from '@nestjs/common';
 import { AchievementsService } from './achievements.service';
-import { CreateAchievementDto } from './dto/create-achievement.dto';
-import { UpdateAchievementDto } from './dto/update-achievement.dto';
 import { ApiTags } from '@nestjs/swagger';
 
 @ApiTags('achievements')

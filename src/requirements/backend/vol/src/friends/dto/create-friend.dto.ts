@@ -1,9 +1,9 @@
 import { IsNumber } from 'class-validator';
 
-export class PaginationOptionsDto {
+export class CreateFriendDto {
   @IsNumber()
-	limit: number;
+  senderId: number;
 
   @IsNumber()
-	page: number;
+  receiverId: number;
 }

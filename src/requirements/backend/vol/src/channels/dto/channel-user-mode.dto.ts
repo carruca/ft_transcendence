@@ -3,7 +3,8 @@ import {
   IsNumber,
   IsBoolean,
 } from 'class-validator';
-export class CreateChannelUserDto {
+
+export class ChannelUserModeDto {
   @IsString()
   channelId: string;
 
@@ -11,5 +12,5 @@ export class CreateChannelUserDto {
   userId: number;
 
   @IsBoolean()
-  admin: boolean;
+  mode: boolean;
 }

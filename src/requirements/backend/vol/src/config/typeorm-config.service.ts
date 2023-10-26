@@ -14,6 +14,7 @@ import { AchievementUser } from '../achievements/entities/achievement-user.entit
 import { CreateDefaultAchievement1686824989874 } from '../achievements/migrations/1686824989874-createDefaultAchievement';
 import { Channel } from '../channels/entities/channel.entity';
 import { ChannelUser } from '../channels/entities/channel-user.entity';
+import { Friend } from '../friends/entities/friend.entity';
 
 @Injectable()
 export class TypeOrmConfigService implements TypeOrmOptionsFactory {
@@ -34,6 +35,7 @@ export class TypeOrmConfigService implements TypeOrmOptionsFactory {
         AchievementUser,
         Channel,
         ChannelUser,
+        Friend,
       ],
       migrationsRun: true,
       synchronize: true,
@@ -54,6 +56,7 @@ export class TypeOrmConfigService implements TypeOrmOptionsFactory {
         AchievementUser,
         Channel,
         ChannelUser,
+        Friend,
       ],
       migrationsRun: true,
       synchronize: true,

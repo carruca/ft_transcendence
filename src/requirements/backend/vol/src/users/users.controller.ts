@@ -19,6 +19,7 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Express, Request } from 'express';
 import { ApiTags } from '@nestjs/swagger';
+import { FriendStatus } from '../friends/entities/friend.entity';
 
 @ApiTags('users')
 @Controller('users')
@@ -68,8 +69,28 @@ export class UsersController {
   }
 
   @Get('me/achievements')
-  findAchievementsUser(@Req() req: Request) {
+  findMyAchievements(@Req() req: Request) {
     return this.usersService.findAchievementsUser(req.user?.id);
+  }
+
+  @Get('me/friends')
+  findMyFriends(@Req() req: Request) {
+    return this.usersService.findFriendsUser(req.user?.id);
+  }
+
+  @Get('me/pending-friends')
+  findMyPendingFriends(@Req() req: Request) {
+    return this.usersService.findFriendsUser(req.user?.id, FriendStatus.requested);
+  }
+
+  @Get(':id/achievements')
+  findAchievementsUser(@Param('id') id: number) {
+    return this.usersService.findAchievementsUser(id);
+  }
+
+  @Get(':id/friends')
+  findFriendsUser(@Param('id') id: number) {
+    return this.usersService.findFriendsUser(id);
   }
 
   @Get('leaderboard')
