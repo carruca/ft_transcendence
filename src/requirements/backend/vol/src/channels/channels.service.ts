@@ -11,6 +11,7 @@ import { ChannelUser } from './entities/channel-user.entity';
 
 import { CreateChannelDto } from './dto/create-channel.dto';
 import { CreateChannelUserDto } from './dto/create-channel-user.dto';
+import { ChannelUserModeDto } from './dto/channel-user-mode.dto';
 
 import { User } from '../users/entities/user.entity';
 import * as bcrypt from 'bcrypt';
@@ -36,7 +37,7 @@ export class ChannelsService {
     const channel = await this.channelsRepository.findOneBy({ id: id });
     if (!channel) {
       throw new HttpException('Channel not found', HttpStatus.NOT_FOUND);
-	}
+    }
     return channel;
   }
 
@@ -52,8 +53,8 @@ export class ChannelsService {
     const channel = await this.findOneById(createChannelUserDto.channelId);
     const channelUser = new ChannelUser(
       channel,
-	  createChannelUserDto.userId,
-	  createChannelUserDto.admin,
+	    createChannelUserDto.userId,
+	    createChannelUserDto.admin,
     );
     await this.channelUsersRepository.save(channelUser);
 
@@ -64,19 +65,22 @@ export class ChannelsService {
   }
 
   async removeChannelUser(channelId: string, userId: number): Promise<Channel> {
-	const channel = await this.findOneById(channelId);
-    const channelUser = await this.findChannelUserById(channel, userId);
+    const channel = await this.findOneById(channelId);
+    const channelUser = await this.findChannelUser(channelId, userId);
 
-	await this.channelUsersRepository.delete(channelUser);
-	channel.users = channel.users.filter(user => user.id !== userId);
-	return this.channelsRepository.save(channel);
+    await this.channelUsersRepository.delete(channelUser);
+    channel.users = channel.users.filter(user => user.id !== userId);
+    return this.channelsRepository.save(channel);
   }
 
-  async findChannelUserById(channel: Channel, userId: number) : Promise<ChannelUser> {
+  async findChannelUser(channelId: string, userId: number) : Promise<ChannelUser> {
     const channelUser = await this.channelUsersRepository.findOne({
+      relations: ['channel'],
       where: {
-        channel,
-        userId,
+        userId: userId,
+        channel: {
+          id: channelId,
+        }
       },
     });
     if (!channelUser) {
@@ -126,51 +130,33 @@ export class ChannelsService {
     return await bcrypt.compare(password, channel.password);
   }
 
-  async setAdminToChannelUser(channelId: string, userId: number): Promise<ChannelUser> {
-	  const channel = await this.findOneById(channelId);
-    const channelUser = await this.findChannelUserById(channel, userId);
+  async setAdminToChannelUser(channelUserModeDto: ChannelUserModeDto): Promise<ChannelUser> {
+    const channelUser = await this.findChannelUser(
+      channelUserModeDto.channelId,
+      channelUserModeDto.userId
+    );
 
-    channelUser.admin = true;
+    channelUser.admin = channelUserModeDto.mode;
     return this.channelUsersRepository.save(channelUser);
   }
 
-  async unsetAdminToChannelUser(channelId: string, userId: number): Promise<ChannelUser> {
-	  const channel = await this.findOneById(channelId);
-    const channelUser = await this.findChannelUserById(channel, userId);
+  async setBannedToChannelUser(channelUserModeDto: ChannelUserModeDto): Promise<ChannelUser> {
+    const channelUser = await this.findChannelUser(
+      channelUserModeDto.channelId,
+      channelUserModeDto.userId
+    );
 
-	  channelUser.admin = false;
+	  channelUser.banned = channelUserModeDto.mode;
     return this.channelUsersRepository.save(channelUser);
   }
 
-  async setBannedToChannelUser(channelId: string, userId: number): Promise<ChannelUser> {
-	  const channel = await this.findOneById(channelId);
-    const channelUser = await this.findChannelUserById(channel, userId);
+  async setMutedToChannelUser(channelUserModeDto: ChannelUserModeDto): Promise<ChannelUser> {
+    const channelUser = await this.findChannelUser(
+      channelUserModeDto.channelId,
+      channelUserModeDto.userId
+    );
 
-	  channelUser.banned = true;
-    return this.channelUsersRepository.save(channelUser);
-  }
-
-  async unsetBannedToChannelUser(channelId: string, userId: number): Promise<ChannelUser> {
-	  const channel = await this.findOneById(channelId);
-    const channelUser = await this.findChannelUserById(channel, userId);
-
-	  channelUser.banned = false;
-    return this.channelUsersRepository.save(channelUser);
-  }
-
-  async setMutedToChannelUser(channelId: string, userId: number): Promise<ChannelUser> {
-	  const channel = await this.findOneById(channelId);
-    const channelUser = await this.findChannelUserById(channel, userId);
-
-	  channelUser.muted = true;
-    return this.channelUsersRepository.save(channelUser);
-  }
-
-  async unsetMutedToChannelUser(channelId: string, userId: number): Promise<ChannelUser> {
-	  const channel = await this.findOneById(channelId);
-    const channelUser = await this.findChannelUserById(channel, userId);
-
-    channelUser.muted = false;
+	  channelUser.muted = channelUserModeDto.mode;
     return this.channelUsersRepository.save(channelUser);
   }
 }
