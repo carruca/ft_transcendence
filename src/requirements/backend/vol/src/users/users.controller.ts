@@ -98,11 +98,11 @@ export class UsersController {
     return this.usersService.getLeaderboard();
   }
 
-  @Get(':id')
+/*  @Get(':id')
   findOne(@Param('id') id: number) {
     return this.usersService.findOne(id);
   }
-
+*/
   @Get(':nickname')
   findOneByNickname(@Param('nickname') nickname: string) {
     return this.usersService.findOneByNickname(nickname);
