@@ -103,6 +103,11 @@ export class UsersController {
     return this.usersService.findOne(id);
   }
 
+  @Get(':nickname')
+  findOneByNickname(@Param('nickname') nickname: string) {
+    return this.usersService.findOneByNickname(nickname);
+  }
+
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.usersService.remove(id);

@@ -26,6 +26,8 @@ export abstract class InARowCondition extends AchievementCondition {
       }
     });
 
+//    console.log(`user ${userStats.id} has ${matchUsers.length} matchUsers`);
+
     if (matchUsers.length !== maxMatches) {
       return false;
     }

@@ -42,7 +42,7 @@ const DEFAULT_ACHIEVEMENTS: Partial<Achievement>[] = [
     image: 'comeback-victory',
   },
   {
-    name: 'Racha ganadora',
+    name: 'Cinco seguidos',
     description: 'Has conseguido 5 puntos seguidos en una partida',
     image: 'winning-streak',
   },

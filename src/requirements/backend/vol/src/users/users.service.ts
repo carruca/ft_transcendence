@@ -47,6 +47,15 @@ export class UsersService {
     return await this.usersRepository.findOneBy({ id });
   }
 
+  async findOneByNickname(nickname: string): Promise<User> {
+    const user = await this.usersRepository.findOneBy({ nickname: nickname });
+    if (!user) {
+      throw new HttpException('User not found', HttpStatus.NOT_FOUND);
+    }
+
+    return user;
+  }
+
   async setNickname(id: number, nick: string) {
     const user = await this.findOneByIntraId(id);
     if (user) {
