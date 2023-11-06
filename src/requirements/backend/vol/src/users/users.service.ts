@@ -61,13 +61,15 @@ export class UsersService {
     }
   }
 
-  async update(id: number, updateUserDto: UpdateUserDto, avatar?: Express.Multer.File): Promise<User> {
+  async update(id: number, updateUserDto?: UpdateUserDto, avatar?: Express.Multer.File): Promise<User> {
     const user = await this.usersRepository.findOneBy({ id });
     if (!user) {
       throw new HttpException('User not found', HttpStatus.NOT_FOUND);
     }
-    user.nickname = updateUserDto.nickname;
-	if (avatar) {
+    if (updateUserDto?.nickname) {
+      user.nickname = updateUserDto.nickname;
+    }
+    if (avatar) {
       const avatarPath = `public/avatars/${user.nickname}.png`;
       await this.saveAvatar(avatar, avatarPath);
     }
@@ -79,6 +81,9 @@ export class UsersService {
   }
 
   async saveAvatar(file: Express.Multer.File, avatarPath: string) {
+    if (file.mimetype !== 'image/png') {
+      throw new HttpException('Only png files are allowed', HttpStatus.BAD_REQUEST);
+    }
     const filePath = path.resolve(avatarPath);
     await fs.promises.mkdir(path.dirname(filePath), { recursive: true });
     fs.writeFileSync(filePath, file.buffer);
