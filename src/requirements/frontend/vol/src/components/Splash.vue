@@ -26,7 +26,7 @@
 }
 
 .splash__div h1 {
-  color: var(--h1-color);
+  color: var(--color-text);
   font-size: 2rem;
 }
 </style>

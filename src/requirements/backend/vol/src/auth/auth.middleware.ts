@@ -3,6 +3,7 @@ import { Injectable, NestMiddleware, UnauthorizedException } from '@nestjs/commo
 import { Request, Response, NextFunction } from 'express'
 import { AuthService } from './auth.service';
 import { UsersService } from '../users/users.service';
+import { JwtService } from '@nestjs/jwt';
 
 class NoNicknameError extends UnauthorizedException {
     constructor() {
@@ -10,17 +11,49 @@ class NoNicknameError extends UnauthorizedException {
     }
 }
 
+class No2FAError extends UnauthorizedException {
+    constructor() {
+        super('No 2FA token passed');
+    }
+}
+
 @Injectable()
 export class AuthMiddleware implements NestMiddleware {
-    constructor(private usersService: UsersService) { }
+    constructor (private usersService: UsersService,
+                 private readonly jwtService: JwtService) { }
 
     checkUserNickname(req: Request, _res: Response, _next: NextFunction) {
         // if req.path is PUT /users/me, then we don't need to check the nickname
         if (req.originalUrl === '/users/me' && req.method === 'PUT') {
             return;
         }
+        if (req.originalUrl === '/users/me/2fa' && req.method === 'POST') {
+            return;
+        }
         if (req.user.nickname === null) {
             throw new NoNicknameError();
+        }
+    }
+    
+    async check2FA(req: Request, res: Response, _next: NextFunction) {
+        if (req.originalUrl === '/users/me/2fa' && req.method === 'POST') {
+            return;
+        }
+        const _2fa_secret = await this.usersService.get2FASecret(req.user.id);
+        const { _2fa } = req.signedCookies;
+        if (!_2fa_secret) {
+            return;
+        }
+        if (!_2fa) {
+            throw new No2FAError();
+        }
+        try {
+            const payload = this.jwtService.verify(_2fa);
+            if (payload.id !== req.user.id) {
+                throw new No2FAError();
+            }
+        } catch (error) {
+            throw new No2FAError();
         }
     }
 
@@ -40,10 +73,12 @@ export class AuthMiddleware implements NestMiddleware {
                 }
                 req.user = user;
                 this.checkUserNickname(req, _res, next);
+                await this.check2FA(req, _res, next);
                 return next();
             }
         } catch (error) {
             this.checkUserNickname(req, _res, next);
+            await this.check2FA(req, _res, next);
             console.error(error)
         }
         throw new UnauthorizedException();

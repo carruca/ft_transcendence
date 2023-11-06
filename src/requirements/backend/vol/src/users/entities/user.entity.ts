@@ -7,8 +7,6 @@ import {
   JoinTable,
 } from 'typeorm';
 import { AchievementUser } from '../../achievements/entities/achievement-user.entity';
-import { Channel } from '../../channels/entities/channel.entity';
-import { ChannelUser } from '../../channels/entities/channel-user.entity';
 import { Friend } from '../../friends/entities/friend.entity';
 
 @Entity()
@@ -52,4 +50,10 @@ export class User {
   @ManyToMany(() => Friend, (friend) => friend.users)
   @JoinTable()
   friends: Friend[];
+
+  @Column({ default: '', nullable: true })
+  two_fa_token: string;
+
+  @Column({ default: false, nullable: false })
+  two_fa_enabled: boolean;
 }

@@ -2,15 +2,12 @@ import {
 	Injectable,
 	HttpException,
 	HttpStatus,
-	UploadedFile,
-	StreamableFile
 } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from './entities/user.entity';
-import { Readable } from 'stream';
 import * as fs from 'fs';
 import * as path from 'path';
 import { AchievementUser } from '../achievements/entities/achievement-user.entity';
@@ -138,5 +135,59 @@ export class UsersService {
       wins: user.wins,
       losses: user.losses,
     }));
+  }
+
+  async get2FASecret(userId: number) : Promise<string> {
+    const user = await this.usersRepository.findOne({
+      where: {
+        id: userId,
+      },
+    });
+    if (!user) {
+      throw new HttpException('User not found', HttpStatus.NOT_FOUND);
+    }
+
+    return user.two_fa_token;
+  }
+
+  async set2FASecret(userId: number, token: string) : Promise<void> {
+    const user = await this.usersRepository.findOne({
+      where: {
+        id: userId,
+      },
+    });
+    if (!user) {
+      throw new HttpException('User not found', HttpStatus.NOT_FOUND);
+    }
+
+    user.two_fa_token = token;
+    await this.usersRepository.save(user);
+  }
+
+  async get2FAEnabled(userId: number) : Promise<boolean> {
+    const user = await this.usersRepository.findOne({
+      where: {
+        id: userId,
+      },
+    });
+    if (!user) {
+      throw new HttpException('User not found', HttpStatus.NOT_FOUND);
+    }
+
+    return user.two_fa_enabled && user.two_fa_token == undefined || false;
+  }
+
+  async set2FAEnabled(userId: number, enabled: boolean) : Promise<void> {
+    const user = await this.usersRepository.findOne({
+      where: {
+        id: userId,
+      },
+    });
+    if (!user) {
+      throw new HttpException('User not found', HttpStatus.NOT_FOUND);
+    }
+
+    user.two_fa_enabled = enabled;
+    await this.usersRepository.save(user);
   }
 }

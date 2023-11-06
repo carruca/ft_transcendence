@@ -39,7 +39,7 @@ nav ul li:hover {
 }
 
 nav ul li a {
-  color: var(--p-color);
+  color: var(--color-text);
   text-decoration: none;
   width: 100%;
   height: 100%;

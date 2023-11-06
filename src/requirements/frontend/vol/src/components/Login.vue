@@ -13,6 +13,9 @@ let error: string | undefined = undefined;
 
 (async () => {
   try {
+    if (document.cookie.includes('token')) {
+      window.location.href = "/";
+    }
     if (hasParam("code")) {
       const urlParams = new URLSearchParams(window.location.search);
       const code = urlParams.get("code");

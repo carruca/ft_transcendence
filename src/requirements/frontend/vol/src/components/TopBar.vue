@@ -174,7 +174,7 @@ onMounted(() => {
   display: flex;
   align-items: center;
   text-decoration: none;
-  color: var(--p-color);
+  color: var(--color-text);
   width: 100%;
   height: 100%;
   padding: 0 1em;
@@ -182,7 +182,7 @@ onMounted(() => {
 
 .dropdown ul li p {
   flex: 2;
-  color: var(--p-color);
+  color: var(--color-text);
 }
 
 .dropdown ul li span {

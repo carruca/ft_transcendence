@@ -7,6 +7,8 @@ import About from '../views/AboutView.vue';
 import Logout from '../components/Logout.vue';
 import GameView from '../views/GameView.vue';
 import Setup from '@/components/Setup/Setup.vue'
+import Settings from '@/components/Settings.vue'
+import _2FA from '@/components/2FA.vue'
 
 const routes = [
   {
@@ -36,7 +38,7 @@ const routes = [
       {
         path: 'settings',
         name: 'Settings',
-        component: undefined,
+        component: Settings,
       }
       // TODO: Add routes that must display the navbar and sidebar here
     ],
@@ -55,6 +57,11 @@ const routes = [
     path: '/setup',
     name: 'Setup',
     component: Setup,
+  },
+  {
+    path: '/2fa',
+    name: '2FA',
+    component: _2FA,
   },
   // 404 -> Always at the end!
   {

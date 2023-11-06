@@ -4,7 +4,6 @@ import {
   Post,
   Put,
   Body,
-  Patch,
   Param,
   Delete,
   UseInterceptors,
@@ -12,19 +11,25 @@ import {
   Req,
   HttpStatus,
   HttpException,
+  Res,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { Express, Request } from 'express';
+import { Express, Request, Response } from 'express';
 import { ApiTags } from '@nestjs/swagger';
 import { FriendStatus } from '../friends/entities/friend.entity';
+import { JwtService } from '@nestjs/jwt';
+import * as speakeasy from 'speakeasy';
+
+const THREE_DAYS = 1000 * 60 * 60 * 24 * 3;
 
 @ApiTags('users')
 @Controller('users')
 export class UsersController {
-  constructor(private readonly usersService: UsersService) { }
+  constructor(private readonly usersService: UsersService,
+    private readonly jwtService: JwtService) { }
 
   @Post()
   create(@Body() createUserDto: CreateUserDto) {
@@ -98,11 +103,11 @@ export class UsersController {
     return this.usersService.getLeaderboard();
   }
 
-/*  @Get(':id')
-  findOne(@Param('id') id: number) {
-    return this.usersService.findOne(id);
-  }
-*/
+  /*  @Get(':id')
+    findOne(@Param('id') id: number) {
+      return this.usersService.findOne(id);
+    }
+  */
   @Get(':nickname')
   findOneByNickname(@Param('nickname') nickname: string) {
     return this.usersService.findOneByNickname(nickname);
@@ -111,5 +116,44 @@ export class UsersController {
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.usersService.remove(id);
+  }
+
+  private verifyAndSet2FA (secret: string, code: string): void {
+    const verified = speakeasy.totp.verify({
+      secret: secret,
+      encoding: 'base32',
+      token: code,
+    });
+
+    if (!verified) {
+      throw new HttpException('Invalid code', HttpStatus.BAD_REQUEST);
+    }
+  }
+
+  @Post('me/2fa')
+  async enable2FA(@Req() req: Request, @Res({ passthrough: true }) res: Response, @Body('secret') secret: string | undefined, @Body('code') code: string) {
+    const userId = req.user?.id;
+    
+    const storedSecret = await this.usersService.get2FASecret(userId);
+    if (secret && !storedSecret) {
+      this.verifyAndSet2FA(secret, code);
+      this.usersService.set2FAEnabled(userId, true);
+      this.usersService.set2FASecret(userId, secret);
+    } else {
+      this.verifyAndSet2FA(storedSecret, code);
+    }
+    res.cookie('_2fa', this.jwtService.sign({ id: userId }), {
+      signed: true, httpOnly: false, maxAge: THREE_DAYS
+    });
+    return 'OK';
+  }
+
+  @Delete('me/2fa')
+  async disable2FA(@Req() req: Request, @Res({ passthrough: true }) res: Response, @Body('code') code: string) {
+    this.verifyAndSet2FA(await this.usersService.get2FASecret(req.user?.id), code);
+    this.usersService.set2FAEnabled(req.user?.id, false);
+    this.usersService.set2FASecret(req.user?.id, '');
+    res.clearCookie('_2fa');
+    return 'OK';
   }
 }

@@ -18,8 +18,18 @@ const loggedInFn = async (): Promise<boolean | undefined> => {
     });
     if (response.status === 401) {
       const data = await response.json();
-      if ('message' in data && data.message === 'No nickname') {
-        router.replace("/setup");
+      if ('message' in data) {
+        switch (data.message) {
+          case 'No nickname':
+            router.replace("/setup");
+            break;
+          case 'No 2FA token passed':
+            router.replace("/2fa");
+            break;
+          default:
+            router.replace("/login");
+            break;
+        }
         return true;
       }
     }

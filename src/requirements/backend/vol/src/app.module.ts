@@ -3,7 +3,6 @@ import {
   Module,
   NestModule,
   MiddlewareConsumer,
-  RequestMethod,
 } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -25,6 +24,9 @@ import { AchievementsModule } from './achievements/achievements.module';
 import { ServeStaticModule } from '@nestjs/serve-static/dist/serve-static.module';
 import { ChannelsModule } from './channels/channels.module';
 import { FriendsModule } from './friends/friends.module';
+import { JwtModule } from '@nestjs/jwt';
+import { APP_FILTER } from '@nestjs/core';
+import { ExceptionInterceptor } from './exception.interceptor';
 
 const routes = [
   {
@@ -60,9 +62,20 @@ const routes = [
     AchievementsModule,
     ChannelsModule,
     FriendsModule,
+    JwtModule.register({
+      secret: process.env.NEST_COOKIE_SECRET,
+      signOptions: { expiresIn: '3d' },
+    })
   ],
   controllers: [AppController, AuthController],
-  providers: [AppService, AuthService],
+  providers: [
+    AppService,
+    AuthService,
+    {
+      provide: APP_FILTER,
+      useClass: ExceptionInterceptor,
+    }
+  ],
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {

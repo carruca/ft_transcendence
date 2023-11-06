@@ -3,6 +3,8 @@ import { Controller, Get, Res, Req, HttpException, HttpStatus } from '@nestjs/co
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { Request, Response } from 'express';
+import * as speakeasy from 'speakeasy';
+import * as qrcode from 'qrcode';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -44,6 +46,24 @@ export class AuthController {
     res.clearCookie('token');
     res.clearCookie('refresh_token');
     res.clearCookie('auth_method');
+    res.clearCookie('_2fa');
     return;
+  }
+
+  @ApiOperation({ description: 'Get 2FA qr' })
+  @Get('2fa/qr')
+  async get2FASecret(): Promise<Object> {
+    const secret = speakeasy.generateSecret({
+      issuer: 'Transcendence',
+      name: 'Transcendence',
+    });
+    const data = await qrcode.toDataURL(secret.otpauth_url || '');
+    if (!data) {
+      throw new HttpException('Internal Server Error', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+    return {
+      secret: secret.base32,
+      qr: data,
+    };
   }
 }
