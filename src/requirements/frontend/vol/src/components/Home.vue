@@ -12,12 +12,13 @@ const props = defineProps({
 
 // TODO: Get current user image pic
 // TODO: Separate this into components
+
 </script>
 
 <template>
   <div class="main_content">
     <TopBar :user="props.user" />
-    <NavBar />
+    <NavBar :admin="props.user.admin || true"/>  <!-- TODO: get props.user.admin-->
     <main>
       <router-view />
     </main>

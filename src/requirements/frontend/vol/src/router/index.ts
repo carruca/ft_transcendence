@@ -39,6 +39,11 @@ const routes = [
         path: 'settings',
         name: 'Settings',
         component: Settings,
+      },
+      {
+        path: 'admin',
+        name: 'Admin',
+        component: undefined,
       }
       // TODO: Add routes that must display the navbar and sidebar here
     ],

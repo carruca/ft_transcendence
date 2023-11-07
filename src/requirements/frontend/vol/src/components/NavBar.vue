@@ -1,4 +1,11 @@
 <script setup lang="ts">
+const props = defineProps({
+  admin: {
+    type: Boolean,
+    required: false,
+    default: false
+  }
+})
 </script>
 
 <template>
@@ -8,6 +15,7 @@
       <li><router-link to="/game"><span class="material-icons">videogame_asset</span></router-link></li>
       <li><router-link to="/chat"><span class="material-icons">chat</span></router-link></li>
       <li><router-link to="/profile"><span class="material-icons">person</span></router-link></li>
+      <li v-if="props.admin"><router-link to="/admin"><span class="material-icons">admin_panel_settings</span></router-link></li>
     </ul>
   </nav>
 </template>
