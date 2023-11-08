@@ -68,6 +68,10 @@ export class UsersService {
     }
     if (updateUserDto?.nickname) {
       user.nickname = updateUserDto.nickname;
+      const avatarPath = `public/avatars/${user.nickname}.png`;
+      if (fs.existsSync(`public/avatars/${user.nickname}.png`)) {
+        fs.renameSync(`public/avatars/${user.nickname}.png`, avatarPath);
+      }
     }
     if (avatar) {
       const avatarPath = `public/avatars/${user.nickname}.png`;
