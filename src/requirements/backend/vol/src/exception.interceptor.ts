@@ -13,6 +13,11 @@ export class ExceptionInterceptor implements ExceptionFilter {
         const response = ctx.getResponse();
         const request = ctx.getRequest();
 
+        if (request.url.startsWith('/public'))
+        {
+            return response.status(404).send();
+        }
+
         const status =
             exception instanceof HttpException
                 ? exception.getStatus()

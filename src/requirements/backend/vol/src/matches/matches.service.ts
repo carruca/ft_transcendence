@@ -59,7 +59,7 @@ export class MatchesService {
     return this.matchesRepository.find();
   }
 
-  async history(id: number): Promise<Match[]> {
+  async history(id: string): Promise<Match[]> {
     const matchUsers = await this.matchUsersRepository.find({
       where: { userId: id },
       relations: ['match'],
@@ -70,7 +70,7 @@ export class MatchesService {
   }
 
   async paginate(
-    id: number,
+    id: string,
     options: PaginationOptionsDto,
   ): Promise<PaginationDto<Match>> {
     const [ results, total ] = await this.matchUsersRepository.findAndCount({
@@ -92,13 +92,13 @@ export class MatchesService {
     };
   }
 
-  getMockUser(id: number): string {
+  getMockUser(id: string | number): string {  // FIXME: remove this
     if (id == 1)
       return 'paco';
     return 'jones';
   }
 
-  async updateEloRating(winner: number, loser: number): Promise<void> {
+  async updateEloRating(winner: string, loser: string): Promise<void> {
     const winningUsers = await this.usersRepository.find({
       where: {
         nickname: this.getMockUser(winner),
@@ -140,11 +140,11 @@ export class MatchesService {
     await this.usersRepository.save([...winningUsers, ...losingUsers]);
   }
 
-  async findOne(id: number) {
+  async findOne(id: string) {
     return this.matchesRepository.findOneBy({ id });
   }
 
-  async remove(id: number) {
+  async remove(id: string) {
     return this.matchesRepository.delete(id);
   }
 }

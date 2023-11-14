@@ -10,12 +10,12 @@ import { MatchUser } from './match-user.entity';
 export class Match {
   constructor(
     type: string,
-	start: Date,
-	end: Date
+    start: Date,
+    end: Date
   ) {
     this.type = type;
-	this.start = start;
-	this.end = end;
+    this.start = start;
+    this.end = end;
   }
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -34,6 +34,6 @@ export class Match {
   })
   users: MatchUser[];
 
-  @Column({ type: "int", array: true, default: [] })
-  winners: number[];
+  @Column({ type: "varchar", array: true, default: [] })
+  winners: string[];
 }

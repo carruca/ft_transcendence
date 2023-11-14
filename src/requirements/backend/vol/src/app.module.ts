@@ -44,10 +44,12 @@ const routes = [
 
 @Module({
   imports: [
-    ServeStaticModule.forRoot({
-      serveRoot: '/avatars',
-      rootPath: path.resolve(__dirname, `../public/avatars`),  // FIXME: error 500 when there isn't a match
-    }),
+    ServeStaticModule.forRoot(
+      {
+        serveRoot: '/public',
+        rootPath: path.resolve(__dirname, '..', 'public'),
+      }
+    ),
     ConfigModule.forRoot({
       validate,
       isGlobal: true,

@@ -40,7 +40,7 @@ export class UsersService {
     return user;
   }
 
-  async findOne(id: number): Promise<User | null> {
+  async findOne(id: string): Promise<User | null> {
     return await this.usersRepository.findOneBy({ id });
   }
 
@@ -61,7 +61,7 @@ export class UsersService {
     }
   }
 
-  async update(id: number, updateUserDto?: UpdateUserDto, avatar?: Express.Multer.File): Promise<User> {
+  async update(id: string, updateUserDto?: UpdateUserDto, avatar?: Express.Multer.File): Promise<User> {
     const user = await this.usersRepository.findOneBy({ id });
     if (!user) {
       throw new HttpException('User not found', HttpStatus.NOT_FOUND);
@@ -93,7 +93,7 @@ export class UsersService {
     fs.writeFileSync(filePath, file.buffer);
   }
 
-  async findAchievementsUser(userId: number): Promise<AchievementUser[]> {
+  async findAchievementsUser(userId: string): Promise<AchievementUser[]> {
     const user = await this.usersRepository.findOne({
       relations: ['achievements'],
       where: {
@@ -107,7 +107,7 @@ export class UsersService {
     return user.achievements;
   }
 
-  async findFriendsUser(userId: number, status?: FriendStatus) : Promise<Friend[]> {
+  async findFriendsUser(userId: string, status?: FriendStatus) : Promise<Friend[]> {
     console.log(userId);
     const user = await this.usersRepository.findOne({
       relations: ['friends'],
@@ -146,7 +146,7 @@ export class UsersService {
     }));
   }
 
-  async get2FASecret(userId: number) : Promise<string> {
+  async get2FASecret(userId: string) : Promise<string> {
     const user = await this.usersRepository.findOne({
       where: {
         id: userId,
@@ -159,7 +159,7 @@ export class UsersService {
     return user.two_fa_token;
   }
 
-  async set2FASecret(userId: number, token: string) : Promise<void> {
+  async set2FASecret(userId: string, token: string) : Promise<void> {
     const user = await this.usersRepository.findOne({
       where: {
         id: userId,
@@ -173,7 +173,7 @@ export class UsersService {
     await this.usersRepository.save(user);
   }
 
-  async get2FAEnabled(userId: number) : Promise<boolean> {
+  async get2FAEnabled(userId: string) : Promise<boolean> {
     const user = await this.usersRepository.findOne({
       where: {
         id: userId,
@@ -186,7 +186,7 @@ export class UsersService {
     return user.two_fa_enabled && user.two_fa_token == undefined || false;
   }
 
-  async set2FAEnabled(userId: number, enabled: boolean) : Promise<void> {
+  async set2FAEnabled(userId: string, enabled: boolean) : Promise<void> {
     const user = await this.usersRepository.findOne({
       where: {
         id: userId,
