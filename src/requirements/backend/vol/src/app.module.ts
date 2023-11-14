@@ -27,6 +27,7 @@ import { FriendsModule } from './friends/friends.module';
 import { JwtModule } from '@nestjs/jwt';
 import { APP_FILTER } from '@nestjs/core';
 import { ExceptionInterceptor } from './exception.interceptor';
+import * as path from 'path';
 
 const routes = [
   {
@@ -44,7 +45,8 @@ const routes = [
 @Module({
   imports: [
     ServeStaticModule.forRoot({
-      rootPath: `${__dirname}/../public`,
+      serveRoot: '/avatars',
+      rootPath: path.resolve(__dirname, `../public/avatars`),  // FIXME: error 500 when there isn't a match
     }),
     ConfigModule.forRoot({
       validate,
@@ -54,11 +56,11 @@ const routes = [
       useClass: TypeOrmConfigService,
     }),
     RouterModule.register(routes),
-    ChatModule,
+    AuthModule,
     UsersModule,
+    ChatModule,
     MatchesModule,
     GameModule,
-    AuthModule,
     AchievementsModule,
     ChannelsModule,
     FriendsModule,

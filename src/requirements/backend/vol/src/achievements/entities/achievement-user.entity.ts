@@ -16,7 +16,7 @@ export class AchievementUser {
 	}
 
 	@PrimaryGeneratedColumn('uuid')
-	id: number;
+	id: string;
 
 	@ManyToOne(() => User, (user) => user.achievements, {
 		cascade: true,

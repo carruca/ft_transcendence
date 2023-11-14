@@ -20,7 +20,7 @@ export class MatchUser {
   }
 
   @PrimaryGeneratedColumn('uuid')
-  id: number;
+  id: string;
 
   @Column()
   score: number;

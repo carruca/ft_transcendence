@@ -18,7 +18,7 @@ export class Match {
 	this.end = end;
   }
   @PrimaryGeneratedColumn('uuid')
-  id: number;
+  id: string;
 
   @Column()
   type: string;

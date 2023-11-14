@@ -20,7 +20,7 @@ export class ChannelUser {
   }
 
   @PrimaryGeneratedColumn('uuid')
-  id: number;
+  id: string;
 
 //TODO:
 //@ManyToOne(() => User, (user) => user.channels)
