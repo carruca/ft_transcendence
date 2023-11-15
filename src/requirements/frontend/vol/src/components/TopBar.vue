@@ -9,7 +9,7 @@ const props = defineProps({
   }
 })
 
-const bgImage = ref(`url('${import.meta.env.VITE_BACKEND_URL}/avatars/${props.user.nickname}.png')`);
+const bgImage = ref(`url('${import.meta.env.VITE_BACKEND_URL}/public/avatars/${props.user.nickname}.png')`);
 
 onMounted(() => {
   const profilePic = document.querySelector('.profile__pic') as HTMLDivElement;

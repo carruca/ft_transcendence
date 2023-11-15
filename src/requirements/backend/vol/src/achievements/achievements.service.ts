@@ -87,7 +87,7 @@ export class AchievementsService {
     return all.filter((achievement) => !achieved.includes(achievement.id));
   }
 
-  getMockUser(id: number): string {
+  getMockUser(id: string | number): string {  // FIXME: remove this
     if (id == 1)
       return 'paco';
     return 'jones';
@@ -122,11 +122,11 @@ export class AchievementsService {
     return this.achievementsRepository.find();
   }
 
-  findOne(id: number) {
+  findOne(id: string) {
     return this.achievementsRepository.findOneBy({ id });
   }
 
-  remove(id: number) {
+  remove(id: string) {
     return this.achievementsRepository.delete(id);
   }
 }

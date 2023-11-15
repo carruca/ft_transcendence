@@ -14,7 +14,7 @@ interface AchievementCondition {
 @Entity()
 export class Achievement {
 	@PrimaryGeneratedColumn('uuid')
-	id: number;
+	id: string;
 
 	@Column()
 	name: string;

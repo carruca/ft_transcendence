@@ -284,7 +284,7 @@ export class RoomService {
     // TODO centralize  this in a function that receives the players[] and returns the UserScore[]
     const winners_stats: UserStats[] = winners.map((player: Player) => {
       return {
-        id: player.id,
+        id: `${player.id}`,  // TODO: @izenynn change to user id
         score: player.stats.score,
         winRatio: 0,
         rivalScore: player.stats.rival_score,
@@ -299,7 +299,7 @@ export class RoomService {
     });
     const losers_stats: UserStats[] = losers.map((player: Player) => {
       return {
-        id: player.id,
+        id: `${player.id}`,  // TODO: @izenynn change to user id
         score: player.stats.score,
         winRatio: 0,
         rivalScore: player.stats.rival_score,

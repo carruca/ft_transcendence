@@ -27,6 +27,7 @@ import { FriendsModule } from './friends/friends.module';
 import { JwtModule } from '@nestjs/jwt';
 import { APP_FILTER } from '@nestjs/core';
 import { ExceptionInterceptor } from './exception.interceptor';
+import * as path from 'path';
 
 const routes = [
   {
@@ -43,9 +44,12 @@ const routes = [
 
 @Module({
   imports: [
-    ServeStaticModule.forRoot({
-      rootPath: `${__dirname}/../public`,
-    }),
+    ServeStaticModule.forRoot(
+      {
+        serveRoot: '/public',
+        rootPath: path.resolve(__dirname, '..', 'public'),
+      }
+    ),
     ConfigModule.forRoot({
       validate,
       isGlobal: true,
@@ -54,11 +58,11 @@ const routes = [
       useClass: TypeOrmConfigService,
     }),
     RouterModule.register(routes),
-    ChatModule,
+    AuthModule,
     UsersModule,
+    ChatModule,
     MatchesModule,
     GameModule,
-    AuthModule,
     AchievementsModule,
     ChannelsModule,
     FriendsModule,
