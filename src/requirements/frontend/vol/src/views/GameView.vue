@@ -62,7 +62,7 @@ import {
   ref,
 } from 'vue';
 
-import socket from "../services/ws.js";
+import socket from "../services/ws.ts";
 
 // FIXME remove
 const inputText = ref("");
