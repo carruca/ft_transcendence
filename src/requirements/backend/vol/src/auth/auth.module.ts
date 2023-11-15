@@ -9,6 +9,7 @@ import { MockModule } from './mock/mock.module';
 @Module({
   imports: [IntraModule, MockModule],
   providers: [AuthService, IntraService],
-  controllers: [MockController]
+  controllers: [MockController],
+  exports: [AuthService],
 })
 export class AuthModule {}
