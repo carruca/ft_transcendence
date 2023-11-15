@@ -7,7 +7,7 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { User } from './entities/user.entity';
+import { User, UserPermits } from './entities/user.entity';
 import * as fs from 'fs';
 import * as path from 'path';
 import { AchievementUser } from '../achievements/entities/achievement-user.entity';
@@ -23,9 +23,10 @@ export class UsersService {
 
   async create(createUserDto: CreateUserDto): Promise<User> {
     const newUser = new User();
-    newUser.intraId = createUserDto.id;
+    newUser.intraId = createUserDto.intraId;
     newUser.name = createUserDto.displayname.replace(/[\p{L}]\S*/gu, (w) => (w.replace(/^\p{L}/u, (c) => c.toUpperCase())));
-    newUser.login = createUserDto.login;
+    newUser.login = createUserDto.login;	
+    newUser.nickname = (createUserDto.nickname) ? createUserDto.nickname : createUserDto.login;
     newUser.achievements = [];
     newUser.friends = [];
     return this.usersRepository.save(newUser);
@@ -35,8 +36,8 @@ export class UsersService {
     return this.usersRepository.find();
   }
 
-  async findOneByIntraId(id: number): Promise<User | null> {
-    const user = await this.usersRepository.findOneBy({ intraId: id });
+  async findOneByIntraId(intraId: number): Promise<User | null> {
+    const user = await this.usersRepository.findOneBy({ intraId: intraId });
     return user;
   }
 
@@ -53,13 +54,25 @@ export class UsersService {
     return user;
   }
 
-  async setNickname(id: number, nick: string) {
-    const user = await this.findOneByIntraId(id);
-    if (user) {
-      user.nickname = nick;
-      this.usersRepository.save(user);
+  async setNickname(intraId: number, nick: string) : Promise<User> {
+    const user = await this.findOneByIntraId(intraId);
+    if (!user) {
+      throw new HttpException('User not found', HttpStatus.NOT_FOUND);
     }
+
+    user.nickname = nick;
+    return this.usersRepository.save(user);
   }
+
+	async setPermits(id: string, permits: UserPermits) {
+    const user = await this.findOne(id);
+    if (!user) {
+      throw new HttpException('User not found', HttpStatus.NOT_FOUND);
+    }
+
+    user.permits = permits;
+    return this.usersRepository.save(user);
+	}
 
   async update(id: string, updateUserDto?: UpdateUserDto, avatar?: Express.Multer.File): Promise<User> {
     const user = await this.usersRepository.findOneBy({ id });

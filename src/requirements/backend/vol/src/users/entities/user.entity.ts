@@ -9,6 +9,14 @@ import {
 import { AchievementUser } from '../../achievements/entities/achievement-user.entity';
 import { Friend } from '../../friends/entities/friend.entity';
 
+export enum UserPermits {
+	user,
+	owner,
+	moderator,
+	banned,
+	disabled,
+}
+
 @Entity()
 export class User {
   @PrimaryGeneratedColumn('uuid')
@@ -38,8 +46,8 @@ export class User {
   @Column({ default: 0 })
   status: number;
 
-  @Column({ default: 0 })
-  permits: number;
+  @Column({ default: UserPermits.user })
+  permits: UserPermits;
 
   @OneToMany(() => AchievementUser, (achievementUser) => achievementUser.user)
   achievements: AchievementUser[];
