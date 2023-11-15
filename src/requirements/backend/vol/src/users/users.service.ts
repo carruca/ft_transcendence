@@ -13,12 +13,14 @@ import * as path from 'path';
 import { AchievementUser } from '../achievements/entities/achievement-user.entity';
 import { RatingUserDto } from './dto/rating-user.dto';
 import { Friend, FriendStatus } from '../friends/entities/friend.entity';
+import { ChatManager } from '../chat/managers';
 
 @Injectable()
 export class UsersService {
   constructor(
     @InjectRepository(User)
     private usersRepository: Repository<User>,
+    private chatManager: ChatManager,
   ) { }
 
   async create(createUserDto: CreateUserDto): Promise<User> {
@@ -28,7 +30,17 @@ export class UsersService {
     newUser.login = createUserDto.login;
     newUser.achievements = [];
     newUser.friends = [];
-    return this.usersRepository.save(newUser);
+    return new Promise<User>((resolve, reject) => {
+      this.usersRepository.save(newUser)
+        .then((savedUser) => {
+          this.chatManager.addUser(savedUser);
+          resolve(savedUser);
+        })
+        .catch((error) => {
+          reject(error);
+        });
+
+    });
 }
 
   findAll(): Promise<User[]> {
