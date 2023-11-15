@@ -1,0 +1,15 @@
+export enum EventContentType {
+    MESSAGE,
+    CREATE,
+    JOIN,
+    PART,
+    TOPIC,
+    KICK,
+    PASSWORD,
+    PROMOTE,
+    DEMOTE,
+    MUTE,
+    UNMUTE,
+    BAN,
+    UNBAN,
+};
