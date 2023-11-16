@@ -1,7 +1,7 @@
 import { IsString, IsNumber } from 'class-validator';
 export class CreateUserDto {
 	@IsNumber()
-  intraId: number;
+  id: number;
 
 	@IsString()
   displayname: string;

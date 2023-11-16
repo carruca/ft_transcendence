@@ -23,7 +23,7 @@ export class UsersService {
 
   async create(createUserDto: CreateUserDto): Promise<User> {
     const newUser = new User();
-    newUser.intraId = createUserDto.intraId;
+    newUser.intraId = createUserDto.id;
     newUser.name = createUserDto.displayname.replace(/[\p{L}]\S*/gu, (w) => (w.replace(/^\p{L}/u, (c) => c.toUpperCase())));
     newUser.login = createUserDto.login;	
     newUser.nickname = (createUserDto.nickname) ? createUserDto.nickname : createUserDto.login;
