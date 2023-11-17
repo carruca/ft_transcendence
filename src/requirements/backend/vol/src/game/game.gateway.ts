@@ -10,6 +10,8 @@ import { Server } from 'net';
 
 import { Axis, Axis2, Player, Room } from './game.interface';
 import { RoomService } from './room.service';
+import { ChatManagerHandler, ChatManagerSubscribe, ChatManagerInstance } from '../chat/decorators';
+import { ChatManager } from '../chat/managers';
 
 @WebSocketGateway({
   cors: {
@@ -17,12 +19,17 @@ import { RoomService } from './room.service';
     origin: process.env.NEST_FRONT_URL
   },
 })
-
+@ChatManagerHandler()
 export class GameGateway implements OnGatewayDisconnect {
+  @ChatManagerInstance()
+  private chat_manager: ChatManager;
   //nicknames: Map<string, string> = new Map();
   constructor(
     private room_service: RoomService,
-  ) {}
+    chat_manager: ChatManager,
+  ) {
+    this.chat_manager = chat_manager;
+  }
 
   @WebSocketServer()
   server: Server;
@@ -127,5 +134,10 @@ export class GameGateway implements OnGatewayDisconnect {
         axis.x = Axis.NONE;
       }
     }
+  }
+
+  @ChatManagerSubscribe('onUserChallengeAccepted')
+  onUserChallengeAccepted(event: any): void {
+    console.log(`onUserChallengeAccepted: source ${event.sourceUser.uuid} | target ${event.targetUser.uuid} | mode ${event.mode}`);
   }
 }

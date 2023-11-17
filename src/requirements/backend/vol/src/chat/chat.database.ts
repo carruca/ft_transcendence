@@ -14,14 +14,14 @@ export class ChatDatabase {
   private readonly logger_: Logger = new Logger("ChatDatabase");
 
   @ChatManagerInstance()
-  private chat_: ChatManager;
+  private chatManager_: ChatManager;
 
   constructor(
-    chat: ChatManager,
+    chatManager: ChatManager,
     private readonly channelsService_: ChannelsService,
-    private readonly userService_: UsersService,
+    private readonly usersService_: UsersService,
   ) {
-    this.chat_ = chat;
+    this.chatManager_ = chatManager;
     this.logger_.log("Instance created");
   }
 
@@ -29,18 +29,33 @@ export class ChatDatabase {
   ** ChatService events handle
   */
 
+  @ChatManagerSubscribe('onChatUserGetInfo')
+  onChatUserConnecting(event: any): void {
+    this.usersService_.findOneByIntraId(event.userIntraID).then(user => {
+      event.user = user;
+      console.log("event.user ", event.user);
+    });
+  }
+
   @ChatManagerSubscribe('onChatDataLoad')
-  onChatManagerIntialized(dataLoader: DataLoader): void { 
+  async onChatManagerIntialized(dataLoader: DataLoader): Promise<void> { 
+    for (const userDB of await this.usersService_.findAll()) {
+      this.chatManager_.addUserDB(userDB);
+    }
+    for (const channelDB of await this.channelsService_.findAll()) {
+      console.log(channelDB);
+      this.chatManager_.addChannelDB(channelDB);
+    }
     this.logger_.warn(`onChatDataLoad: ${dataLoader}`);
   }
 
-  @ChatManagerSubscribe('onUserConnecting')
-  onUserConnecting() {
-
+  @ChatManagerSubscribe('onChannelCreated')
+  onChannelCreated(event: any) {
+    
   }
 
-  @ChatManagerSubscribe('onChannelCreating')
-  onChannelCreating(event: any): boolean { 
-    return true;
+  @ChatManagerSubscribe('onChannelDeleted')
+  onChannelDeleted(event: any) {
+
   }
 }

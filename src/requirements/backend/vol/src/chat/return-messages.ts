@@ -24,6 +24,10 @@ export const ReturnMessages: Record<ReturnCode, ReturnMessage> = {
     code: ReturnCode.UserInGame,
     message: "User in game",
   },
+  [ReturnCode.UserAway]: {
+    code: ReturnCode.UserAway,
+    message: "User away",
+  },
   [ReturnCode.NameInUse]: {
     code: ReturnCode.NameInUse,
     message: "Name in use",
@@ -34,7 +38,7 @@ export const ReturnMessages: Record<ReturnCode, ReturnMessage> = {
   },
   [ReturnCode.ChannelExists]: {
     code: ReturnCode.ChannelExists,
-    message: "Chanel exists",
+    message: "Channel exists",
   },
   [ReturnCode.NotInChannel]: {
     code: ReturnCode.NotInChannel,
@@ -43,6 +47,10 @@ export const ReturnMessages: Record<ReturnCode, ReturnMessage> = {
   [ReturnCode.AlreadyInChannel]: {
     code: ReturnCode.AlreadyInChannel,
     message: "You're already in that channel",
+  },
+  [ReturnCode.PendingChallenge]: {
+    code: ReturnCode.PendingChallenge,
+    message: "You have a pending challenge request",
   },
   [ReturnCode.BadChannelName]: {
     code: ReturnCode.BadChannelName,

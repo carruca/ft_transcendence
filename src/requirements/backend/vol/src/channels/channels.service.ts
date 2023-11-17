@@ -42,7 +42,9 @@ export class ChannelsService {
   }
 
   async	findAll(): Promise<Channel[]> {
-    return this.channelsRepository.find();
+    return this.channelsRepository.find({
+      relations: ['users'],
+    });
   }
 
   async remove(id: string) {
@@ -53,10 +55,14 @@ export class ChannelsService {
     const channel = await this.findOneById(createChannelUserDto.channelId);
     const channelUser = new ChannelUser(
       channel,
-	    createChannelUserDto.userId,
-	    createChannelUserDto.admin,
+      createChannelUserDto.userId,
+      createChannelUserDto.admin,
     );
     await this.channelUsersRepository.save(channelUser);
+
+    if (!channel.users) {
+      channel.users = [];
+    }
 
     channel.users.push(channelUser);
     await this.channelsRepository.save(channel);

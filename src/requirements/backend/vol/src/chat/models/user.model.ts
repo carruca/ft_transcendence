@@ -1,18 +1,29 @@
-import { ChannelModel as Channel, ConversationModel as Conversation } from '.';
-import { UserData, UserDetails } from '../interfaces';
-import { UserStatus, UserChannelRole, UserSiteRole } from '../enums';
+import {
+    ChannelModel as Channel,
+    ConversationModel as Conversation,
+} from '.';
+
+import { UserData } from '../interfaces';
+import { UserDTO } from '../dto';
+
+import {
+    UserStatus,
+    UserChannelRole,
+    UserSiteRole
+} from '../enums';
+
 import { PropertyUndefinedError } from '../errors';
 
 import { User as UserDB } from '../../users/entities/user.entity';
 
 import { Socket } from 'socket.io';
 
-export { UserData, UserDetails, UserStatus, UserChannelRole, UserSiteRole };
+export { UserData, UserDTO, UserStatus, UserChannelRole, UserSiteRole };
 
 export class UserModel {
-    private id_: number;
+    private intraId_: number;
     private uuid_: string;
-    private name_?: string;
+    private name_: string;
     private status_: UserStatus;
     private socket_?: Socket;
     private siteRole_: UserSiteRole;
@@ -26,7 +37,7 @@ export class UserModel {
 
     constructor(data: UserData | UserDB) {
         if (data instanceof UserDB) {
-            this.id_ = data.intraId;
+            this.intraId_ = data.intraId;
             this.uuid_ = data.id.toString();
             this.name_ = data.nickname;
             this.socket_ = undefined;
@@ -35,7 +46,7 @@ export class UserModel {
             this.banned_ = false;
             this.disabled_ = false;
         } else {
-            this.id_ = data.id;
+            this.intraId_ = data.id;
             this.uuid_ = data.uuid;
             this.name_ = data.name;
             this.socket_ = data.socket;
@@ -102,7 +113,7 @@ export class UserModel {
     }
     */
 
-    getDetails(): UserDetails {
+    getDTO(): UserDTO {
         return {
             uuid: this.uuid_,
             name: this.name_,
@@ -153,8 +164,8 @@ export class UserModel {
         console.log("User destructor called");
     }
 
-    get id(): number {
-        return this.id_;
+    get intraId(): number {
+        return this.intraId_;
     }
 
     get uuid(): string {

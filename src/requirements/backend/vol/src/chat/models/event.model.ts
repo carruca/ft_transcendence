@@ -1,61 +1,57 @@
 import { UserModel as User } from '.';
-import { EventData, EventDetails, EventContent } from '../interfaces';
-import { EventContentType } from '../enums'
+
+import { EventData } from '../interfaces';
+
+import { EventDTO } from '../dto';
+
+import { EventType } from '../enums'
 
 import { v4 as uuidv4 } from 'uuid';
 
-export { EventData, EventDetails, EventContent, EventContentType }
+export { EventData, EventDTO, EventType }
 
 export class EventModel {
     private uuid_: string;
     private timestamp_: Date;
     private modified_: boolean;
-    private senderUser_: User;
-    private content_: EventContent;
+    private sourceUser_: User;
+    private targetUser_: User | undefined;
+    private eventType_: EventType;
+    private value_: string | undefined;
 
-    constructor(data: EventData) {
-        if (data.uuid === undefined)
-            data.uuid = uuidv4();
-        this.uuid_ = data.uuid;
-        if (data.timestamp === undefined)
-            data.timestamp = new Date();
-        this.timestamp_ = new Date(data.timestamp);
-        if (data.modified === undefined)
-            data.modified = false;
-        this.modified_ = data.modified;
-        this.senderUser_ = data.senderUser;
-        this.content_ = data.content;
+    constructor(eventData: EventData) {
+        this.uuid_ = eventData.uuid ?? uuidv4();
+        this.timestamp_ = new Date();
+        this.modified_ = eventData.modified ?? false;
+        this.sourceUser_ = eventData.sourceUser;
+        this.targetUser_ = eventData.targetUser;
+        this.eventType_ = eventData.eventType;
+        this.value_ = eventData.value;
     }
 
-    public static message(senderUser: User, value: string): EventModel {
+    public static message(sourceUser: User, value: string): EventModel {
         return new EventModel({
-            senderUser: senderUser,
-            content: {
-                type: EventContentType.MESSAGE,
-                value: value,
-            },
+            sourceUser: sourceUser,
+            eventType: EventType.MESSAGE,
+            value: value,
         });
     }
 
-    public static kick(senderUser: User, targetUser: User, value?: string): EventModel {
+    public static kick(sourceUser: User, targetUser: User, value?: string): EventModel {
         return new EventModel({
-            senderUser: senderUser,
-            content: {
-                type: EventContentType.KICK,
-                targetUUID: targetUser.uuid,
-                value: value,
-            },
+            eventType: EventType.KICK,
+            sourceUser: sourceUser,
+            targetUser: targetUser,
+            value: value,
         });
     }
 
-    public static generic(eventContentType: EventContentType, senderUser: User, targetUser?: User, value?: string): EventModel {
+    public static generic(eventType: EventType, sourceUser: User, targetUser?: User, value?: string): EventModel {
         return new EventModel({
-            senderUser: senderUser,
-            content: {
-                type: eventContentType,
-                targetUUID: targetUser?.uuid,
-                value: value,
-            },
+            eventType: eventType,
+            sourceUser: sourceUser,
+            targetUser: targetUser,
+            value: value,
         })
     }
 
@@ -71,12 +67,8 @@ export class EventModel {
         return this.modified_;
     }
 
-    get senderUser(): User {
-        return this.senderUser_;
-    }
-
-    get content(): EventContent {
-        return this.content_;
+    get sourceUser(): User {
+        return this.sourceUser_;
     }
 
     modifyontent(user: User, value: string): boolean {
@@ -85,11 +77,11 @@ export class EventModel {
         const timeThreshold = 60 * 1000; //1 minute in milliseconds
 
         if (
-               this.senderUser_ === user
+               this.sourceUser_ === user
             && timeDifference <= timeThreshold
-            && this.content_.type === EventContentType.MESSAGE
+            && this.eventType_ === EventType.MESSAGE
         ) {
-            this.content_.value = value;
+            this.value_ = value;
             this.modified_ = true;
             this.timestamp_ = now;
             return true;
@@ -97,13 +89,15 @@ export class EventModel {
         return false;
     }
 
-    getDetails(): EventDetails {
+    getDTO(): EventDTO {
         return {
             uuid: this.uuid_,
+            eventType: this.eventType_,
             timestamp: this.timestamp_,
-            modified: this.modified_ ? this.modified_ : undefined,
-            senderUUID: this.senderUser_.uuid,
-            content: this.content_,
+            modified: this.modified_,
+            sourceUUID: this.sourceUser_.uuid,
+            targetUUID: this.targetUser_?.uuid,
+            value: this.value_,
         };
     }
 }

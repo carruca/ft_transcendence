@@ -1,29 +1,56 @@
-import { UserModel as User, EventModel as Event } from '.';
-import { EventManager } from '../managers';
-import { UserDetails, ChannelData, ChannelDetails, ChannelTopic } from '../interfaces';
-import { EventContentType } from '../enums';
-import { PropertyUndefinedError, NotImplementedError } from '../errors';
+import {
+    UserModel as User,
+    EventModel as Event,
+} from '.';
 
-export { ChannelData, ChannelTopic, ChannelDetails };
+import { EventManager } from '../managers';
+
+import {
+    ChannelData,
+    ChannelTopic,
+} from '../interfaces';
+
+import {
+    UserDTO,
+    ChannelDTO,
+    ChannelUserDTO,
+    ChannelTopicDTO,
+} from '../dto';
+
+import {
+    EventType,
+    UserChannelRole,
+} from '../enums';
+
+import {
+    PropertyUndefinedError,
+    NotImplementedError,
+} from '../errors';
+
+import { Channel as ChannelDB } from '../../channels/entities/channel.entity';
+
+export { ChannelData, ChannelTopic, ChannelDTO };
 
 export class ChannelModel {
     private uuid_: string;
     private name_: string;
-    private owner_?: User;
+    private owner_: User;
     private topic_?: ChannelTopic;
     private password_?: string;
+    private createdDate_: Date;
     private users_ = new Map<string, User>;
     private bans_ = new Set<string>;
     private mutes_ = new Set<string>;
     private opers_ = new Set<string>;
     private eventManager_ = new EventManager;
 
-    public constructor(data: ChannelData) {
-        this.uuid_ = data.uuid;
-        this.name_ = data.name;
-        this.owner_ = data.owner;
-        this.topic_ = data.topic;
-        this.password_ = data.password;
+    public constructor(channelInfo: ChannelData) {
+        this.uuid_ = channelInfo.uuid;
+        this.name_ = channelInfo.name;
+        this.createdDate_ = channelInfo.createdDate;
+        this.topic_ = channelInfo.topic;
+        this.password_ = channelInfo.password;
+        this.owner_ = channelInfo.owner;
     }
 
     public addMessageEvent(sourceUser: User, value: string): Event {
@@ -34,8 +61,8 @@ export class ChannelModel {
         return this.eventManager_.addEvent(event);
     }
 
-    public addGenericEvent(eventContentType: EventContentType, sourceUser: User, targetUser?: User): Event {
-        return this.eventManager_.addEvent(Event.generic(eventContentType, sourceUser, targetUser));
+    public addGenericEvent(eventType: EventType, sourceUser: User, targetUser?: User): Event {
+        return this.eventManager_.addEvent(Event.generic(eventType, sourceUser, targetUser));
     }
 
     public addKickEvent(sourceUser: User, targetUser: User, value?: string): Event {
@@ -125,16 +152,19 @@ export class ChannelModel {
         return this.getUsers().filter((user: User) => user.uuid !== exceptUser.uuid );
     }
 
-    public getDetails(): ChannelDetails {
-        return {
-            uuid: this.uuid_,
-            name: this.name_,
-          //owner: this.owner_.getDetails(),
-     //     successor: this.successor_.getDetails(),
-            topic: this.topic_,
-            hasPassword: (this.password_ !== undefined),
-        }
+    public getDTO(): ChannelDTO {
+        return new ChannelDTO(this);
     }
+
+    public getTopicDTO(): ChannelTopicDTO | undefined {
+        if (!this.topic_)
+            return undefined;
+        return new ChannelTopicDTO(this.topic_);
+    }
+
+    public getUserDTO(user: User): ChannelUserDTO {
+        return new ChannelUserDTO(this, user);
+    } 
 
     //properties
     get isEmpty(): boolean {
@@ -153,7 +183,11 @@ export class ChannelModel {
         return this.name_;
     }
 
-    get owner(): User | undefined {
+    get createdDate(): Date {
+        return this.createdDate_;
+    }
+
+    get owner(): User {
         return this.owner_;
     }
 /*

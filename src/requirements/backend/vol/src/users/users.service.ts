@@ -1,7 +1,9 @@
 import {
+  Inject,
 	Injectable,
 	HttpException,
 	HttpStatus,
+	forwardRef,
 } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -20,6 +22,7 @@ export class UsersService {
   constructor(
     @InjectRepository(User)
     private usersRepository: Repository<User>,
+    @Inject(forwardRef(() => ChatManager))
     private chatManager: ChatManager,
   ) { }
 
@@ -30,18 +33,8 @@ export class UsersService {
     newUser.login = createUserDto.login;
     newUser.achievements = [];
     newUser.friends = [];
-    return new Promise<User>((resolve, reject) => {
-      this.usersRepository.save(newUser)
-        .then((savedUser) => {
-          this.chatManager.addUser(savedUser);
-          resolve(savedUser);
-        })
-        .catch((error) => {
-          reject(error);
-        });
-
-    });
-}
+    return this.usersRepository.save(newUser);
+  }
 
   findAll(): Promise<User[]> {
     return this.usersRepository.find();
@@ -70,6 +63,7 @@ export class UsersService {
     if (user) {
       user.nickname = nick;
       this.usersRepository.save(user);
+      this.chatManager.changeNickUserIntraId(id, nick);
     }
   }
 

@@ -1,6 +1,7 @@
-export enum EventContentType {
+export enum EventType {
     MESSAGE,
     CREATE,
+    CLOSE,
     JOIN,
     PART,
     TOPIC,

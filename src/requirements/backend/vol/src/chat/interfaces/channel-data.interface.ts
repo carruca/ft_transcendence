@@ -5,6 +5,7 @@ export interface ChannelData {
     uuid: string;
     name: string;
     owner: User;
+    createdDate: Date;
     topic?: ChannelTopic;
     password?: string;
 }

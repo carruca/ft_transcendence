@@ -1,8 +1,9 @@
-import { UserModel as User, EventModel as Event } from '.'
-import { EventManager } from '../managers'
-import { ConversationData, ConversationDetails } from '../interfaces'
+import { UserModel as User, EventModel as Event } from '.';
+import { EventManager } from '../managers';
+import { ConversationData } from '../interfaces';
+import { ConversationDTO } from '../dto';
 
-export { ConversationData, ConversationDetails };
+export { ConversationData, ConversationDTO };
 
 export class ConversationModel {
     private uuid_: string;
@@ -64,7 +65,7 @@ export class ConversationModel {
         return this.countEventsAfterUUID(startEventUUID);
     }
 
-    getDetails(): ConversationDetails {
+    getDTO(): ConversationDTO {
         return {
             uuid: this.uuid_,
             user1UUID: this.user1_.uuid,

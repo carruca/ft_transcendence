@@ -1,10 +1,12 @@
-import { UserModel as User } from '../models/user.model'
-import { EventContent } from '.';
+import { UserModel as User } from '../models';
+import { EventType } from '../enums';
 
 export interface EventData {
     uuid?: string;
+    eventType: EventType;
     timestamp?: Date;
     modified?: boolean;
-    senderUser: User;
-    content: EventContent;
+    sourceUser: User;
+    targetUser?: User;
+    value?: string;
 };

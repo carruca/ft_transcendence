@@ -8,18 +8,24 @@ import {
 
 import {
   UserData, 
-  UserDetails,
   ChannelData,
   ChannelTopic,
-  ChannelDetails,
+  ChallengeData,
   ConversationData,
 } from '../interfaces';
 
 import {
+  UserDTO,
+  ChannelDTO,
+  ChannelTopicDTO,
+  ConversationDTO,
+} from '../dto';
+
+import {
   UserStatus,
-  UserChannelRole,
-  UserSiteRole,
-  EventContentType,
+  //UserChannelRole,
+  //UserSiteRole,
+  EventType,
 } from '../enums';
 
 import {
@@ -28,13 +34,23 @@ import {
   ReturnMessages,
 } from '../return-messages';
 
-import { UserNotFoundError } from '../errors';
+import { UserNotFoundError, UserNoSocketError } from '../errors';
+
+import { ChannelsService } from '../../channels/channels.service';
+import { UsersService } from '../../users/users.service';
+
+import { CreateChannelDto } from '../../channels/dto/create-channel.dto';
+import { CreateChannelUserDto } from '../../channels/dto/create-channel-user.dto';
 
 import {
   MultiMap,
   BidirectionalMap,
   checkChannelName,
 } from '../utils';
+
+import {
+  Mode as GameMode,
+} from '../../game/game.interface';
 
 import { User as UserDB } from '../../users/entities/user.entity';
 import { Channel as ChannelDB } from '../../channels/entities/channel.entity';
@@ -57,9 +73,13 @@ export class ChatManager {
   private channelsByUUID_ = new Map<string, Channel>();
   private conversationsByUUID_ = new Map<string, Conversation>();
   private conversationsByUsers_ = new BidirectionalMap<User, Conversation>();
+  private challengesByUsers_ = new BidirectionalMap<User, ChallengeData>();
   private events_ = new MultiMap<string, Function>();
 
-  constructor() {
+  constructor(
+    private channelsService_: ChannelsService,
+    private usersService_: UsersService,
+  ) {
     this.logger_.log("Instance created");
   }
 
@@ -67,8 +87,12 @@ export class ChatManager {
   **  properties
   */
 
-  public getUserByID(userID: number): User | undefined {
-    return this.usersByID_.get(userID);
+  public getUserByID(userIntraID: number): User | undefined {
+    let user = this.usersByID_.get(userIntraID);
+
+//    if (!user)
+  //    this.raise_<void>('onChatUserGetInfo', { userIntraID, user });
+    return user;
   }
 
   public getUserByUUID(userUUID: string): User | undefined {
@@ -79,8 +103,11 @@ export class ChatManager {
     return this.usersByName_.get(userName!);
   }
 
-  public getUserBySocket(userSocket: Socket): User | undefined {
-    return this.usersBySocket_.get(userSocket);
+  public getUserBySocket(userSocket: Socket): User {
+    const user = this.usersBySocket_.get(userSocket);
+    if (user === undefined)
+      throw new UserNoSocketError("getUserBySocket can't find that socket."); 
+    return user;
   }
 
   public getChannelByName(channelName: string): Channel | undefined {
@@ -103,6 +130,10 @@ export class ChatManager {
     return this.conversationsByUsers_.getInnerKeys(user);
   }
 
+  public getChallengeByUsers(user1: User, user2: User): ChallengeData | undefined {
+    return this.challengesByUsers_.get(user1, user2);
+  }
+
   public getChannels(): Channel[] {
     return Array.from(this.channelsByName_.values());
   }
@@ -115,26 +146,67 @@ export class ChatManager {
     return Array.from(this.conversationsByUUID_.values());
   }
 
-  public addUser(userInfo: UserData | UserDB ) {
+  public addUserDB(userInfo: UserDB ): User {
     let sourceUser = new User(userInfo);
 
-    this.usersByID_.set(sourceUser.id, sourceUser);
+    if (this.usersByUUID_.has(sourceUser.uuid))
+      return this.getUserByUUID(sourceUser.uuid)!;
+
+    this.usersByID_.set(sourceUser.intraId, sourceUser);
     this.usersByUUID_.set(sourceUser.uuid, sourceUser);
     this.usersByName_.set(sourceUser.name, sourceUser);
-    this.usersBySocket_.set(sourceUser.socket, sourceUser);
+    //this.usersBySocket_.set(sourceUser.socket, sourceUser);
 
-    this.raise_<void>('onUserAdded', { sourceUser }); 
-    console.log(`addUser ${sourceUser.uuid} (${sourceUser.name})`);;
+    //this.raise_<void>('onUserAdded', { sourceUser }); 
+    return sourceUser;
   }
 
-  public addChannel(channelInfo: ChannelData | ChannelDB ) {
-    if (channelInfo instanceof ChannelDB)
-      return;
-    let channel = new Channel(channelInfo);
+  public changeNickUserIntraId(intraId: number, nickname: string) {
+    const sourceUser = this.getUserByID(intraId);
 
+    if (sourceUser) {
+      this.raise_<void>('onUserNickChanged', { sourceUser, nickname });
+      sourceUser.name = nickname;
+    }
+  }
+
+  public addChannelDB(channelDB: ChannelDB ): Channel {
+    const ownerUser = this.getUserByUUID(channelDB.owner);
+    let channelTopic: ChannelTopic | undefined;
+
+    if (!ownerUser)
+      throw new UserNotFoundError("channelDB contains a non valid owner uuid"); 
+
+    if (channelDB.topicUser) {
+      const topicUser = this.getUserByUUID(channelDB.topicUser);
+
+      if (!topicUser)
+        throw new UserNotFoundError("channelDB contains a non valid topic.user uuid");
+
+      channelTopic = {
+        user: topicUser,
+        setDate: channelDB.topicSetDate!,
+        value: channelDB.topic!,
+      };
+    }
+
+    const channelData: ChannelData = {
+      uuid: channelDB.id,
+      name: channelDB.name,
+      owner: ownerUser,
+      createdDate: channelDB.createdDate,
+      topic: channelTopic,
+      password: channelDB.password,
+    };
+
+    const channel = new Channel(channelData);
+    this.addChannel_(channel);
+    return channel;
+  }
+
+  private addChannel_(channel: Channel) {
     this.channelsByName_.set(channel.name, channel);
     this.channelsByUUID_.set(channel.uuid, channel);
-    this.raise_<void>('onChannelAdded', { channel });
   }
 
   public renameUser(userUUID: string, nickname: string) {
@@ -145,18 +217,18 @@ export class ChatManager {
   **  methods
   */
 
-  public topicChannelUUID(sourceUser: User, channelUUID: string, text: string): ReturnMessage {
+  public topicChannelUUID(sourceUser: User, channelUUID: string, value: string): ReturnMessage {
     const channel = this.getChannelByUUID(channelUUID);
     const topic: ChannelTopic = {
-      uuid: sourceUser.uuid,
-      date: new Date(),
-      text: text,
+      user: sourceUser,
+      setDate: new Date(),
+      value: value,
     };
 
     if (!channel) return this.message_(ReturnCode.ChannelNotExists);
     if (!channel.hasUser(sourceUser)) return this.message_(ReturnCode.NotInChannel);
     if (!channel.hasPrivileges(sourceUser)) return this.message_(ReturnCode.InsufficientPrivileges);
-    if (channel.topic?.text === text) return this.message_(ReturnCode.Allowed);
+    if (channel.topic?.value === value) return this.message_(ReturnCode.Allowed);
 
     if (this.raise_<boolean>('onChannelTopicChanging', { channel, topic }).includes(true))
       return this.message_(ReturnCode.Denied);
@@ -166,25 +238,37 @@ export class ChatManager {
     return this.message_(ReturnCode.Allowed);
   }
 
-  public connectUser(client: Socket): ReturnMessage {
-    const sourceUser = this.getUserByID(client.data.userID);
-
+  public connectUser(sourceUser: User): ReturnMessage {
     if (sourceUser === undefined) return this.message_(ReturnCode.UserNotExists);
     if (sourceUser.isDisabled()) return this.message_(ReturnCode.Denied);
     if (sourceUser.isBanned()) return this.message_(ReturnCode.Denied);
 
+    /*
     if (this.raise_<boolean>('onUserConnecting', { sourceUser }).includes(true)) 
       return this.message_(ReturnCode.Denied);
+    */
 
+    this.usersBySocket_.set(sourceUser.socket, sourceUser);
     sourceUser.status = UserStatus.ONLINE;
     this.raise_<void>('onUserConnected', { sourceUser });
+    this.logger_.debug(`nick ${sourceUser.name} has marked ONLINE`);
     return this.message_(ReturnCode.Allowed);
   }
 
   public disconnectUser(sourceUser: User): ReturnMessage {
     sourceUser.status = UserStatus.OFFLINE;
     this.raise_<void>('onUserDisconnect', { sourceUser });
+    this.usersBySocket_.delete(sourceUser.socket);
+    this.logger_.debug(`nick ${sourceUser.name} has marked OFFLINE`);
     return this.message_(ReturnCode.Allowed);
+  }
+
+  public createChallenge(user1: User, user2: User) {
+    this.challengesByUsers_.set(user1, user2, { sourceUser: user1, targetUser: user2 });
+  }
+
+  public deleteChallenge(user1: User, user2: User) {
+    this.challengesByUsers_.delete(user1, user2);
   }
 
   public createConversation(user1: User, user2: User): ReturnMessage {
@@ -221,62 +305,72 @@ export class ChatManager {
     return this.message_(ReturnCode.Allowed);
   }
 
-  public createChannelName(user: User, channelName: string, password?: string): ReturnMessage {
-    let channel = this.getChannelByName(channelName);
-    const channelData: ChannelData = {
-      uuid: "",
-      name: channelName,
-      owner: user,
-      password: password,
+  private async addUserToChannel_(user: User, channel: Channel) {
+    const createChannelUserDto: CreateChannelUserDto = {
+      channelId: channel.uuid,
+      userId: user.intraId,
+      admin: false,
     };
+
+    channel.addUser(user);
+    user.addChannel(channel);
+    await this.channelsService_.createChannelUser(createChannelUserDto);
+  }
+
+  private async removeUserFromChannel_(user: User, channel: Channel) {
+    channel.removeUser(user);
+    user.removeChannel(channel);
+    await this.channelsService_.removeChannelUser(channel.uuid, +user.uuid); 
+  }
+
+  public async createChannelName(sourceUser: User, channelName: string, password?: string): Promise<ReturnMessage> {
+    let channel = this.getChannelByName(channelName);
 
     if (!checkChannelName(channelName)) return this.message_(ReturnCode.BadChannelName);
     if (channel) return this.message_(ReturnCode.ChannelExists);
 
-    if (this.raise_<boolean>('onChannelCreating', { channelData }).includes(true))
-      return this.message_(ReturnCode.Denied);
-    if (!channelData.uuid) {
-      this.logger_.debug("No UUID provided for the new channel. Generating one...");
-      channelData.uuid = uuidv4();
-    }
-    channel = new Channel(channelData)
-    channel.addUser(user);
-    user.addChannel(channel);
-    channel.addGenericEvent(EventContentType.CREATE, user);
-    this.raise_<void>('onChannelCreated', { channel, user });
-    return this.message_(ReturnCode.Allowed, { channel });
+    const createChannelDto: CreateChannelDto = {
+      name: channelName,
+      owner: sourceUser.uuid,
+      password: password,
+    };
+
+    const channelDB = await this.channelsService_.create(createChannelDto);
+    channel = this.addChannelDB(channelDB);
+    await this.addUserToChannel_(sourceUser, channel);
+    channel.addGenericEvent(EventType.CREATE, sourceUser);
+    this.raise_<void>('onChannelCreated', { channel, sourceUser });
+    return this.message_(ReturnCode.Allowed, { channel: new ChannelDTO(channel) });
   }
 
-  public deleteChannelUUID(user: User, channelUUID: string): ReturnMessage {
+  public async deleteChannelUUID(user: User, channelUUID: string): Promise<ReturnMessage> {
     const channel = this.getChannelByUUID(channelUUID);
 
     if (!channel) return this.message_(ReturnCode.ChannelNotExists);
     if (!channel.isOwner(user)) return this.message_(ReturnCode.InsufficientPrivileges);
 
-    this.raise_<void>('onChannelDeleted', { channel, user });
-    channel.getUsers().forEach(user => {
-      user.removeChannel(channel);
-    });
     this.destroyChannel_(channel);
+
+    //this.raise_<void>('onChannelDeleted', { channel, user });
+    //this.destroyChannel_(channel);
 
     return this.message_(ReturnCode.Allowed);
   }
 
-  public joinChannelUUID(user: User, channelUUID: string, password?: string): ReturnMessage {
+  public async joinChannelUUID(sourceUser: User, channelUUID: string, password?: string): Promise<ReturnMessage> {
     let channel = this.getChannelByUUID(channelUUID);
 
     if (!channel) return this.message_(ReturnCode.ChannelNotExists);
-    if (channel.hasUser(user)) return this.message_(ReturnCode.AlreadyInChannel);
-    if (channel.hasBanned(user)) return this.message_(ReturnCode.BannedFromChannel);
+    if (channel.hasUser(sourceUser)) return this.message_(ReturnCode.AlreadyInChannel);
+    if (channel.hasBanned(sourceUser)) return this.message_(ReturnCode.BannedFromChannel);
     if (channel.password !== password) return this.message_(ReturnCode.InvalidPassword);
 
-    if (this.raise_<boolean>('onUserJoining', { channel, user }).includes(true))
+    if (this.raise_<boolean>('onUserJoining', { channel, sourceUser }).includes(true))
       return this.message_(ReturnCode.Denied);
 
-    channel.addUser(user);
-    user.addChannel(channel);
-    channel.addGenericEvent(EventContentType.JOIN, user);
-    this.raise_<void>('onUserJoined', { channel, user });
+    await this.addUserToChannel_(sourceUser, channel);
+    channel.addGenericEvent(EventType.JOIN, sourceUser);
+    this.raise_<void>('onUserJoined', { channel, sourceUser });
     return this.message_(ReturnCode.Allowed, { channel });
   }
 
@@ -286,28 +380,27 @@ export class ChatManager {
     if (!channel) return this.message_(ReturnCode.ChannelNotExists);
     if (!channel.hasUser(user)) return this.message_(ReturnCode.NotInChannel);
 
-    if (this.raise_<boolean>('onUserParting').includes(true))
-      return this.message_(ReturnCode.Denied);
-
     this.raise_<void>('onUserParted', { channel, user });
-    channel.removeUser(user);
-    user.removeChannel(channel);
-    channel.addGenericEvent(EventContentType.PART, user);
     if (channel.isEmpty)
       this.destroyChannel_(channel);
     return this.message_(ReturnCode.Allowed);
   }
 
   private destroyChannel_(channel: Channel): void {
+    this.raise_<void>('onChannelDestroyed', { channel });
     this.channelsByUUID_.delete(channel.uuid);
     this.channelsByName_.delete(channel.name);
+
+    channel.getUsers().forEach(user => {
+      user.removeChannel(channel);
+    });
   }
   
   public listChannels(): ReturnMessage {
-    let channelList: ChannelDetails[] = [];
+    let channelList: ChannelDTO[] = [];
 
     for (const channel of this.getChannels()) {
-      channelList.push(channel.getDetails());
+      channelList.push(channel.getDTO());
     }
     return this.message_(ReturnCode.Allowed, [ channelList ]);
   }
@@ -349,7 +442,7 @@ export class ChatManager {
       return this.message_(ReturnCode.Denied);
     this.raise_<void>("onChannelPasswordChanged", { channel, sourceUser, newPassword });
     channel.password = newPassword;
-    channel.addGenericEvent(EventContentType.PASSWORD, sourceUser);
+    channel.addGenericEvent(EventType.PASSWORD, sourceUser);
     return this.message_(ReturnCode.Allowed);
   }
 
@@ -398,7 +491,7 @@ export class ChatManager {
     this.raise_<void>("onUserBanned", { channel, sourceUser, targetUser });
     channel.addBan(targetUser);
     channel.removeUser(targetUser);
-    channel.addGenericEvent(EventContentType.BAN, targetUser);
+    channel.addGenericEvent(EventType.BAN, targetUser);
     targetUser.removeChannel(channel);
     return this.message_(ReturnCode.Allowed);
   }
@@ -420,7 +513,7 @@ export class ChatManager {
     if (this.raise_<boolean>("onUserUnbanning", { channel, sourceUser, targetUser }).includes(true))
         return this.message_(ReturnCode.Denied);
 
-    channel.addGenericEvent(EventContentType.UNBAN, targetUser);
+    channel.addGenericEvent(EventType.UNBAN, targetUser);
     this.raise_<void>("onUserUnbanned", { channel, sourceUser, targetUser });
     channel.removeBan(targetUser);
     return this.message_(ReturnCode.Allowed);
@@ -443,7 +536,7 @@ export class ChatManager {
 
     this.raise_<void>("onUserPromoted", { channel, sourceUser, targetUser });
     channel.addOper(targetUser);
-    channel.addGenericEvent(EventContentType.PROMOTE, sourceUser, targetUser);
+    channel.addGenericEvent(EventType.PROMOTE, sourceUser, targetUser);
     return this.message_(ReturnCode.Allowed);
   }
 
@@ -459,12 +552,70 @@ export class ChatManager {
     //if (channel.owner === targetUser) return this.chatMessage(ChatReturnCode.InsufficientPrivileges);
     if (!channel.hasOper(targetUser)) return this.message_(ReturnCode.NothingHappened);
 
-    if (this.raise_<boolean>("onUserDemoting", { channel, sourceUser, targetUser }).includes(true))
+    if (this.raise_<boolean>('onUserDemoting', { channel, sourceUser, targetUser }).includes(true))
       return this.message_(ReturnCode.Denied);
 
-    channel.addGenericEvent(EventContentType.DEMOTE, sourceUser, targetUser);
-    this.raise_<void>("onUserDemoted", { channel, sourceUser, targetUser });
+    channel.addGenericEvent(EventType.DEMOTE, sourceUser, targetUser);
+    this.raise_<void>('onUserDemoted', { channel, sourceUser, targetUser });
     channel.removeOper(targetUser);
+    return this.message_(ReturnCode.Allowed);
+  }
+
+  public requestChallengeUserUUID(sourceUser: User, targetUserUUID: string, gameMode: GameMode): ReturnMessage {
+    const targetUser = this.getUserByUUID(targetUserUUID);
+
+    if (!targetUser) return this.message_(ReturnCode.UserNotExists);
+    if (sourceUser === targetUser) return this.message_(ReturnCode.NothingHappened);
+    if (this.getChallengeByUsers(sourceUser, targetUser)) return this.message_(ReturnCode.PendingChallenge);
+    if (sourceUser.hasBlocked(targetUser)) return this.message_(ReturnCode.NothingHappened);
+    if (targetUser.hasBlocked(sourceUser)) return this.message_(ReturnCode.NothingHappened);
+    if (sourceUser.status === UserStatus.OFFLINE) return this.message_(ReturnCode.UserNotConnected);
+    if (sourceUser.status === UserStatus.INGAME) return this.message_(ReturnCode.UserInGame);
+    if (sourceUser.status === UserStatus.AWAY) return this.message_(ReturnCode.UserAway);
+
+    if (this.raise_<boolean>('onUserChallengeRequested', { sourceUser, targetUser }).includes(true))
+      return this.message_(ReturnCode.Denied);
+    this.createChallenge(sourceUser, targetUser);
+    this.raise_<void>('onUserChallengeRequest', { sourceUser, targetUser });
+    return this.message_(ReturnCode.Allowed);
+  }
+
+  public acceptChallengeUserUUID(sourceUser: User, targetUserUUID: string): ReturnMessage {
+    const targetUser = this.getUserByUUID(targetUserUUID);
+
+    if (!targetUser) return this.message_(ReturnCode.UserNotExists);
+    if (sourceUser === targetUser) return this.message_(ReturnCode.NothingHappened);
+
+    const challenge = this.getChallengeByUsers(sourceUser, targetUser);
+
+    if (!challenge) return this.message_(ReturnCode.NothingHappened);
+    if (challenge.targetUser !== targetUser) return this.message_(ReturnCode.NothingHappened);
+    if (sourceUser.status === UserStatus.OFFLINE) return this.message_(ReturnCode.UserNotConnected);
+    if (sourceUser.status === UserStatus.INGAME) return this.message_(ReturnCode.UserInGame);
+    if (sourceUser.status === UserStatus.AWAY) return this.message_(ReturnCode.UserAway);
+
+    if (this.raise_<boolean>('onUserChallengeAccepting', { sourceUser, targetUser }).includes(true))
+      return this.message_(ReturnCode.Denied);
+    this.deleteChallenge(sourceUser, targetUser);
+    this.raise_<void>('onUserChallengeAccepted', { sourceUser, targetUser });
+    return this.message_(ReturnCode.Allowed);
+  }
+
+  public rejectChallengeUserUUID(sourceUser: User, targetUserUUID: string): ReturnMessage {
+    const targetUser = this.getUserByUUID(targetUserUUID);
+
+    if (!targetUser) return this.message_(ReturnCode.UserNotExists);
+    if (sourceUser === targetUser) return this.message_(ReturnCode.NothingHappened);
+
+    const challenge = this.getChallengeByUsers(sourceUser, targetUser);
+
+    if (!challenge) return this.message_(ReturnCode.NothingHappened);
+    if (challenge.targetUser !== targetUser) return this.message_(ReturnCode.NothingHappened);
+
+    if (this.raise_<boolean>('onUserChallengeRejecting', { sourceUser, targetUser }).includes(true))
+      return this.message_(ReturnCode.Denied);
+    this.deleteChallenge(sourceUser, targetUser);
+    this.raise_<void>('onUserChallengeRejected', { sourceUser, targetUser });
     return this.message_(ReturnCode.Allowed);
   }
 
@@ -608,7 +759,8 @@ export class ChatManager {
     const dataLoader = new DataLoader;
     this.logger_.log("Raising initialization events");
     this.raise_<void>('onChatManagerInitialized');
-    this.raise_<void>('onChatDataLoad', dataLoader)
+    this.raise_<void>('onChatDataLoad', dataLoader);
+    console.log("raiseInit finalizado");
   }
 
   private raise_<T>(event: string, ...params: any[]): T[] {
@@ -619,6 +771,22 @@ export class ChatManager {
       const result = callback(...params);
       results.push(result as T);
     });
+    return results;
+  }
+
+  private async raisePro_<T>(event: string, ...params: any[]): Promise<T[]> {
+    let i = 0;
+    const results: T[] = [];
+    const callbacks = this.events_.get(event);
+
+    if (callbacks) {
+      for (const callback of callbacks) {
+        const result = await callback(...params);
+        results.push(result as T);
+        console.log(`Ejecutando el elemento ${i}`);
+        ++i;
+      }
+    }
     return results;
   }
 

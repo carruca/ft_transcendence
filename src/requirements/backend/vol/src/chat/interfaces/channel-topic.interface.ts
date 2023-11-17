@@ -1,5 +1,7 @@
+import { UserModel as User } from '../models';
+
 export interface ChannelTopic {
-    uuid: string;
-    date: Date;
-    text: string;
+    user: User;
+    setDate: Date;
+    value: string;
 }

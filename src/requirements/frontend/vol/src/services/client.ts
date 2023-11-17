@@ -7,6 +7,7 @@ import { ReturnCode } from './return-code';
 import type { UserStatus } from './user-status';
 
 import socket from './ws';
+import { reactive } from 'vue';
 
 class Client {
     private me_?: User;
@@ -25,6 +26,7 @@ class Client {
         this.conversationsByUUID_ = new Map<string, Conversation>();
         //this.watchs_ = new Set<User>();
 
+        socket.on('reterr', this.onRetErr.bind(this));
         socket.on('join', this.onJoin.bind(this));
         socket.on('part', this.onPart.bind(this));
         socket.on('kick', this.onKick.bind(this));
@@ -44,6 +46,11 @@ class Client {
         socket.on('convmsg', this.onConvmsg.bind(this));
 		socket.on('convopen', this.onConvopen.bind(this));
         //
+    }
+
+    onRetErr(dataJSON: string): void {
+        const data = JSON.parse(dataJSON);
+        console.log("onRetErr:", data);
     }
 
 	onConvopen(dataJSON: string): void {
@@ -464,8 +471,10 @@ class Client {
         }
     }
 
-    async create(channelName: string, password?: string): Promise<boolean> {
-        const result = await this.send('create', [channelName, password]);
+    async create(channelName: string, password?: string) {
+      this.send('create', [channelName, password]);
+      return true;
+
         let channel: Channel;
 
         console.log(result.data);
@@ -476,7 +485,7 @@ class Client {
             return false;
         }
         channel = this.createChannel_(result.data.channel);
-        for (const userDetails of result.data.users) {
+        for (const userDetails of result.data.channel.users) {
             let user = this.getUserByUUID(userDetails.uuid);
 
             if (!user)
@@ -503,7 +512,7 @@ class Client {
             return false
         }
         channel = this.createChannel_(result.data.channel);
-        for (const userDetails of result.data.users) {
+        for (const userDetails of result.data.channel.users) {
             let user = this.getUserByUUID(userDetails.uuid);
 
             if (!user)

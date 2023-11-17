@@ -1,7 +1,7 @@
 import { EventModel as Event } from '../models'
-import { EventContentType } from '../enums'
+import { EventType } from '../enums'
 
-export { EventContentType }
+export { EventType }
 
 export class EventManager {
     private events_: Event[] = [];

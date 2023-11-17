@@ -16,13 +16,15 @@ export class Channel {
     createChannelDto: CreateChannelDto,
   ) {
     if (createChannelDto) {
-	  if (createChannelDto.id !== undefined) {
+	    if (createChannelDto.id !== undefined) {
         this.id = createChannelDto.id;
       }
       this.name = createChannelDto.name;
       this.owner = createChannelDto.owner;
-      this.topic = createChannelDto.topic;
-      this.password = createChannelDto.password;
+      this.topic = createChannelDto.topic ?? "";
+      this.topicSetDate = new Date();
+      this.topicUser = createChannelDto.owner;
+      this.password = createChannelDto.password ?? "";
     }
   }
   @PrimaryGeneratedColumn('uuid')
@@ -31,7 +33,7 @@ export class Channel {
   @Column({ unique: true })
   name: string;
 
-//  @ManyToOne(() => User)
+  @ManyToOne(() => User)
   @Column()
   owner: string;
 

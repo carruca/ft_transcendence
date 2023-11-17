@@ -3,6 +3,7 @@ import router from "@/router";
 import Splash from "../components/Splash.vue";
 import { onMounted, ref } from "vue";
 import HomeVue from "../components/Home.vue";
+import socket from "../services/ws";
 
 const loggedIn = ref<boolean | undefined>(false);
 const user = ref<Object | undefined>(undefined);
@@ -35,6 +36,8 @@ const loggedInFn = async (): Promise<boolean | undefined> => {
     }
     if (response.ok) {
       user.value = await response.json();
+      if (!socket.connected)
+        socket.connect();
       return true;
     }
   } catch (error) {

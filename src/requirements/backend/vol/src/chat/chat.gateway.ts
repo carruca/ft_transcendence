@@ -7,6 +7,8 @@ import { UserChannelRole, ReturnCode } from './enums';
 
 import { MissingEnvironmentVariableError, InvalidCookieSignatureError, UserNotFoundError } from './errors';
 
+import { UsersService } from '../users/users.service';
+
 import { WebSocketGateway, WebSocketServer, SubscribeMessage, MessageBody, WsException } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { Logger, Injectable } from '@nestjs/common';
@@ -29,7 +31,11 @@ export class ChatGateway {
   @ChatManagerInstance()
   private chat_: ChatManager;
 
-  constructor(chat: ChatManager, private readonly auth_: AuthService) {
+  constructor(
+    chat: ChatManager,
+    private readonly auth_: AuthService,
+    private readonly usersService_: UsersService,
+  ) {
     this.chat_ = chat;
     this.logger_.log("Instance created");
   }
@@ -42,28 +48,98 @@ export class ChatGateway {
         cookies.token === undefined ||
         cookies.refresh_token === undefined
       ) {
-        this.logger_.error("Undefined cookies: ", cookies);
-        client.disconnect();
-        return
+        this.logger_.error(`Undefined cookies: ${cookies}`);
+        setTimeout(() => {
+          client.disconnect();
+        }, 100);
+        return;
       }
-      this.logger_.warn("handleConnection: entrando aquí");
       const userIntra = await this.auth_.getUser(cookies.auth_method, cookies.token, cookies.refresh_token);
-
-      client.data.user = this.chat_.getUserByID(userIntra.id);
-      if (client.data.user === undefined) {
-        this.logger_.error(`The user ${userIntra.login} (${userIntra.id}) does not appear in the in-memory database of ChatManager.`);
-        client.emit('error', `${userIntra.login} not registered.`);
-        client.disconnect();
+      let sourceUser = this.chat_.getUserByID(userIntra.id);
+      if (!sourceUser) {
+        const userDB = await this.usersService_.findOneByIntraId(userIntra.id); 
+        if (!userDB?.nickname) {
+          this.logger_.error(`The user ${userIntra.login} (${userIntra.id}) does not appear in the in-memory database of ChatManager.`);
+          client.emit('error', `${userIntra.login} not registered.`);
+          client.disconnect();
+        } else {
+          sourceUser = this.chat_.addUserDB(userDB);
+          sourceUser.socket = client;
+          client.data.user = sourceUser;
+          this.logger_.log("Usuario registrado en la DB. Copiando a memoria.");
+          this.chat_.connectUser(sourceUser);
+        }
+      } else {
+        this.logger_.log("Usuario en memoria.");
+        sourceUser.socket = client;
+        client.data.user = sourceUser;
+        this.chat_.connectUser(sourceUser);
       }
-      this.chat_.connectUser(client);
+    } catch(error) {
+      if (error instanceof MissingEnvironmentVariableError)
+        console.error(`${error.message}`);
+      else if (error instanceof InvalidCookieSignatureError)
+        console.error(`${error.message}`);
+      //else if (error instanceof UserNotFoundError)
+        //console.error(`${client.datio.intraID} does not have a created profile yet.`);
+      
+      else
+        throw error;
+    }
+  }
+
+  handleConnection1(client: Socket) {
+    try {
+      const cookies = verifyCookies(client.handshake.auth.token);
+      if (
+        cookies.auth_method === undefined ||
+        cookies.token === undefined ||
+        cookies.refresh_token === undefined
+      ) {
+        this.logger_.error(`Undefined cookies: ${cookies}`);
+        // When attempting to disconnect the socket within the handleConnection
+        // event, the socket doesn't disconnect as expected, hence the need to
+        // introduce a deliberate delay.
+        setTimeout(() => {
+          client.disconnect();
+        }, 100);
+        return;
+      }
+      //const userIntra = await this.auth_.getUser(cookies.auth_method, cookies.token, cookies.refresh_token);
+      this.auth_.getUser(cookies.auth_method, cookies.token, cookies.refresh_token).then((userIntra) => {
+        let sourceUser = this.chat_.getUserByID(userIntra.id);
+        if (sourceUser === undefined) {
+          this.usersService_.findOneByIntraId(userIntra.id).then((userDB) => {
+
+            if (!userDB || !userDB.nickname) {
+            //console.log("dbuser ", userDB.nickname);
+              this.logger_.error(`The user ${userIntra.login} (${userIntra.id}) does not appear in the in-memory database of ChatManager.`);
+              client.emit('error', `${userIntra.login} not registered.`);
+              client.disconnect();
+            } else {
+              sourceUser = this.chat_.addUserDB(userDB);
+              sourceUser.socket = client;
+              client.data.user = sourceUser;
+              this.logger_.log("Usuario registrado en la DB. Copiando a memoria.");
+              this.chat_.connectUser(sourceUser);
+            }
+          });
+        } else {
+          this.logger_.log("Usuario en memoria.");
+          sourceUser.socket = client;
+          client.data.user = sourceUser;
+          this.chat_.connectUser(sourceUser);
+        }
+      });
     }
     catch(error) {
       if (error instanceof MissingEnvironmentVariableError)
         console.error(`${error.message}`);
       else if (error instanceof InvalidCookieSignatureError)
         console.error(`${error.message}`);
-      else if (error instanceof UserNotFoundError)
-        console.error(`${client.data.userID} does not have a created profile yet.`);
+      //else if (error instanceof UserNotFoundError)
+        //console.error(`${client.datio.intraID} does not have a created profile yet.`);
+      
       else
         throw error;
     }
@@ -75,71 +151,36 @@ export class ChatGateway {
     if (sourceUser === undefined)
       return;
     this.chat_.disconnectUser(sourceUser);
-    this.logger_.debug("Close connection, client id: ", client.id);
   }
-
-  
 
   /*
   ** WebSocket events handler
   */
 
   @SubscribeMessage('create')
-  onClientCreate(client: Socket, @MessageBody() data: string) {
-    const [channelName, password] = data;
+  async onClientCreate(client: Socket, data: string) {
+    const [channelName, password] = JSON.parse(data);
     const sourceUser = client.data.user;
-    const response = this.chat_.createChannelName(sourceUser, channelName, password ?? undefined);
-    let channel: Channel;
+    const response = await this.chat_.createChannelName(sourceUser, channelName, password);
 
-    if (response.code === ReturnCode.Allowed) {
-      channel = response.data.channel;
-      delete response.data.channel;
-      response.data.channel = channel.getDetails();
-      response.data.users = [] as User[];
-
-      for (const user of channel.getUsers()) {
-        const userDetails = user.getDetails();
-
-        if (channel.hasOper(user))
-          userDetails.channelRole = UserChannelRole.ADMIN;
-        if (channel.owner === user)
-          userDetails.channelRole = UserChannelRole.OWNER;
-        userDetails.isMuted = channel.hasMuted(user);
-        response.data.users.push(userDetails);
-      } 
+    if (response.code != ReturnCode.Allowed) {
+      client.emit('reterr', JSON.stringify(response));
+    } else {
+      client.emit('create', JSON.stringify(response));
     }
-    return JSON.stringify(response);
   }
 
   @SubscribeMessage('join')
-  onClientJoin(client: Socket, @MessageBody() data: string) {
+  onClientJoin(client: Socket, data: string) {
     const [channelUUID, password] = data;
     const sourceUser = client.data.user;
-    const response = this.chat_.joinChannelUUID(sourceUser, channelUUID, password ?? undefined);
-    let channel: Channel;
+    const response = this.chat_.joinChannelUUID(sourceUser, channelUUID, password);
 
-    if (response.code === ReturnCode.Allowed) {
-      channel = response.data.channel;
-      delete response.data.channel;
-      response.data.channel = channel.getDetails();
-      response.data.users = [] as User[];
-
-      for (const user of channel.getUsers()) {
-        const userDetails = user.getDetails();
-
-        if (channel.hasOper(user))
-          userDetails.channelRole = UserChannelRole.ADMIN;
-        if (channel.owner === user)
-          userDetails.channelRole = UserChannelRole.OWNER;
-        userDetails.isMuted = channel.hasMuted(user);
-        response.data.users.push(userDetails);
-      }
-    }
     return JSON.stringify(response);
   }
 
   @SubscribeMessage('close')
-  onClientClose(client: Socket, @MessageBody() data: string) {
+  onClientClose(client: Socket, data: string) {
     const [channelUUID, message] = data;
     const sourceUser = client.data.user;
     const response = this.chat_.forceCloseChannelUUID(sourceUser, channelUUID, message ?? undefined);
@@ -148,7 +189,7 @@ export class ChatGateway {
   }
 
   @SubscribeMessage('part')
-  onClientPart(client: Socket, @MessageBody() data: string) {
+  onClientPart(client: Socket, data: string) {
     const [channelUUID] = data;
     const sourceUser = client.data.user;
     const response = this.chat_.partChannelUUID(sourceUser, channelUUID);
@@ -165,7 +206,7 @@ export class ChatGateway {
   }
  
   @SubscribeMessage('kick')
-  onClientKick(client: Socket, @MessageBody() data: string) {
+  onClientKick(client: Socket, data: string) {
     const [channelUUID, targetUserUUID, message] = data;
     const sourceUser = client.data.user;
     const response = this.chat_.kickUserFromChannelUUID(sourceUser, channelUUID, targetUserUUID, message);
@@ -174,7 +215,7 @@ export class ChatGateway {
   }
 
   @SubscribeMessage('ban')
-  onClientBan(client: Socket, @MessageBody() data: string) {
+  onClientBan(client: Socket, data: string) {
     const [channelUUID, targetUserUUID] = data;
     const sourceUser = client.data.user;
     const response = this.chat_.banUserFromChannelUUID(sourceUser, channelUUID, targetUserUUID);
@@ -183,7 +224,7 @@ export class ChatGateway {
   }
 
   @SubscribeMessage('unban')
-  onClientUnban(client: Socket, @MessageBody() data: string) {
+  onClientUnban(client: Socket, data: string) {
     const [channelUUID, targetUserUUID] = data;
     const sourceUser = client.data.user;
     const response = this.chat_.unbanUserFromChannelUUID(sourceUser, channelUUID, targetUserUUID);
@@ -192,7 +233,7 @@ export class ChatGateway {
   }
 
   @SubscribeMessage('promote')
-  onClientPromote(client: Socket, @MessageBody() data: string) {
+  onClientPromote(client: Socket, data: string) {
     const [channelUUID, targetUserUUID] = data;
     const sourceUser = client.data.user;
     const response = this.chat_.promoteUserInChannelUUID(sourceUser, channelUUID, targetUserUUID);
@@ -201,7 +242,7 @@ export class ChatGateway {
   }
 
   @SubscribeMessage('demote')
-  onClientDemote(client: Socket, @MessageBody() data: string) {
+  onClientDemote(client: Socket, data: string) {
     const [channelUUID, targetUserUUID] = data;
     const sourceUser = client.data.user;
     const response = this.chat_.demoteUserInChannelUUID(sourceUser, channelUUID, targetUserUUID);
@@ -211,7 +252,7 @@ export class ChatGateway {
 
 
   @SubscribeMessage('topic')
-  onClientTopic(client: Socket, @MessageBody() data: string) {
+  onClientTopic(client: Socket, data: string) {
     const [channelUUID, topic] = data;
     const sourceUser = client.data.user;
     const response = this.chat_.topicChannelUUID(sourceUser, channelUUID, topic);
@@ -220,7 +261,7 @@ export class ChatGateway {
   }
 
   @SubscribeMessage('password')
-  onClientPassword(client: Socket, @MessageBody() data: string) {
+  onClientPassword(client: Socket, data: string) {
     const [channelUUID, password] = data;
     const sourceUser = client.data.user;
     const response = this.chat_.passwordChannelUUID(sourceUser, channelUUID, password);
@@ -229,7 +270,7 @@ export class ChatGateway {
   }
 
   @SubscribeMessage('block')
-  handleClientBlock(client: Socket, @MessageBody() data: string): string {
+  handleClientBlock(client: Socket, data: string): string {
     const [targetUserUUID] = data;
     const sourceUser = client.data.user;
     const response = this.chat_.blockUserUUID(sourceUser, targetUserUUID);
@@ -238,7 +279,7 @@ export class ChatGateway {
   }
 
   @SubscribeMessage('unblock')
-  handleClientUnblock(client: Socket, @MessageBody() data: string): string {
+  handleClientUnblock(client: Socket, data: string): string {
     const [targetUserUUID] = data;
     const sourceUser = client.data.user;
     const response = this.chat_.unblockUserUUID(sourceUser, targetUserUUID);
@@ -246,8 +287,35 @@ export class ChatGateway {
     return JSON.stringify(response);
   }
 
+  @SubscribeMessage('challenge')
+  handleClientChallenge(client: Socket, data: string): string {
+    const [targetUserUUID, gameMode] = data;
+    const sourceUser = client.data.user;
+    const response = this.chat_.requestChallengeUserUUID(sourceUser, targetUserUUID, parseInt(gameMode, 10));
+
+    return JSON.stringify(response);
+  }
+
+  @SubscribeMessage('challengeaccept')
+  handleClientAcceptChallenge(client: Socket, data: string): string {
+    const [targetUserUUID] = data;
+    const sourceUser = client.data.user;
+    const response = this.chat_.acceptChallengeUserUUID(sourceUser, targetUserUUID);
+
+    return JSON.stringify(response);
+  }
+
+  @SubscribeMessage('challengereject')
+  handleRejectChallenge(client: Socket, data: string): string {
+    const [targetUserUUID] = data;
+    const sourceUser = client.data.user;
+    const response = this.chat_.rejectChallengeUserUUID(sourceUser, targetUserUUID);
+
+    return JSON.stringify(response);
+  }
+
   @SubscribeMessage('chanmsg')
-  onClientChannelMessage(client: Socket, @MessageBody() data: string) {
+  onClientChannelMessage(client: Socket, data: string) {
     const [message, channelUUID] = data;
     const sourceUser = client.data.user;
     const response = this.chat_.messageChannelUUID(sourceUser, channelUUID, message);
@@ -258,7 +326,7 @@ export class ChatGateway {
   }
 
   @SubscribeMessage('convmsg')
-  onClientConversationMessage(client: Socket, @MessageBody() data: string) {
+  onClientConversationMessage(client: Socket, data: string) {
     const [message, targetUserUUID] = data;
     const sourceUser = client.data.user;
     const response = this.chat_.messageConversationUUID(sourceUser, targetUserUUID, message);
@@ -266,8 +334,8 @@ export class ChatGateway {
     //TODO: Si yo mando un mensaje pero la conversación no se ha creado, se me ha de enviar conversationDetails
     //si ya existe, sólo se enviara messageEventDetails
 
-    response.data.conversationDetails = response.data.conversation.getDetails();
-    response.data.messageDetails = response.data.messageEvent.getDetails();
+    response.data.conversationDetails = response.data.conversation.getDTO();
+    response.data.messageDetails = response.data.messageEvent.getDTO();
 
     delete response.data.conversation;
     delete response.data.messageEvent;
@@ -279,40 +347,66 @@ export class ChatGateway {
   ** ChatService events handle
   */
 
+  @ChatManagerSubscribe('onUserChallengeRequest')
+  onUserChallengeRequest(event: any): void {
+    event.targetUser.socket.emit('challengerequest', event.sourceUser.uuid, event.gameMode);
+  }
+
+  @ChatManagerSubscribe('onUserChallengeAccepted')
+  onUserChallengeAccepted(event: any): void {
+    event.sourceUser.socket.emit('challengeaccepted', event.targetUser.uuid, event.gameMode);
+  }
+
+  @ChatManagerSubscribe('onUserChallengeRejected')
+  onUserChallengeRejected(event: any): void {
+    event.sourceUser.socket.emit('challengerejected', event.targetUser.uuid, event.gameMode);
+  }
+
+
+  @ChatManagerSubscribe('onUserNickChanged')
+  onUserNickChanged(event: any): void {
+    const users = event.sourceUser.getWatchers();
+    const response = {
+      userUUID: event.sourceUser.uuid,
+      name: event.sourceUser.name,
+      status: event.sourceUser.status,
+      siteRole: event.sourceUser.siteRole,
+    };
+    const responseJSON = JSON.stringify(response);
+
+    for (const user of users) {
+      user.socket.emit('update', responseJSON);
+    }
+  }
+
   @ChatManagerSubscribe('onUserJoined')
   onUserJoined(event: any): void {
     const userList = event.channel.getUsersExcept(event.sourceUser);
-    const userDetails = event.sourceUuser.getDetails();
-    const channelDetails = event.channel.getDetails();
+    const userView = event.sourceUser.getViewModel();
+    const channelView = event.channel.getViewModel();
     // const channelInfo = {
     //   channel: channelDetails,
     //   users: [] as UserDetails[],
     // }
     const response = {
         channel: { uuid: event.channel.uuid },
-        user: userDetails,
+        user: userView,
     }
     response.user.isMuted = event.channel.hasMuted(event.sourceUser);
     const responseJSON = JSON.stringify(response);
 
     for (const user of userList) {
         user.socket.emit("join", responseJSON);
-    //channelInfo.users.push(item.getDetails());
+    //channelInfo.users.push(item.getDTO());
     }
     //channelInfo.users.push(userDetails);
     //user.socket.emit("join", JSON.stringify(channelInfo))
     this.logger_.debug(`onUserJoined: channel: ${event.channel.name} user: ${event.sourceUser.name}`);
   }
 
-  @ChatManagerSubscribe('onUserConnecting')
-  onUserConnecting(event: any): boolean { 
-    this.logger_.debug(`onUserConnecting: userID ${event.userID}`);
-    return true;
-  }
-
   @ChatManagerSubscribe('onUserConnected')
   onUserConnected(event: any): void {
-    this.logger_.debug(`onUserConnected: user ${event.sourceUser.name}`);
+    //this.logger_.debug(`onUserConnected: user ${event.sourceUser.name}`);
   }
 
   @ChatManagerSubscribe('onUserBlocking')
