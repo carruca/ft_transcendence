@@ -1,6 +1,5 @@
 import {
   IsString,
-  IsNumber,
   IsBoolean,
 } from 'class-validator';
 
@@ -8,8 +7,8 @@ export class ChannelUserModeDto {
   @IsString()
   channelId: string;
 
-  @IsNumber()
-  userId: number;
+  @IsString()
+  userId: string;
 
   @IsBoolean()
   mode: boolean;

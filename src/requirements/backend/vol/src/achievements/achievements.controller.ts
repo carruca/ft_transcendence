@@ -22,11 +22,11 @@ export class AchievementsController {
 
   @Get(':id')
   findOne(@Param('id') id: string) {
-    return this.achievementsService.findOne(Math.abs(Number(id)));
+    return this.achievementsService.findOne(id);
   }
 
   @Delete(':id')
   remove(@Param('id') id: string) {
-    return this.achievementsService.remove(Math.abs(Number(id)));
+    return this.achievementsService.remove(id);
   }
 }

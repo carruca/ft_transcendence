@@ -70,7 +70,7 @@ export class ChannelsService {
     return channelUser;
   }
 
-  async removeChannelUser(channelId: string, userId: number): Promise<Channel> {
+  async removeChannelUser(channelId: string, userId: string): Promise<Channel> {
     const channel = await this.findOneById(channelId);
     const channelUser = await this.findChannelUser(channelId, userId);
 
@@ -79,7 +79,7 @@ export class ChannelsService {
     return this.channelsRepository.save(channel);
   }
 
-  async findChannelUser(channelId: string, userId: number) : Promise<ChannelUser> {
+  async findChannelUser(channelId: string, userId: string) : Promise<ChannelUser> {
     const channelUser = await this.channelUsersRepository.findOne({
       relations: ['channel'],
       where: {

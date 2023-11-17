@@ -8,4 +8,7 @@ export class CreateUserDto {
 
 	@IsString()
   login: string;
+
+	@IsString()
+	nickname?: string;
 }

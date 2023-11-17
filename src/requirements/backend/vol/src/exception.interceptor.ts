@@ -13,14 +13,19 @@ export class ExceptionInterceptor implements ExceptionFilter {
         const response = ctx.getResponse();
         const request = ctx.getRequest();
 
+        if (request.url.startsWith('/public'))
+        {
+            return response.status(404).send();
+        }
+
         const status =
             exception instanceof HttpException
                 ? exception.getStatus()
-                : HttpStatus.INTERNAL_SERVER_ERROR;
+                : HttpStatus.I_AM_A_TEAPOT;
         const message =
             exception instanceof HttpException
                 ? exception.message
-                : 'Internal Server Error'
+                : 'I am a teapot'
 
         response.status(status).json({
             statusCode: status,

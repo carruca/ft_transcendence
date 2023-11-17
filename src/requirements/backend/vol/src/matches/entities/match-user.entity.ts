@@ -1,7 +1,7 @@
 import {
   Entity,
   Column,
-  PrimaryGeneratedColumn,	
+  PrimaryGeneratedColumn,
   ManyToOne,
 } from 'typeorm';
 import { User } from '../../users/entities/user.entity';
@@ -11,23 +11,23 @@ import { Match } from './match.entity';
 export class MatchUser {
   constructor(
     score: number,
-	userId: number,
-	match: Match,
+    userId: string,
+    match: Match,
   ) {
     this.score = score;
-	this.userId = userId;
-	this.match = match;
+    this.userId = userId;
+    this.match = match;
   }
 
   @PrimaryGeneratedColumn('uuid')
-  id: number;
+  id: string;
 
   @Column()
   score: number;
 
-//@ManyToOne(() => User)
+  //@ManyToOne(() => User)
   @Column()
-  userId: number;
+  userId: string;
 
   @ManyToOne(() => Match, (match) => match.users)
   match: Match;

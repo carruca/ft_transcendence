@@ -77,12 +77,12 @@ export class UsersController {
   }
 
   @Get(':id/achievements')
-  findAchievementsUser(@Param('id') id: number) {
+  findAchievementsUser(@Param('id') id: string) {
     return this.usersService.findAchievementsUser(id);
   }
 
   @Get(':id/friends')
-  findFriendsUser(@Param('id') id: number) {
+  findFriendsUser(@Param('id') id: string) {
     return this.usersService.findFriendsUser(id);
   }
 
