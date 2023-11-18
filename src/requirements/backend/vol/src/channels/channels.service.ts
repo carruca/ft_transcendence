@@ -30,6 +30,7 @@ export class ChannelsService {
 
   async create(createChannelDto: CreateChannelDto): Promise<Channel> {
     const newChannel = new Channel(createChannelDto);
+		newChannel.users = [];
     return this.channelsRepository.save(newChannel);
   }
 
