@@ -1,9 +1,9 @@
-import { IsNumber } from 'class-validator';
+import { IsString } from 'class-validator';
 
 export class CreateFriendDto {
-  @IsNumber()
-  senderId: number;
+  @IsString()
+  senderId: string;
 
-  @IsNumber()
-  receiverId: number;
+  @IsString()
+  receiverId: string;
 }
