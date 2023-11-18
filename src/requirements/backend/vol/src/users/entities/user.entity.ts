@@ -7,6 +7,7 @@ import {
   JoinTable,
 } from 'typeorm';
 import { AchievementUser } from '../../achievements/entities/achievement-user.entity';
+import { ChannelUser } from '../../channels/entities/channel-user.entity';
 import { Friend } from '../../friends/entities/friend.entity';
 
 export enum UserPermits {
@@ -51,10 +52,10 @@ export class User {
 
   @OneToMany(() => AchievementUser, (achievementUser) => achievementUser.user)
   achievements: AchievementUser[];
-/*
+
   @OneToMany(() => ChannelUser, (channelUser) => channelUser.user)
   channels: ChannelUser[];
-*/
+
   @ManyToMany(() => Friend, (friend) => friend.users)
   @JoinTable()
   friends: Friend[];

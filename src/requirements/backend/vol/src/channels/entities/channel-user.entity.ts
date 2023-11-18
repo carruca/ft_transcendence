@@ -11,21 +11,19 @@ import { User } from '../../users/entities/user.entity';
 export class ChannelUser {
   constructor(
     channel: Channel,
-    userId: string,
+    user: User,
     admin: boolean,
   ) {
     this.channel = channel;
-    this.userId = userId;
+    this.user = user;
     this.admin = admin;
   }
 
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  //TODO:
-  //@ManyToOne(() => User, (user) => user.channels)
-  @Column()
-  userId: string;
+  @ManyToOne(() => User, (user) => user.channels)
+  user: User;
 
   @ManyToOne(() => Channel, (channel) => channel.users)
   channel: Channel;

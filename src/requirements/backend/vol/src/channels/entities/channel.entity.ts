@@ -16,14 +16,16 @@ export class Channel {
     createChannelDto: CreateChannelDto,
   ) {
     if (createChannelDto) {
-	  if (createChannelDto.id !== undefined) {
+	    if (createChannelDto.id !== undefined) {
         this.id = createChannelDto.id;
       }
       this.name = createChannelDto.name;
-      this.owner = createChannelDto.owner;
+      this.ownerId = createChannelDto.ownerId;
       this.topic = createChannelDto.topic;
-      this.password = createChannelDto.password;
-    }
+      if (createChannelDto.password !== undefined) {
+        this.password = createChannelDto.password;
+      }
+		}
   }
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -31,23 +33,22 @@ export class Channel {
   @Column({ unique: true })
   name: string;
 
-//  @ManyToOne(() => User)
   @Column()
-  owner: string;
+  ownerId: string;
 
   @CreateDateColumn()
   createdDate: Date;
 
-  @Column()
+  @Column({ nullable: true })
   topic?: string;
 
-  @Column()
+  @Column({ nullable: true })
   topicSetDate?: Date;
 
-  @Column()
+  @Column({ nullable: true })
   topicUser?: string;
 
-  @Column()
+  @Column({ nullable: true })
   password?: string;
 
   @OneToMany(() => ChannelUser, (channelUser) => channelUser.channel, {
