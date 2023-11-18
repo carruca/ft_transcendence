@@ -13,6 +13,7 @@ import { User, UserPermits } from './entities/user.entity';
 import * as fs from 'fs';
 import * as path from 'path';
 import { AchievementUser } from '../achievements/entities/achievement-user.entity';
+import { ChannelUser } from '../channels/entities/channel-user.entity';
 import { RatingUserDto } from './dto/rating-user.dto';
 import { Friend, FriendStatus } from '../friends/entities/friend.entity';
 import { ChatManager } from '../chat/managers';
@@ -27,12 +28,13 @@ export class UsersService {
   ) { }
 
   async create(createUserDto: CreateUserDto): Promise<User> {
-    const newUser = new User();
-    newUser.intraId = createUserDto.id;
-    newUser.name = createUserDto.displayname.replace(/[\p{L}]\S*/gu, (w) => (w.replace(/^\p{L}/u, (c) => c.toUpperCase())));
-    newUser.login = createUserDto.login;	
- // newUser.nickname = (createUserDto.nickname) ? createUserDto.nickname : createUserDto.login;
+    const newUser = new User(
+      createUserDto.id,
+      createUserDto.displayname.replace(/[\p{L}]\S*/gu, (w) => (w.replace(/^\p{L}/u, (c) => c.toUpperCase()))),
+      createUserDto.login
+    );
     newUser.achievements = [];
+    newUser.channels = [];
     newUser.friends = [];
     return this.usersRepository.save(newUser);
   }
@@ -125,6 +127,20 @@ export class UsersService {
     const filePath = path.resolve(avatarPath);
     await fs.promises.mkdir(path.dirname(filePath), { recursive: true });
     fs.writeFileSync(filePath, file.buffer);
+  }
+
+  async findChannelsUser(userId: string): Promise<ChannelUser[]> {
+    const user = await this.usersRepository.findOne({
+      relations: ['channels'],
+      where: {
+        id: userId,
+      },
+    });
+    if (!user) {
+      throw new HttpException('User not found', HttpStatus.NOT_FOUND);
+    }
+
+    return user.channels;
   }
 
   async findAchievementsUser(userId: string): Promise<AchievementUser[]> {

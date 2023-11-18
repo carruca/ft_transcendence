@@ -20,6 +20,16 @@ export enum UserPermits {
 
 @Entity()
 export class User {
+  constructor (
+    intraId: number,
+    name: string,
+    login: string,
+  ) {
+    this.intraId = intraId;
+    this.name = name;
+    this.login = login;
+  }
+
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
