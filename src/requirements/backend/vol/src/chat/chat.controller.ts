@@ -3,7 +3,7 @@ import { ChatManager } from './managers';
 
 @Controller('chat')
 export class ChatController {
-    constructor() {
+  constructor() {
 
-    }
+  }
 }

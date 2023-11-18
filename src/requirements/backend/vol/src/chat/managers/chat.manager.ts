@@ -171,6 +171,8 @@ export class ChatManager {
   }
 
   public addChannelDB(channelDB: ChannelDB ): Channel {
+    const channel = this.channelFromDB_(channelDB);
+/*
     const ownerUser = this.getUserByUUID(channelDB.owner);
     let channelTopic: ChannelTopic | undefined;
 
@@ -199,7 +201,8 @@ export class ChatManager {
       password: channelDB.password,
     };
 
-    const channel = new Channel(channelData);
+    const channel = new ChannelFactory.fromDB(channelDB);//Channel(channelData);
+    */
     this.addChannel_(channel);
     return channel;
   }
@@ -308,7 +311,7 @@ export class ChatManager {
   private async addUserToChannel_(user: User, channel: Channel) {
     const createChannelUserDto: CreateChannelUserDto = {
       channelId: channel.uuid,
-      userId: user.intraId,
+      userId: user.uuid,
       admin: false,
     };
 
@@ -320,7 +323,7 @@ export class ChatManager {
   private async removeUserFromChannel_(user: User, channel: Channel) {
     channel.removeUser(user);
     user.removeChannel(channel);
-    await this.channelsService_.removeChannelUser(channel.uuid, +user.uuid); 
+    await this.channelsService_.removeChannelUser(channel.uuid, user.uuid); 
   }
 
   public async createChannelName(sourceUser: User, channelName: string, password?: string): Promise<ReturnMessage> {
@@ -788,6 +791,75 @@ export class ChatManager {
       }
     }
     return results;
+  }
+
+  private channelFromDTO_(dto: ChannelDTO): Channel {
+    const owner = this.getUserByUUID(dto.ownerUUID);
+    let topic: ChannelTopic | undefined;
+
+    if (!owner)
+      throw new UserNotFoundError("channelFromDTO: ownerUUID user not found.");
+
+    if (dto.topic) {
+      const topicUser = this.getUserByUUID(dto.topic.userUUID);
+
+      if (!topicUser)
+        throw new UserNotFoundError("channelFromDTO: topicUserUUID user not found.");
+      topic = {
+        user: topicUser,
+        setDate: dto.topic.setDate,
+        value: dto.topic.value,
+      };
+    }
+
+    return new Channel(
+      dto.uuid,
+      dto.name,
+      owner,
+      dto.createdDate,
+      topic,
+      dto.password,
+    );
+  }
+
+  private channelFromDB_(db: ChannelDB): Channel {
+    console.log(db);
+    const owner = this.getUserByUUID(db.owner);
+    let topic: ChannelTopic | undefined;
+
+    if (!owner)
+      throw new UserNotFoundError("channelFromDB: ownerId user not found.");
+
+    if (db.topicUser) {
+      const topicUser = this.getUserByUUID(db.topicUser);
+      
+      if (!topicUser)
+        throw new UserNotFoundError("channelFromDB: topicUserId user not found.");
+      topic = {
+        user: topicUser,
+        setDate: db.topicSetDate!,
+        value: db.topic!,
+      };
+    }
+    return new Channel(
+      db.id,
+      db.name,
+      owner,
+      db.createdDate, 
+      topic,
+      db.password,
+      users,
+    );
+  }
+
+  private userFromDB_(db: UserDB): User {
+    let friend: User[];
+
+    return new User(
+      db.id,
+      db.intraID,
+      db.nickname,
+      friends)
   }
 
   private cleanChannel_(channel: Channel): void {

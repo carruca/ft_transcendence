@@ -38,12 +38,11 @@ export class ChatDatabase {
   }
 
   @ChatManagerSubscribe('onChatDataLoad')
-  async onChatManagerIntialized(dataLoader: DataLoader): Promise<void> { 
+  async onChatManagerIntialized(dataLoader: DataLoader) { 
     for (const userDB of await this.usersService_.findAll()) {
       this.chatManager_.addUserDB(userDB);
     }
     for (const channelDB of await this.channelsService_.findAll()) {
-      console.log(channelDB);
       this.chatManager_.addChannelDB(channelDB);
     }
     this.logger_.warn(`onChatDataLoad: ${dataLoader}`);

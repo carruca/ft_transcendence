@@ -32,7 +32,7 @@ export class User {
   login: string;
 
   @Column({ nullable: true, unique: true })
-  nickname: string;
+  nickname?: string;
 
   @Column({ default: 100 })
   rating: number;

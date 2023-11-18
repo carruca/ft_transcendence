@@ -1,4 +1,4 @@
-import { CHATMANAGERINSTANCE } from '../constants'
+import { CHATMANAGERINSTANCE } from '../constants';
 
 export const ChatManagerInstance = (): PropertyDecorator => {
   return (target: object, propertyKey: string | symbol) => {

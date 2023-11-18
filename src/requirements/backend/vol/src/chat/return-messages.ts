@@ -1,7 +1,7 @@
-import { ReturnCode } from './enums'
-import { ReturnMessage } from './interfaces'
+import { ReturnCode } from './enums';
+import { ReturnMessage } from './interfaces';
 
-export { ReturnCode, ReturnMessage }
+export { ReturnCode, ReturnMessage };
 
 export const ReturnMessages: Record<ReturnCode, ReturnMessage> = {
   [ReturnCode.Allowed]: {

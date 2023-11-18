@@ -1,5 +1,5 @@
-import { UserModel as User } from '../models'
-import { ChannelTopic } from '.'
+import { UserModel as User } from '../models';
+import { ChannelTopic } from '.';
 
 export interface ChannelData {
     uuid: string;

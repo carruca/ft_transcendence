@@ -1,4 +1,4 @@
-import { ReturnCode } from '../enums'
+import { ReturnCode } from '../enums';
 
 export interface ReturnMessage {
   event?: string;

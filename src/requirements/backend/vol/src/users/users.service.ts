@@ -31,7 +31,7 @@ export class UsersService {
     newUser.intraId = createUserDto.id;
     newUser.name = createUserDto.displayname.replace(/[\p{L}]\S*/gu, (w) => (w.replace(/^\p{L}/u, (c) => c.toUpperCase())));
     newUser.login = createUserDto.login;	
-    newUser.nickname = (createUserDto.nickname) ? createUserDto.nickname : createUserDto.login;
+    newUser.nickname = createUserDto.nickname;
     newUser.achievements = [];
     newUser.friends = [];
     return this.usersRepository.save(newUser);
@@ -158,7 +158,7 @@ export class UsersService {
     });
 
     return users.map(user => ({
-      nickname: user.nickname,
+      nickname: user.nickname!,
       rating: user.rating,
       wins: user.wins,
       losses: user.losses,

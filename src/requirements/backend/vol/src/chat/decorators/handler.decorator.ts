@@ -1,4 +1,4 @@
-import { scanForInstance } from '../utils'
+import { scanForInstance } from '../utils';
 
 export const ChatManagerHandler = () => {
   return function<T extends { new (...args: any[]): {} }>(target: T) {
