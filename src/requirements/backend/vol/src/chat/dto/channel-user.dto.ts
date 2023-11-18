@@ -12,6 +12,7 @@ export class ChannelUserDTO {
   readonly siteRole: UserSiteRole;
   readonly channelRole: UserChannelRole;
   readonly isMuted: boolean;
+  readonly isBanned: boolean;
 
   constructor(channel: Channel, user: User) {
     this.uuid = user.uuid;
@@ -24,5 +25,6 @@ export class ChannelUserDTO {
     if (channel.owner === user)
       this.channelRole = UserChannelRole.OWNER;
     this.isMuted = channel.hasMuted(user);
+    this.isBanned = channel.hasBanned(user);
   }
 }

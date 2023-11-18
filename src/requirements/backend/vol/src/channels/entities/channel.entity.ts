@@ -53,5 +53,5 @@ export class Channel {
 
   @OneToMany(() => ChannelUser, (channelUser) => channelUser.channel, {
   })
-  users: ChannelUser[];
+  users: ChannelUser[] = [];
 }

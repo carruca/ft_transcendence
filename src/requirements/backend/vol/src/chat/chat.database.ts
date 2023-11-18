@@ -42,7 +42,7 @@ export class ChatDatabase {
     for (const userDB of await this.usersService_.findAll()) {
       this.chatManager_.addUserDB(userDB);
     }
-    for (const channelDB of await this.channelsService_.findAll()) {
+    for (const channelDB of await this.channelsService_.findAllWithUsers()) {
       this.chatManager_.addChannelDB(channelDB);
     }
     this.logger_.warn(`onChatDataLoad: ${dataLoader}`);

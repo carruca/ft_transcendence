@@ -42,10 +42,17 @@ export class ChannelModel {
     private readonly uuid_: string,
     private name_: string,
     private readonly owner_: User,
-    private readonly createdDate_: Date,
+    private readonly createdDate_: Date = new Date(),
     private topic_?: ChannelTopic,
     private password_?: string,
-  ) {}
+    users?: User[],
+  ) {
+    if (users) {
+      users.forEach(user => {
+        this.addUser(user);
+      });
+    }
+  }
 
   public addMessageEvent(sourceUser: User, value: string): Event {
     return this.eventManager_.addEvent(Event.message(sourceUser, value));

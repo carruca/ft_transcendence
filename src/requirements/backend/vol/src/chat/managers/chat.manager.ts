@@ -17,6 +17,7 @@ import {
 import {
   UserDTO,
   ChannelDTO,
+  ChannelUserDTO,
   ChannelTopicDTO,
   ConversationDTO,
 } from '../dto';
@@ -34,7 +35,7 @@ import {
   ReturnMessages,
 } from '../return-messages';
 
-import { UserNotFoundError, UserNoSocketError } from '../errors';
+import { UserNotFoundError, UserNoSocketError, PropertyUndefinedError } from '../errors';
 
 import { ChannelsService } from '../../channels/channels.service';
 import { UsersService } from '../../users/users.service';
@@ -52,7 +53,7 @@ import {
   Mode as GameMode,
 } from '../../game/game.interface';
 
-import { User as UserDB } from '../../users/entities/user.entity';
+import { User as UserDB, UserPermits } from '../../users/entities/user.entity';
 import { Channel as ChannelDB } from '../../channels/entities/channel.entity';
 
 import { Logger, Injectable } from '@nestjs/common';
@@ -146,8 +147,35 @@ export class ChatManager {
     return Array.from(this.conversationsByUUID_.values());
   }
 
-  public addUserDB(userInfo: UserDB ): User {
-    let sourceUser = new User(userInfo);
+  public userFromDTO(dto: UserDTO): User {
+    return new User(
+      dto.intraId,
+      dto.uuid,
+      dto.name,
+      dto.siteRole,
+      dto.banned,
+      dto.disabled,
+      dto.status,
+      dto.socket,
+    );
+  }
+
+  public userFromDB(db: UserDB): User {
+    if (!db.nickname)
+      throw new PropertyUndefinedError("userFromDB: nickname is not set"); 
+
+    return new User(
+      db.intraId,
+      db.id,
+      db.nickname,
+      db.permits & UserPermits.user | db.permits & UserPermits.owner || db.permits & UserPermits.moderator,
+      db.permits == UserPermits.banned,
+      db.permits == UserPermits.disabled,
+    );
+  }
+
+  public addUserDB(userDB: UserDB ): User {
+    let sourceUser = this.userFromDB(userDB);
 
     if (this.usersByUUID_.has(sourceUser.uuid))
       return this.getUserByUUID(sourceUser.uuid)!;
@@ -332,13 +360,11 @@ export class ChatManager {
     if (!checkChannelName(channelName)) return this.message_(ReturnCode.BadChannelName);
     if (channel) return this.message_(ReturnCode.ChannelExists);
 
-    const createChannelDto: CreateChannelDto = {
+    const channelDB = await this.channelsService_.create({
       name: channelName,
-      owner: sourceUser.uuid,
+      ownerId: sourceUser.uuid,
       password: password,
-    };
-
-    const channelDB = await this.channelsService_.create(createChannelDto);
+    });
     channel = this.addChannelDB(channelDB);
     await this.addUserToChannel_(sourceUser, channel);
     channel.addGenericEvent(EventType.CREATE, sourceUser);
@@ -777,8 +803,16 @@ export class ChatManager {
     return results;
   }
 
-  private async raisePro_<T>(event: string, ...params: any[]): Promise<T[]> {
-    let i = 0;
+  //TODO: A eliminar
+  async test() {
+    if ((await this.asyncRaise<boolean>('test', "value")).includes(true)) {
+      console.log("stop");
+    } else {
+      console.log("continue");
+    }
+  }
+
+  private async asyncRaise<T>(event: string, ...params: any[]): Promise<T[]> {
     const results: T[] = [];
     const callbacks = this.events_.get(event);
 
@@ -786,8 +820,6 @@ export class ChatManager {
       for (const callback of callbacks) {
         const result = await callback(...params);
         results.push(result as T);
-        console.log(`Ejecutando el elemento ${i}`);
-        ++i;
       }
     }
     return results;
@@ -822,44 +854,46 @@ export class ChatManager {
     );
   }
 
-  private channelFromDB_(db: ChannelDB): Channel {
-    console.log(db);
-    const owner = this.getUserByUUID(db.owner);
+  private channelFromDB_(channelDB: ChannelDB): Channel {
+    console.log(channelDB);
+    const owner = this.getUserByUUID(channelDB.ownerId);
     let topic: ChannelTopic | undefined;
+    let channelUserDTOArray: ChannelUserDTO[] | undefined;
 
     if (!owner)
       throw new UserNotFoundError("channelFromDB: ownerId user not found.");
 
-    if (db.topicUser) {
-      const topicUser = this.getUserByUUID(db.topicUser);
+    if (channelDB.topicUser) {
+      const topicUser = this.getUserByUUID(channelDB.topicUser);
       
       if (!topicUser)
         throw new UserNotFoundError("channelFromDB: topicUserId user not found.");
       topic = {
         user: topicUser,
-        setDate: db.topicSetDate!,
-        value: db.topic!,
+        setDate: channelDB.topicSetDate!,
+        value: channelDB.topic!,
       };
     }
+
+    if (channelDB.users)
+      channelUserDTOArray = channelDB.users.map(channelUserDB => this.channelUserFromDB_(channelDB, channelUserDB));
+
     return new Channel(
-      db.id,
-      db.name,
+      channelDB.id,
+      channelDB.name,
       owner,
-      db.createdDate, 
+      channelDB.createdDate, 
       topic,
-      db.password,
-      users,
+      channelDB.password,
+      channelUserDTOArray,
     );
   }
 
-  private userFromDB_(db: UserDB): User {
-    let friend: User[];
+  private channelUserFromDB_(channelDB: ChannelDB, userDB: ChannelUserDB): ChannelUserDTO {
 
-    return new User(
-      db.id,
-      db.intraID,
-      db.nickname,
-      friends)
+    return new ChannelUserDTO(
+
+    );
   }
 
   private cleanChannel_(channel: Channel): void {

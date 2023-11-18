@@ -54,7 +54,7 @@ export class User {
   achievements: AchievementUser[];
 
   @OneToMany(() => ChannelUser, (channelUser) => channelUser.user)
-  channels: ChannelUser[];
+  channels: ChannelUser[] = [];
 
   @ManyToMany(() => Friend, (friend) => friend.users)
   @JoinTable()

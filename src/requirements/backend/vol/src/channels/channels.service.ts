@@ -33,7 +33,6 @@ export class ChannelsService {
 
   async create(createChannelDto: CreateChannelDto): Promise<Channel> {
     const newChannel = new Channel(createChannelDto);
-		newChannel.users = [];
 		/*
 		this.createChannelUser({
       channelId: newChannel.id,
@@ -53,6 +52,10 @@ export class ChannelsService {
   }
 
   async	findAll(): Promise<Channel[]> {
+    return this.channelsRepository.find();
+  }
+
+  async	findAllWithUsers(): Promise<Channel[]> {
     return this.channelsRepository.find({
       relations: ['users'],
     });
@@ -63,8 +66,21 @@ export class ChannelsService {
   }
 
   async createChannelUser(createChannelUserDto: CreateChannelUserDto): Promise<ChannelUser> {
-    const channel = await this.findOneById(createChannelUserDto.channelId);
-    const user = await this.usersRepository.findOneBy({ id: createChannelUserDto.userId });
+    const channel = await this.channelsRepository.findOne({
+      relations: ['users'],
+      where: {
+        id: createChannelUserDto.channelId,
+      },
+    });
+    const user = await this.usersRepository.findOne({
+      relations: ['channels'],
+      where: {
+        id: createChannelUserDto.userId,
+      },
+    });
+    if (!channel) {
+      throw new HttpException('Channel not found', HttpStatus.NOT_FOUND);
+    }
     if (!user) {
       throw new HttpException('User not found', HttpStatus.NOT_FOUND);
     }
@@ -74,10 +90,6 @@ export class ChannelsService {
 	    createChannelUserDto.admin,
     );
     await this.channelUsersRepository.save(channelUser);
-
-    if (!channel.users) {
-      channel.users = [];
-    }
 
     channel.users.push(channelUser);
     await this.channelsRepository.save(channel);

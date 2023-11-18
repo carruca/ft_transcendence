@@ -41,6 +41,12 @@ export class UsersService {
     return this.usersRepository.find();
   }
 
+  findAllWithChannels(): Promise<User[]> {
+    return this.usersRepository.find({
+      relations: ['channels'],
+    });
+  }
+
   async findOneByIntraId(intraId: number): Promise<User | null> {
     const user = await this.usersRepository.findOneBy({ intraId: intraId });
     return user;

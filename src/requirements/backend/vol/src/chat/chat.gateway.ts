@@ -59,7 +59,7 @@ export class ChatGateway {
       if (!sourceUser) {
         const userDB = await this.usersService_.findOneByIntraId(userIntra.id); 
         if (!userDB?.nickname) {
-          this.logger_.error(`The user ${userIntra.login} (${userIntra.id}) does not appear in the in-memory database of ChatManager.`);
+          this.logger_.warn(`The user ${userIntra.login} (${userIntra.id}) does not appear in the in-memory database of ChatManager.`);
           client.emit('error', `${userIntra.login} not registered.`);
           client.disconnect();
         } else {
@@ -88,6 +88,7 @@ export class ChatGateway {
     }
   }
 
+  /*
   handleConnection1(client: Socket) {
     try {
       const cookies = verifyCookies(client.handshake.auth.token);
@@ -144,12 +145,14 @@ export class ChatGateway {
         throw error;
     }
   }
-
+*/
   handleDisconnect(client: Socket) {
     const sourceUser = client.data.user;
 
-    if (sourceUser === undefined)
+    if (sourceUser === undefined) {
+      this.logger_.warn("Unregistered user disconnected.");
       return;
+    }
     this.chat_.disconnectUser(sourceUser);
   }
 
@@ -346,6 +349,22 @@ export class ChatGateway {
   /*
   ** ChatService events handle
   */
+
+  //TODO: A eliminar
+  @ChatManagerSubscribe('test')
+  async onTest(events: any): Promise<boolean> {
+    console.log("Inicio de test");
+
+    await new Promise((resolve)  => {
+      setTimeout(() => {
+        console.log("Se ha realizado la espera.");
+        resolve(false); // Resuelve la promesa después de la espera.
+      }, 5000);
+    });
+
+    console.log("Fin de test");
+    return true;
+  }
 
   @ChatManagerSubscribe('onUserChallengeRequest')
   onUserChallengeRequest(event: any): void {

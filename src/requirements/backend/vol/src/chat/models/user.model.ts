@@ -21,21 +21,33 @@ import { Socket } from 'socket.io';
 export { UserData, UserDTO, UserStatus, UserChannelRole, UserSiteRole };
 
 export class UserModel {
-  private intraId_: number;
-  private uuid_: string;
-  private name_: string;
-  private status_: UserStatus;
-  private socket_?: Socket;
-  private siteRole_: UserSiteRole;
-  private banned_: boolean;
-  private disabled_: boolean;
+  //private intraId_: number;
+  //private uuid_: string;
+  //private name_: string;
+  //private status_: UserStatus;
+  //private socket_?: Socket;
+  //private siteRole_: UserSiteRole;
+  //private banned_: boolean;
+  //private disabled_: boolean;
 
   private channels_ = new Set<Channel>; // Array para almacenar los canales a los que pertenece el nick
   private conversations_ = new Set<Conversation>;
   private blockUsers_ = new Set<UserModel>;
   //private watchers_ = new Set<User>;
 
-  constructor(data: UserData | UserDB) {
+  constructor(
+    private readonly intraId_: number,
+    private readonly uuid_: string,
+    private name_: string,
+    private siteRole_: UserSiteRole = UserSiteRole.NONE,
+    private banned_: boolean = false,
+    private disabled_: boolean = false,
+    private status_: UserStatus = UserStatus.OFFLINE,
+    private socket_?: Socket,
+  ) {}
+
+  /*
+  constructor1(data: UserData | UserDB) {
     if (data instanceof UserDB) {
       this.intraId_ = data.intraId;
       this.uuid_ = data.id.toString();
@@ -56,7 +68,7 @@ export class UserModel {
       this.disabled_ = data.disabled ?? false;
     }
   }
-
+  */
   addChannel(channel: Channel): void {
     // se da por hecho que no existe el canal puesto que esta comprobación se hace antes
     if (channel.uuid !== undefined)
@@ -112,15 +124,6 @@ export class UserModel {
     this.watchers_.delete(user);
   }
   */
-
-  getDTO(): UserDTO {
-    return {
-      uuid: this.uuid_,
-      name: this.name_,
-      status: this.status_,
-      siteRole: this.siteRole_,
-    };
-  }
 
   getChannels(): Channel[] {
     return Array.from(this.channels_);
