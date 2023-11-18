@@ -166,7 +166,7 @@ export class ChatGateway {
     const sourceUser = client.data.user;
     const response = await this.chat_.createChannelName(sourceUser, channelName, password);
 
-    if (response.code != ReturnCode.Allowed) {
+    if (response.code != ReturnCode.ALLOWED) {
       client.emit('reterr', JSON.stringify(response));
     } else {
       client.emit('create', JSON.stringify(response));
@@ -323,7 +323,7 @@ export class ChatGateway {
     const sourceUser = client.data.user;
     const response = this.chat_.messageChannelUUID(sourceUser, channelUUID, message);
 
-    if (response.code === ReturnCode.Allowed)
+    if (response.code === ReturnCode.ALLOWED)
       console.log("chanmsg:", response.data.messageEvent);
     return JSON.stringify(response);
   }
