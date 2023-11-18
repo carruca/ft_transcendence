@@ -9,7 +9,7 @@ export class CreateChannelDto {
   name: string;
 
   @IsString()
-  owner: string;
+  ownerId: string;
 
   @IsString()
   topic?: string;

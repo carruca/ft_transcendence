@@ -31,7 +31,7 @@ export class UsersService {
     newUser.intraId = createUserDto.id;
     newUser.name = createUserDto.displayname.replace(/[\p{L}]\S*/gu, (w) => (w.replace(/^\p{L}/u, (c) => c.toUpperCase())));
     newUser.login = createUserDto.login;	
-    newUser.nickname = createUserDto.nickname;
+ // newUser.nickname = (createUserDto.nickname) ? createUserDto.nickname : createUserDto.login;
     newUser.achievements = [];
     newUser.friends = [];
     return this.usersRepository.save(newUser);
@@ -48,6 +48,15 @@ export class UsersService {
 
   async findOne(id: string): Promise<User | null> {
     return await this.usersRepository.findOneBy({ id });
+  }
+
+  async findOneById(id: string): Promise<User> {
+    const user = await this.usersRepository.findOneBy({ id: id });
+    if (!user) {
+      throw new HttpException('User not found', HttpStatus.NOT_FOUND);
+    }
+
+    return user;
   }
 
   async findOneByNickname(nickname: string): Promise<User> {

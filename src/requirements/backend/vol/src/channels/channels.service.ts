@@ -25,11 +25,22 @@ export class ChannelsService {
     @InjectRepository(ChannelUser)
     private readonly channelUsersRepository: Repository<ChannelUser>,
 
+		@InjectRepository(User)
+    private readonly usersRepository: Repository<User>,
+
     //TODO: private chat: Chat,
   ) {}
 
   async create(createChannelDto: CreateChannelDto): Promise<Channel> {
     const newChannel = new Channel(createChannelDto);
+		newChannel.users = [];
+		/*
+		this.createChannelUser({
+      channelId: newChannel.id,
+      userId: createChannelDto.ownerId,
+      admin: true
+    });
+		*/
     return this.channelsRepository.save(newChannel);
   }
 
@@ -53,10 +64,14 @@ export class ChannelsService {
 
   async createChannelUser(createChannelUserDto: CreateChannelUserDto): Promise<ChannelUser> {
     const channel = await this.findOneById(createChannelUserDto.channelId);
+    const user = await this.usersRepository.findOneBy({ id: createChannelUserDto.userId });
+    if (!user) {
+      throw new HttpException('User not found', HttpStatus.NOT_FOUND);
+    }
     const channelUser = new ChannelUser(
       channel,
-      createChannelUserDto.userId,
-      createChannelUserDto.admin,
+	    user,
+	    createChannelUserDto.admin,
     );
     await this.channelUsersRepository.save(channelUser);
 
@@ -66,6 +81,9 @@ export class ChannelsService {
 
     channel.users.push(channelUser);
     await this.channelsRepository.save(channel);
+
+    user.channels.push(channelUser);
+    await this.usersRepository.save(user);
 
     return channelUser;
   }
@@ -81,9 +99,11 @@ export class ChannelsService {
 
   async findChannelUser(channelId: string, userId: string) : Promise<ChannelUser> {
     const channelUser = await this.channelUsersRepository.findOne({
-      relations: ['channel'],
+      relations: ['channel', 'user'],
       where: {
-        userId: userId,
+        user: {
+          id: userId,
+        },
         channel: {
           id: channelId,
         }
@@ -92,6 +112,7 @@ export class ChannelsService {
     if (!channelUser) {
       throw new HttpException('ChannelUser not found', HttpStatus.NOT_FOUND);
     }
+
     return channelUser;
   }
 

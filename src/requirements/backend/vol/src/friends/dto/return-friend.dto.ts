@@ -2,6 +2,6 @@ import { FriendStatus } from '../entities/friend.entity';
 
 export class ReturnFriendDto {
   id: string;
-  receiverId: number;
+  receiverId: string;
   status: FriendStatus;
 }

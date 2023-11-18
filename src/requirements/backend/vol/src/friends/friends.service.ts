@@ -25,19 +25,13 @@ export class FriendsService {
     private usersRepository: Repository<User>,
   ) {}
 
-  getMockUser(id: number): string {
-    if (id == 1)
-      return 'paco';
-    return 'jones';
-  }
-
   async create(createFriendDto: CreateFriendDto) : Promise<ReturnFriendDto> {
     const users = await this.usersRepository.find({
       relations: ['friends'],
       where: {
-        nickname: In([
-          this.getMockUser(createFriendDto.receiverId),
-          this.getMockUser(createFriendDto.senderId),
+        id: In([
+          createFriendDto.receiverId,
+          createFriendDto.senderId,
         ]),
       },
     });

@@ -16,7 +16,7 @@ export enum FriendStatus {
 export class Friend {
   constructor(
     users: User[],
-    receiverId: number,
+    receiverId: string,
     status: FriendStatus,
   ) {
     this.users = users;
@@ -31,7 +31,7 @@ export class Friend {
   users: User[];
 
   @Column()
-  receiverId: number;
+  receiverId: string;
 
   @Column()
   status: FriendStatus;
