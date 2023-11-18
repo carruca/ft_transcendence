@@ -20,7 +20,7 @@ export enum UserPermits {
 
 @Entity()
 export class User {
-  constructor (
+  constructor(
     intraId: number,
     name: string,
     login: string,

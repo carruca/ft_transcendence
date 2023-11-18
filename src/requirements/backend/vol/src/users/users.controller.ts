@@ -16,6 +16,8 @@ import {
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { CreateBlockDto } from './dto/create-block.dto';
+
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Express, Request, Response } from 'express';
 import { ApiTags } from '@nestjs/swagger';
@@ -91,16 +93,21 @@ export class UsersController {
     return this.usersService.findFriendsUser(id);
   }
 
+  @Post('block')
+  createBlock(@Body() createBlockDto: CreateBlockDto) {
+    return this.usersService.createBlock(createBlockDto);
+  }
+
+  @Get(':id/blocks')
+  getBlocks(@Param('id') id: string) {
+    return this.usersService.getBlockIds(id);
+  }
+
   @Get('leaderboard')
   async getLeaderboard() {
     return this.usersService.getLeaderboard();
   }
 
-  /*  @Get(':id')
-    findOne(@Param('id') id: number) {
-      return this.usersService.findOne(id);
-    }
-  */
   @Get(':nickname')
   findOneByNickname(@Param('nickname') nickname: string) {
     return this.usersService.findOneByNickname(nickname);
