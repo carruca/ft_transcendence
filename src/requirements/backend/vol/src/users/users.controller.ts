@@ -76,6 +76,11 @@ export class UsersController {
     return this.usersService.findFriendsUser(req.user?.id, FriendStatus.requested);
   }
 
+  @Get(':id/channels')
+  findChannelsUser(@Param('id') id: string) {
+    return this.usersService.findChannelsUser(id);
+	}
+
   @Get(':id/achievements')
   findAchievementsUser(@Param('id') id: string) {
     return this.usersService.findAchievementsUser(id);
