@@ -29,6 +29,7 @@ export class UsersService {
  // newUser.nickname = (createUserDto.nickname) ? createUserDto.nickname : createUserDto.login;
     newUser.achievements = [];
     newUser.friends = [];
+		newUser.channels = [];
     return this.usersRepository.save(newUser);
 }
 
