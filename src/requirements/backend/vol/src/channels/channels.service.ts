@@ -25,7 +25,7 @@ export class ChannelsService {
     @InjectRepository(ChannelUser)
     private readonly channelUsersRepository: Repository<ChannelUser>,
 
-		@InjectRepository(User)
+    @InjectRepository(User)
     private readonly usersRepository: Repository<User>,
 
     //TODO: private chat: Chat,
@@ -33,14 +33,15 @@ export class ChannelsService {
 
   async create(createChannelDto: CreateChannelDto): Promise<Channel> {
     const newChannel = new Channel(createChannelDto);
-    newChannel.users = [];
     await this.channelsRepository.save(newChannel);
 
-		this.createChannelUser({
-      channelId: newChannel.id,
-      userId: createChannelDto.ownerId,
-      admin: true
-    });
+    newChannel.users = [
+      await this.createChannelUser({
+        channelId: newChannel.id,
+        userId: createChannelDto.ownerId,
+        admin: false
+      })
+    ];
     return newChannel;
   }
 
@@ -57,9 +58,9 @@ export class ChannelsService {
   }
 
   async	findAllWithUsers(): Promise<Channel[]> {
-    return this.channelsRepository.find({
-      relations: ['users'],
-    });
+    return await this.channelsRepository.find({
+      relations: ['users', 'users.channel', 'users.user'],
+    })
   }
 
   async remove(id: string) {
@@ -89,8 +90,8 @@ export class ChannelsService {
 
     const channelUser = new ChannelUser(
       channel,
-	    user,
-	    createChannelUserDto.admin,
+      user,
+      createChannelUserDto.admin,
     );
     await this.channelUsersRepository.save(channelUser);
 
@@ -129,6 +130,27 @@ export class ChannelsService {
     }
 
     return channelUser;
+  }
+ 
+  async findUsersInChannel(channelId: string): Promise<ChannelUser[]> {
+    const channelUsers = await this.channelUsersRepository.find({
+      relations: ['user', 'channel'],
+      where: {
+        channel: {
+          id: channelId,
+        },
+      },
+    });
+
+    if (!channelUsers || channelUsers.length === 0) {
+      throw new HttpException('No users found in the channel', HttpStatus.NOT_FOUND);
+    }
+
+    return channelUsers;
+    // Extraer los usuarios de la lista de ChannelUser
+    //const usersInChannel = channelUsers.map(channelUser => channelUser.user);
+
+    //return usersInChannel;
   }
 
   async setChannelTopic(channelId: string, userId: string, topic: string): Promise<Channel> {
@@ -188,7 +210,7 @@ export class ChannelsService {
       channelUserModeDto.userId
     );
 
-	  channelUser.banned = channelUserModeDto.mode;
+    channelUser.banned = channelUserModeDto.mode;
     return this.channelUsersRepository.save(channelUser);
   }
 
@@ -198,7 +220,7 @@ export class ChannelsService {
       channelUserModeDto.userId
     );
 
-	  channelUser.muted = channelUserModeDto.mode;
+    channelUser.muted = channelUserModeDto.mode;
     return this.channelUsersRepository.save(channelUser);
   }
 }

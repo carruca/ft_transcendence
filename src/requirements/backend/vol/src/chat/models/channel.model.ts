@@ -25,6 +25,7 @@ import {
 import {
   PropertyUndefinedError,
   NotImplementedError,
+  DuplicateValueError,
 } from '../errors';
 
 import { Channel as ChannelDB } from '../../channels/entities/channel.entity';
@@ -45,14 +46,7 @@ export class ChannelModel {
     private readonly createdDate_: Date = new Date(),
     private topic_?: ChannelTopic,
     private password_?: string,
-    users?: User[],
-  ) {
-    if (users) {
-      users.forEach(user => {
-        this.addUser(user);
-      });
-    }
-  }
+  ) {}
 
   public addMessageEvent(sourceUser: User, value: string): Event {
     return this.eventManager_.addEvent(Event.message(sourceUser, value));
@@ -80,6 +74,7 @@ export class ChannelModel {
       this.users_.set(user.uuid, user);
       return true;
     }
+    throw new DuplicateValueError("ChannelModel.addUser: User already exists in that channel");
     return false;
   }
 

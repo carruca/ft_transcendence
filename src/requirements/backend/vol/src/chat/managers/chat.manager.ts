@@ -17,7 +17,6 @@ import {
 import {
   UserDTO,
   ChannelDTO,
-  ChannelUserDTO,
   ChannelTopicDTO,
   ConversationDTO,
 } from '../dto';
@@ -35,11 +34,16 @@ import {
   ReturnMessages,
 } from '../return-messages';
 
-import { UserNotFoundError, UserNoSocketError, PropertyUndefinedError } from '../errors';
+import {
+  UserNotFoundError,
+  UserNoSocketError,
+  PropertyUndefinedError
+} from '../errors';
 
 import { ChannelsService } from '../../channels/channels.service';
 import { UsersService } from '../../users/users.service';
 
+import { ChannelUser as ChannelUserDB } from '../../channels/entities/channel-user.entity';
 import { CreateChannelDto } from '../../channels/dto/create-channel.dto';
 import { CreateChannelUserDto } from '../../channels/dto/create-channel-user.dto';
 
@@ -189,8 +193,8 @@ export class ChatManager {
     return sourceUser;
   }
 
-  public changeNickUserIntraId(intraId: number, nickname: string) {
-    const sourceUser = this.getUserByID(intraId);
+  public changeNickUserUUID(sourceUserUUID: string, nickname: string) {
+    const sourceUser = this.getUserByUUID(sourceUserUUID);
 
     if (sourceUser) {
       this.raise_<void>('onUserNickChanged', { sourceUser, nickname });
@@ -200,37 +204,7 @@ export class ChatManager {
 
   public addChannelDB(channelDB: ChannelDB ): Channel {
     const channel = this.channelFromDB_(channelDB);
-/*
-    const ownerUser = this.getUserByUUID(channelDB.owner);
-    let channelTopic: ChannelTopic | undefined;
 
-    if (!ownerUser)
-      throw new UserNotFoundError("channelDB contains a non valid owner uuid"); 
-
-    if (channelDB.topicUser) {
-      const topicUser = this.getUserByUUID(channelDB.topicUser);
-
-      if (!topicUser)
-        throw new UserNotFoundError("channelDB contains a non valid topic.user uuid");
-
-      channelTopic = {
-        user: topicUser,
-        setDate: channelDB.topicSetDate!,
-        value: channelDB.topic!,
-      };
-    }
-
-    const channelData: ChannelData = {
-      uuid: channelDB.id,
-      name: channelDB.name,
-      owner: ownerUser,
-      createdDate: channelDB.createdDate,
-      topic: channelTopic,
-      password: channelDB.password,
-    };
-
-    const channel = new ChannelFactory.fromDB(channelDB);//Channel(channelData);
-    */
     this.addChannel_(channel);
     return channel;
   }
@@ -238,10 +212,6 @@ export class ChatManager {
   private addChannel_(channel: Channel) {
     this.channelsByName_.set(channel.name, channel);
     this.channelsByUUID_.set(channel.uuid, channel);
-  }
-
-  public renameUser(userUUID: string, nickname: string) {
-
   }
 
   /*
@@ -366,7 +336,7 @@ export class ChatManager {
       password: password,
     });
     channel = this.addChannelDB(channelDB);
-    await this.addUserToChannel_(sourceUser, channel);
+    //await this.addUserToChannel_(sourceUser, channel);
     channel.addGenericEvent(EventType.CREATE, sourceUser);
     this.raise_<void>('onChannelCreated', { channel, sourceUser });
     return this.message_(ReturnCode.ALLOWED, { channel: new ChannelDTO(channel) });
@@ -825,6 +795,7 @@ export class ChatManager {
     return results;
   }
 
+  /*
   private channelFromDTO_(dto: ChannelDTO): Channel {
     const owner = this.getUserByUUID(dto.ownerUUID);
     let topic: ChannelTopic | undefined;
@@ -853,12 +824,12 @@ export class ChatManager {
       dto.password,
     );
   }
+  */
 
   private channelFromDB_(channelDB: ChannelDB): Channel {
-    console.log(channelDB);
+    console.log("channelFromDB_: ", channelDB) ;
     const owner = this.getUserByUUID(channelDB.ownerId);
     let topic: ChannelTopic | undefined;
-    let channelUserDTOArray: ChannelUserDTO[] | undefined;
 
     if (!owner)
       throw new UserNotFoundError("channelFromDB: ownerId user not found.");
@@ -875,26 +846,38 @@ export class ChatManager {
       };
     }
 
-    if (channelDB.users)
-      channelUserDTOArray = channelDB.users.map(channelUserDB => this.channelUserFromDB_(channelDB, channelUserDB));
-
-    return new Channel(
+    const channel = new Channel(
       channelDB.id,
       channelDB.name,
       owner,
       channelDB.createdDate, 
       topic,
       channelDB.password,
-      channelUserDTOArray,
     );
+
+    if (channelDB.users) {
+      channelDB.users.map(channelUserDB => this.addChannelUserFromDB_(channel, channelUserDB));
+    }
+    return channel;
   }
 
-  private channelUserFromDB_(channelDB: ChannelDB, userDB: ChannelUserDB): ChannelUserDTO {
+  private addChannelUserFromDB_(channel: Channel, channelUserDB: ChannelUserDB) {
+    const user = this.getUserByUUID(channelUserDB.user.id);
 
-    return new ChannelUserDTO(
-
-    );
-  }
+    if (!user) {
+      throw new UserNotFoundError("addChannelUserFromDB_: userUUID user not found in memory");
+    }
+    channel.addUser(user);
+    if (channelUserDB.admin) {
+      channel.addOper(user);
+    }
+    if (channelUserDB.banned) {
+      channel.addBan(user);
+    }
+    if (channelUserDB.muted) {
+      channel.addMute(user);
+    }
+ }
 
   private cleanChannel_(channel: Channel): void {
     for (const user of channel.getUsers()) {

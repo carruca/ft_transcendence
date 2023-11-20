@@ -11,16 +11,16 @@ import { ChannelUser } from '../../channels/entities/channel-user.entity';
 import { Friend } from '../../friends/entities/friend.entity';
 
 export enum UserPermits {
-	user,
-	owner,
-	moderator,
-	banned,
-	disabled,
+  user,
+  owner,
+  moderator,
+  banned,
+  disabled,
 }
 
 @Entity()
 export class User {
-  constructor (
+  constructor(
     intraId: number,
     name: string,
     login: string,
@@ -64,7 +64,7 @@ export class User {
   achievements: AchievementUser[];
 
   @OneToMany(() => ChannelUser, (channelUser) => channelUser.user)
-  channels: ChannelUser[] = [];
+  channels: ChannelUser[];
 
   @ManyToMany(() => Friend, (friend) => friend.users)
   @JoinTable()

@@ -7,9 +7,12 @@ import {
 } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { CreateBlockDto } from './dto/create-block.dto';
+
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User, UserPermits } from './entities/user.entity';
+import { Block } from './entities/block.entity';
 import * as fs from 'fs';
 import * as path from 'path';
 import { AchievementUser } from '../achievements/entities/achievement-user.entity';
@@ -23,6 +26,8 @@ export class UsersService {
   constructor(
     @InjectRepository(User)
     private usersRepository: Repository<User>,
+    @InjectRepository(Block)
+    private blocksRepository: Repository<Block>,
     @Inject(forwardRef(() => ChatManager))
     private chatManager: ChatManager,
   ) { }
@@ -83,7 +88,7 @@ export class UsersService {
     }
 
     user.nickname = nick;
-    this.chatManager.changeNickUserIntraId(intraId, nick);
+    this.chatManager.changeNickUserUUID(user.id, nick);
     return this.usersRepository.save(user);
   }
 
@@ -96,6 +101,28 @@ export class UsersService {
     user.permits = permits;
     return this.usersRepository.save(user);
 	}
+
+  async createBlock(createBlockDto: CreateBlockDto) : Promise<Block> {
+    const newBlock = new Block(
+      createBlockDto.userId,
+      createBlockDto.blockId
+    );
+    return this.blocksRepository.save(newBlock);
+  }
+
+  async getBlockIds(userId: string) : Promise<string[]> {
+    const blocks = await this.blocksRepository.find({
+      where: {
+        userId: userId
+      },
+      select: ['blockId']
+    });
+    if (!blocks) {
+      throw new HttpException('Block not found', HttpStatus.NOT_FOUND);
+    }
+
+    return blocks.map((block) => block.blockId);
+  }
 
   async update(id: string, updateUserDto?: UpdateUserDto, avatar?: Express.Multer.File): Promise<User> {
     const user = await this.usersRepository.findOneBy({ id });

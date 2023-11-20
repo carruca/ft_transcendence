@@ -9,6 +9,7 @@ import GameView from '../views/GameView.vue';
 import Setup from '@/components/Setup/Setup.vue'
 import Settings from '@/components/Settings.vue'
 import _2FA from '@/components/2FA.vue'
+import ChatView from '../views/ChatView.vue'
 
 const routes = [
   {
@@ -28,7 +29,7 @@ const routes = [
       {
         path: 'chat',
         name: 'Chat',
-        component: undefined,
+        component: ChatView,
       },
       {
         path: 'profile',
