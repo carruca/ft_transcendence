@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@vitejs/plugin-vue": "^4.0.0",
+    "md5": "^2.3.0",
     "vite-plugin-html": "^3.2.0",
     "vue": "^3.2.45",
     "vue-3-ts-socket.io": "^1.0.3",
@@ -19,6 +20,7 @@
   },
   "devDependencies": {
     "@rushstack/eslint-patch": "^1.1.4",
+    "@types/md5": "^2.3.5",
     "@types/node": "^18.11.12",
     "@vue/eslint-config-prettier": "^7.0.0",
     "@vue/eslint-config-typescript": "^11.0.0",
