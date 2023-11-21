@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import md5 from 'md5';
 const DROPDOWN_ANIMATION_DURATION: number = 200; // ms
 
 const props = defineProps({
@@ -9,7 +10,10 @@ const props = defineProps({
   }
 })
 
-const bgImage = ref(`url('${import.meta.env.VITE_BACKEND_URL}/public/avatars/${props.user.nickname}.png')`);
+const bgImage = ref<String>('')
+
+bgImage.value = `url('${import.meta.env.VITE_BACKEND_URL}/public/avatars/${props.user.nickname}.png'),` +
+                `url('https://www.gravatar.com/avatar/${md5(props.user.login)}/?d=wavatar')`;
 
 onMounted(() => {
   const profilePic = document.querySelector('.profile__pic') as HTMLDivElement;
