@@ -1,31 +1,43 @@
 <template>
   <div class="admin-panel">
     <div class="header">
-      <h1>{{ currentPanel }} TITLE</h1>
+      <h1>{{ currentPanel }} Admin Panel</h1>
       <button @click="togglePanel" class="toggle-button">{{ toggleButtonText }}</button>
     </div>
     <div class="content">
       <div class="section channels">
         <h2>Channels</h2>
         <ul class="list">
-          <li v-for="channel in channels" :key="channel.id" @click="selectItem('channel', channel)" :class="{ selected: selectedChannel?.id === channel.id }">
+          <li v-for="channel in channelList" :key="channel.uuid" @click="selectChannel(channel)" :class="{ selected: selectedChannelUUID === channel.uuid }">
             {{ channel.name }}
           </li>
         </ul>
       </div>
       <div class="section users">
         <h2>Users</h2>
-        <ul class="list">
-          <li v-for="user in users" :key="user.id" @click="selectItem('user', user)" :class="{ selected: selectedUser?.id === user.id }">
+        <ul class="list" v-if="selectedChannel">
+          <li 
+            v-for="user in selectedChannel.users.values()" 
+            :key="user.uuid" 
+            @click="selectUser(user)" 
+            :class="{ selected: selectedUserUUID === user.uuid }">
             {{ user.name }}
           </li>
         </ul>
+        <p v-else>No channel selected</p>
       </div>
       <div class="section actions">
-        <h2>Actions</h2>
+        <h2>Channel Actions</h2>
         <div class="action-buttons">
+          <button v-if="canShowAction('destroy')" @click="destroy">Destroy</button>
+          <button v-if="canShowAction('passwd')" @click="passwd">Change password</button>
+        </div>
+        <h2>User Actions</h2>
+        <div class="action-buttons">
+          <button v-if="canShowAction('promote')" @click="promote">Promote</button>
           <button v-if="canShowAction('mute')" @click="mute">Mute</button>
           <button v-if="canShowAction('kick')" @click="kick">Kick</button>
+          <button v-if="canShowAction('ban')" @click="kick">Ban</button>
         </div>
       </div>
     </div>
@@ -33,21 +45,62 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, onMounted, watch, computed } from 'vue';
+import { client } from '@/services/chat-client';
 
-const channels = ref([
-  { id: 1, name: 'General' },
-  { id: 2, name: 'Support' },
-  // More channels here
-]);
-const users = ref([
-  { id: 1, name: 'Alice' },
-  { id: 2, name: 'Bob' },
-  // More users here
-]);
 const selectedChannel = ref(null);
+const selectedChannelUUID = ref(null);
 const selectedUser = ref(null);
-const currentPanel = ref('Web');
+const selectedUserUUID = ref(null);
+const currentPanel = ref('Chat');
+
+// Destructure the properties and methods from the client you want to use
+const { channelList } = client;
+
+//const textColor = ref('');
+//const backgroundColor = ref('');
+
+onMounted(() => {
+  client.playAdminSim(); // FIXME only for testing
+  selectedChannelUUID.value = null;
+  selectedUserUUID.value = null;
+});
+
+// Watch the channelList for changes
+watch(channelList, (newChannelList) => {
+  // Check if selectedChannel still exists in the updated channelList
+  if (selectedChannel.value && !newChannelList.some(channel => channel.uuid === selectedChannel.value.uuid)) {
+    selectedChannel.value = null;
+    selectedChannelUUID.value = null;
+    selectedUser.value = null;
+    selectedUserUUID.value = null;
+  }
+});
+// Watch the selectedChannel for changes to its user list
+watch(
+  () => selectedChannel.value ? Array.from(selectedChannel.value.users.values()) : [],
+  (newUsersArray) => {
+    // Check if selectedUser still exists in the updated users of selectedChannel
+    if (selectedUser.value && !newUsersArray.some(user => user.uuid === selectedUser.value.uuid)) {
+      // If not, reset selectedUser and selectedUserUUID
+      selectedUser.value = null;
+      selectedUserUUID.value = null;
+    }
+  },
+  { deep: true }
+);
+
+// Functions to select channel and user
+const selectChannel = (channel) => {
+  selectedChannel.value = channel;
+  selectedChannelUUID.value = channel.uuid;
+  selectedUser.value = null;
+  selectedUserUUID.value = null;
+};
+const selectUser = (user) => {
+  selectedUser.value = user;
+  selectedUserUUID.value = user.uuid;
+}
 
 // Toggle between Chat and Web Admin Panel
 function togglePanel() {
@@ -56,21 +109,6 @@ function togglePanel() {
 
 // Computed property for toggle button text
 const toggleButtonText = computed(() => currentPanel.value === 'Chat' ? 'Switch to Web' : 'Switch to Chat');
-
-// Function to select an item
-function selectItem(type, item) {
-  if (type === 'channel') {
-    selectedChannel.value = item;
-    if (currentPanel.value === 'Web') {
-      selectedUser.value = null;
-    }
-  } else if (type === 'user') {
-    selectedUser.value = item;
-    if (currentPanel.value === 'Web') {
-      selectedChannel.value = null;
-    }
-  }
-}
 
 // Function to determine if an action can be shown
 function canShowAction(action) {
@@ -84,12 +122,11 @@ function canShowAction(action) {
 // Example action functions
 function mute() {
   // Muting logic
-  alert(`Muting ${selectedUser.value.name}`);
+  alert(`Muting ${selectedUserUUID.value}`);
 }
-
 function kick() {
   // Kick logic
-  alert(`Kicking ${selectedUser.value.name}`);
+  alert(`Kicking ${selectedUserUUID.value}`);
 }
 </script>
 
@@ -101,7 +138,7 @@ function kick() {
   width: 100vw; /* Full viewport width */
   color: white;
   background-color: #333; /* Dark theme color */
-  margin: 0; /* Remove default margins */
+  margin: 20px;
 }
 
 .header {
@@ -136,9 +173,8 @@ function kick() {
   flex-direction: column;
   align-items: stretch;
   padding: 0; /* Remove padding for full width */
-  border-right: 1px solid #444; /* Maintain border for separation */
+  border-right: 2px solid #444; /* Maintain a border for separation */
 }
-
 .section:last-child {
   border-right: none; /* No border for the last section */
 }
@@ -162,7 +198,7 @@ function kick() {
 }
 
 .list li.selected {
-  background-color: #007bff;
+  background-color: #5c5c5c;
 }
 
 .action-buttons {
