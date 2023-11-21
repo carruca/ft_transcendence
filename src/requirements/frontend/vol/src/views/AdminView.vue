@@ -113,7 +113,12 @@ const toggleButtonText = computed(() => currentPanel.value === 'Chat' ? 'Switch 
 // Function to determine if an action can be shown
 function canShowAction(action) {
   if (currentPanel.value === 'Chat') {
-    return selectedChannel.value && selectedUser.value;
+    if (selectedChannel.value) {
+      if (selectedUser.value)
+        return true;
+      else if (action === 'destroy' || action === 'passwd')
+        return true;
+    }
   } else {
     return selectedChannel.value || selectedUser.value;
   }
