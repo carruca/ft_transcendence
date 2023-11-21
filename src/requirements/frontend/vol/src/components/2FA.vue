@@ -1,14 +1,19 @@
 <script setup lang="ts">
-import { ref, defineProps } from "vue";
+import { onMounted, ref, defineProps } from "vue";
 import router from "@/router";
 import Toast from "@/components/Toast.vue";
-
+import { loggedInFn } from "@/components/AuthCheck";
+import { defineEmits } from "vue";
 const qr2fa = ref<string | undefined>(undefined);
 const enable2fa = ref(!document.cookie.includes("_2fa="));
 const secret2fa = ref<string | undefined>(undefined);
 const form = ref<string | undefined>(undefined);
 const emit = defineEmits(["close2fa"]);
 const error = ref<string | undefined>(undefined);
+
+onMounted(async () => {
+    await loggedInFn();
+});
 
 const props = defineProps({
     hasParent: Boolean

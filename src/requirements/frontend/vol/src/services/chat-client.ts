@@ -137,6 +137,39 @@ class ChatClient {
 
     this.currentChannel_.value = this.channels_.values().next().value;
   }
+  public playAdminSim() {
+    this.clear_();
+    const ownerUser = this.createUser("owner", { siteRole: UserSiteRoleEnum.OWNER, isBanned: false, isDisabled: false });
+    const user1 = this.createUser("User1", { siteRole: UserSiteRoleEnum.NONE, isBanned: false, isDisabled: false });
+    const user2 = this.createUser("User2", { siteRole: UserSiteRoleEnum.NONE, isBanned: false, isDisabled: false });
+    const user3 = this.createUser("User3", { siteRole: UserSiteRoleEnum.NONE, isBanned: false, isDisabled: false });
+    const channel1 = this.createChannel("#paco", user1);
+    const channel2 = this.createChannel("#jones", user2);
+    let channel3: Channel;
+
+    setTimeout(() => {
+      channel3 = this.createChannel("#vermikins", ownerUser);
+      this.join(channel1, user2);
+      this.join(channel1, user3);
+      this.chanmsg(channel1, user2, "Donde caemos gente?");
+    }, 1000);
+    setTimeout(() => {
+      this.chanmsg(channel1, user1, "En el ban por tonto!");
+    }, 2000);
+    setTimeout(() => {
+      this.chanmsg(channel1, user1, "Y tu pa fuera!");
+      this.ban(channel1, user1, user2);
+    }, 3000);
+    setTimeout(() => {
+      this.kick(channel1, user1, user3);
+    }, 5000);
+    setTimeout(() => {
+      this.chanmsg(channel1, user1, "Noobs...");
+      this.closeChannel(channel3);
+    }, 7000);
+
+    this.currentChannel_.value = this.channels_.values().next().value;
+  }
 
   private addChannel_(channel: Channel) {
     this.channels_.set(channel.uuid, channel);
