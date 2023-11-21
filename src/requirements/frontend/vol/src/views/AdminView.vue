@@ -2,30 +2,31 @@
   <div class="admin-panel">
     <div class="header">
       <h1>{{ currentPanel }} TITLE</h1>
-      <button @click="togglePanel">{{ toggleButtonText }}</button>
+      <button @click="togglePanel" class="toggle-button">{{ toggleButtonText }}</button>
     </div>
     <div class="content">
-      <div class="channels">
+      <div class="section channels">
         <h2>Channels</h2>
         <ul class="list">
-          <li v-for="channel in channels" :key="channel.id" @click="selectItem('channel', channel)">
+          <li v-for="channel in channels" :key="channel.id" @click="selectItem('channel', channel)" :class="{ selected: selectedChannel?.id === channel.id }">
             {{ channel.name }}
           </li>
         </ul>
       </div>
-      <div class="users">
+      <div class="section users">
         <h2>Users</h2>
         <ul class="list">
-          <li v-for="user in users" :key="user.id" @click="selectItem('user', user)">
+          <li v-for="user in users" :key="user.id" @click="selectItem('user', user)" :class="{ selected: selectedUser?.id === user.id }">
             {{ user.name }}
           </li>
         </ul>
       </div>
-      <div class="actions">
+      <div class="section actions">
         <h2>Actions</h2>
-        <button v-if="canShowAction('mute')" @click="mute">Mute</button>
-        <button v-if="canShowAction('kick')" @click="kick">Kick</button>
-        <!-- Add more actions as needed -->
+        <div class="action-buttons">
+          <button v-if="canShowAction('mute')" @click="mute">Mute</button>
+          <button v-if="canShowAction('kick')" @click="kick">Kick</button>
+        </div>
       </div>
     </div>
   </div>
@@ -42,19 +43,6 @@ const channels = ref([
 const users = ref([
   { id: 1, name: 'Alice' },
   { id: 2, name: 'Bob' },
-  { id: 3, name: 'Bob 2' },
-  { id: 4, name: 'Bob 3' },
-  { id: 5, name: 'Bob 4' },
-  { id: 6, name: 'Bob 5' },
-  { id: 7, name: 'Bob 6' },
-  { id: 8, name: 'Bob 7' },
-  { id: 9, name: 'Bob 8' },
-  { id: 10, name: 'Bob 9' },
-  { id: 11, name: 'Bob 10' },
-  { id: 12, name: 'Bob 11' },
-  { id: 13, name: 'Bob 12' },
-  { id: 14, name: 'Bob 13' },
-  { id: 15, name: 'Bob 14' },
   // More users here
 ]);
 const selectedChannel = ref(null);
@@ -109,6 +97,11 @@ function kick() {
 .admin-panel {
   display: flex;
   flex-direction: column;
+  height: 100vh; /* Full viewport height */
+  width: 100vw; /* Full viewport width */
+  color: white;
+  background-color: #333; /* Dark theme color */
+  margin: 0; /* Remove default margins */
 }
 
 .header {
@@ -116,40 +109,79 @@ function kick() {
   justify-content: space-between;
   align-items: center;
   padding: 1em;
+  background-color: #222; /* Slightly darker header background */
+}
+
+.toggle-button {
+  background-color: #444;
+  color: white;
+  border: none;
+  padding: 0.5em 1em;
+  cursor: pointer;
+}
+
+.toggle-button:hover {
+  background-color: #555;
 }
 
 .content {
   display: flex;
-  height: 300px; /* Adjust as needed */
+  flex-grow: 1; /* Take up remaining space */
+  width: 100%; /* Use full width */
 }
 
-.content > div {
-  flex: 1;
-  border-right: 1px solid #ccc;
-  padding: 1em;
-  overflow-y: auto;
+.section {
+  flex: 1; /* Each section takes equal width */
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  padding: 0; /* Remove padding for full width */
+  border-right: 1px solid #444; /* Maintain border for separation */
 }
 
-.content > div:last-child {
-  border-right: none;
+.section:last-child {
+  border-right: none; /* No border for the last section */
 }
 
 .list {
+  flex-grow: 1;
+  overflow-y: auto;
   list-style-type: none;
   padding: 0;
+  margin: 0;
 }
 
 .list li {
   cursor: pointer;
   padding: 0.5em;
-  border: 1px solid transparent;
+  border-bottom: 1px solid #444;
 }
 
 .list li:hover {
-  background-color: #f0f0f0;
+  background-color: #555;
 }
 
 .list li.selected {
-  border-color: #007bff;
+  background-color: #007bff;
+}
+
+.action-buttons {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.action-buttons button {
+  background-color: #444;
+  color: white;
+  border: none;
+  padding: 0.5em 1em;
+  margin: 0.5em;
+  cursor: pointer;
+}
+
+.action-buttons button:hover {
+  background-color: #555;
 }
 </style>
