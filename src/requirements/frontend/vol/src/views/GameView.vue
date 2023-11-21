@@ -377,6 +377,17 @@ window.addEventListener('resize', resize_canvas);
 
 /** SOCKETS ------------------------------------ */
 
+socket.on('error_queue', () => {
+  if (button1Pressed.value == true) {
+    button1Text.value = button1DefText;
+    button1Pressed.value = !button1Pressed.value;
+  }
+  if (button2Pressed.value == true) {
+    button2Text.value = button2DefText;
+    button2Pressed.value = !button2Pressed.value;
+  }
+});
+
 socket.on('score', (p1: number, p2: number) => {
   score.p1_ = p1;
   score.p2_ = p2;
