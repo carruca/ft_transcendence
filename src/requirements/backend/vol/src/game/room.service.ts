@@ -52,16 +52,16 @@ export class RoomService {
     for (const [, otherQueue] of this.queue.entries()) {
       for (const it of otherQueue) {
         if (it == undefined) continue;
-        if (it.id == socket.id) return; // FIXME check for user id, not socket id (it.data.user.id)
+        if (it.id == socket.data.user.uuid) return;
       }
     }
     // if playing
-    if (this.get_player(socket.id)) return; // FIXME check for user id, not socket id (it.data.user.id)
+    if (this.get_player(socket.data.user.uuid)) return;
 
     // add do queue
     modeQueue.push(socket);
 
-    console.log("join queue " + mode + ": " + socket.id);
+    // console.log("join queue " + mode + ": " + socket.id);
 
     // try to create room
     const modePlayers = modes.get(mode);
@@ -72,7 +72,7 @@ export class RoomService {
       for (let i = 0; i < modePlayers; ++i) {
         this.join_room(room, modeQueue.shift());
       }
-      console.log("room created!");
+      //console.log("room created!");
     }
   }
   leave_queue(socket: Socket): void {
@@ -80,7 +80,7 @@ export class RoomService {
       const index = modeQueue.indexOf(socket);
       if (index != -1) {
         modeQueue.splice(index, 1);
-        console.log("leave queue " + mode + ": " + socket.id);
+        //console.log("leave queue " + mode + ": " + socket.id);
         break;
       }
     }
@@ -93,7 +93,7 @@ export class RoomService {
         room.spectators.splice(room.spectators.indexOf(socket), 1);
       }
       // find disconnected player
-      const disconnected_player = room.players.find(player => socket.id === player.socket!.id);
+      const disconnected_player = room.players.find(player => socket.data.user.uuid === player.socket!.data.user.uuid);
       if (disconnected_player) {
         const disconnected_player_id = disconnected_player.id;
         const is_odd = disconnected_player_id % 2 === 1;
@@ -138,7 +138,7 @@ export class RoomService {
       ball_pos: { x: (WIDTH / 2) - 5, y: (HEIGHT / 2) - 5 }, // minus half the scale :)
       ball_scale: { x: 10, y: 10 },
       ball_speed: { x: 5, y: 5 },
-      // FIXME set to 5 for final version
+      // TODO set to 5 for final version
       score: 1,
     };
     // special modes changes
@@ -185,26 +185,26 @@ export class RoomService {
       if (room.players.length == room.options.players) room.state = State.STARTING;
       socket!.emit('ready', room.code, room.players.length % 2 === 1 ? true : false);
 
-      console.log("sending player ready: " + room.code);
+      //console.log("sending player ready: " + room.code);
     } else {
       room.spectators.push(socket);
       socket!.emit('ready', room.code, true, true);
 
-      const team1: string[] = room.players.map((player) => player.socket!.id).filter((_, index) => index % 2 === 1);
-      const team2: string[] = room.players.map((player) => player.socket!.id).filter((_, index) => index % 2 === 0);
+      const team1: string[] = room.players.map((player) => player.socket!.data.user.name).filter((_, index) => index % 2 === 1);
+      const team2: string[] = room.players.map((player) => player.socket!.data.user.name).filter((_, index) => index % 2 === 0);
       socket!.emit('players', team2, team1);
 
       socket!.emit('score', room.players[0].stats.score, room.players[1].stats.score);
 
-      console.log("sending spectator ready: " + room.code);
+      //console.log("sending spectator ready: " + room.code);
     }
   }
 
-  get_player(id: string): Player | null {
+  get_player(uuid: string): Player | null {
     for (const room of this.rooms.values()) {
       for (const player of room.players) {
-        if (player.socket == undefined) continue;
-        if (player.socket.id === id) return player;
+        if (player.socket == undefined || player.socket.data.user == undefined) continue;
+        if (player.socket.data.user.uuid === uuid) return player;
       }
     }
     return null;
@@ -214,14 +214,13 @@ export class RoomService {
     return this.rooms.get(code);
   }
 
-  get_user_roomcode(id: string): Room | null {
+  get_user_roomcode(uuid: string): Room | null {
     // Convert the rooms map values to an array
     const roomsArray = Array.from(this.rooms.values());
 
     // Find the room containing the user with the given userId
     const roomWithUser = roomsArray.find(room => {
-      // TODO change socket.id to user.id
-      const userInRoom = room.players.some(player => player.socket!.id === id);
+      const userInRoom = room.players.some(player => player.socket!.data.user.uuid === uuid);
       return userInRoom;
     });
 
@@ -234,7 +233,7 @@ export class RoomService {
   ready(player: Player | null): void {
     if (player == null) return;
     player.ready = true;
-    console.log("ready: " + player.socket!.id);
+    //console.log("ready: " + player.socket!.id);
     this.start(player.room);
   }
 
@@ -249,8 +248,8 @@ export class RoomService {
     const countdown: number = 3;
     for (const player of room.players) {
       // send all players name
-      const team1: string[] = room.players.map((player) => player.socket!.id).filter((_, index) => index % 2 === 1);
-      const team2: string[] = room.players.map((player) => player.socket!.id).filter((_, index) => index % 2 === 0);
+      const team1: string[] = room.players.map((player) => player.socket!.data.user.name).filter((_, index) => index % 2 === 1);
+      const team2: string[] = room.players.map((player) => player.socket!.data.user.name).filter((_, index) => index % 2 === 0);
       if (room.players.length % 2 === 1) {
         player.socket!.emit('players', team1, team2);
       } else {
@@ -260,31 +259,28 @@ export class RoomService {
       player.socket!.emit('start', countdown);
     }
 
-    console.log("countdown...");
+    //console.log("countdown...");
     this.game.start(room);
     const startCountdown = async (): Promise<void> => {
       await new Promise(resolve => setTimeout(resolve, 1000));
       this.game.setInitialPositions(room);
       await new Promise(resolve => setTimeout(resolve, countdown * 1000));
-      console.log("starting...");
+      //console.log("starting...");
       room.state = State.INGAME;
     };
     startCountdown();
   }
 
   stop(room: Room, winners: Player[], losers: Player[]): void {
-    if (room.state === State.END) return;
+    if (room.state === State.END)
+      return;
     room.state = State.END;
-
-    // TODO change for user.id
-    // TODO add `.user` to get the user of loser and change type
-    //const loser: Player | undefined = room.players.find((player) => player.socket!.id != winner.socket!.id,);
 
     // send score, winners and losers to API
     // TODO centralize  this in a function that receives the players[] and returns the UserScore[]
     const winners_stats: UserStats[] = winners.map((player: Player) => {
       return {
-        id: `${player.id}`,  // TODO: @izenynn change to user id
+        id: player.socket!.data.user.uuid,
         score: player.stats.score,
         winRatio: 0,
         rivalScore: player.stats.rival_score,
@@ -299,7 +295,7 @@ export class RoomService {
     });
     const losers_stats: UserStats[] = losers.map((player: Player) => {
       return {
-        id: `${player.id}`,  // TODO: @izenynn change to user id
+        id: player.socket!.data.user.uuid,
         score: player.stats.score,
         winRatio: 0,
         rivalScore: player.stats.rival_score,
@@ -312,7 +308,6 @@ export class RoomService {
         precision: player.stats.precision,
       };
     });
-    // TODO send new CreateMatchDto object
     const match: CreateMatchDto = {
       mode: (room.options.mode === 0 ? "normal" : "special"),
       start: room.start,
@@ -331,14 +326,14 @@ export class RoomService {
     // create win text
     let winText: string;
     if (winners.length === 1) {
-      winText = winners[0].socket!.id + " wins!";
+      winText = winners[0].socket!.data.user.name + " wins!";
     } else {
-      winText = winners[0].socket!.id;
-      for (let i = 1; i < winners.length; ++i) winText += ", " + winners[i].socket!.id;
+      winText = winners[0].socket!.data.user.name;
+      for (let i = 1; i < winners.length; ++i) winText += ", " + winners[i].socket!.data.user.name;
       winText += " win!";
     }
 
-    console.log(winText);
+    //console.log(winText);
     RoomService.update(room, 'stop', winText);
     this.rooms.delete(room.code);
   }
