@@ -9,6 +9,7 @@ import {
 
 import {
     readonly,
+    reactive,
 } from 'vue';
 
 
@@ -21,7 +22,7 @@ export class Channel {
         public readonly owner: User,
         public readonly creationDate = new Date(),
         public hasPassword: boolean = false,
-        public readonly users = new Map<string, ChannelUser>(),
+        public readonly users = reactive(new Map<string, ChannelUser>()),
         private readonly events_ = new Map<string, Event>(),
     ) {}
 
