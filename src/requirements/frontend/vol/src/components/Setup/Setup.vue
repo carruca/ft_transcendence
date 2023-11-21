@@ -1,25 +1,25 @@
 <script setup lang="ts">
 import router from '@/router';
 import { onMounted } from 'vue';
+import { loggedInFn } from '../AuthCheck';
 
 
-onMounted(() => {
-  (async () => {
-    try {
-      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/users/me`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: 'include'
-      });
-      if (response.ok) {
-        router.replace('/');
-      }
-    } catch (error) {
-      console.error(error);
+onMounted(async () => {
+  await loggedInFn();
+  try {
+    const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/users/me`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      credentials: 'include'
+    });
+    if (response.ok) {
+      router.replace('/');
     }
-  })
+  } catch (error) {
+    console.error(error);
+  }
 
   const form = document.querySelector('form') as HTMLFormElement;
   form.addEventListener('submit', async (event) => {
@@ -53,7 +53,7 @@ onMounted(() => {
   });
 
   const avatarInput = document.querySelector('input[type="file"]') as HTMLInputElement;
-  avatarInput.addEventListener('change', (event) => {
+  avatarInput.addEventListener('change', (_event) => {
     const file = avatarInput.files?.[0];
     if (!file) return;
     const reader = new FileReader();
