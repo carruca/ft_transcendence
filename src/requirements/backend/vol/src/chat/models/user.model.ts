@@ -3,72 +3,58 @@ import {
   ConversationModel as Conversation,
 } from '.';
 
-import { UserData } from '../interfaces';
-import { UserDTO } from '../dto';
+import {
+  UserPayload,
+} from '../interfaces';
 
 import {
-  UserStatus,
-  UserChannelRole,
-  UserSiteRole
+  UserDTO,
+} from '../dto';
+
+import {
+  UserStatusEnum,
+  UserChannelRoleEnum,
+  UserSiteRoleEnum,
 } from '../enums';
 
-import { PropertyUndefinedError } from '../errors';
+import {
+  PropertyUndefinedError,
+} from '../errors';
 
-import { User as UserDB } from '../../users/entities/user.entity';
+import { 
+  User as UserDB,
+} from '../../users/entities/user.entity';
 
-import { Socket } from 'socket.io';
-
-export { UserData, UserDTO, UserStatus, UserChannelRole, UserSiteRole };
+import {
+  Socket,
+} from 'socket.io';
 
 export class UserModel {
-  //private intraId_: number;
-  //private uuid_: string;
-  //private name_: string;
-  //private status_: UserStatus;
-  //private socket_?: Socket;
-  //private siteRole_: UserSiteRole;
-  //private banned_: boolean;
-  //private disabled_: boolean;
+  private readonly intraId_: number;
+  private readonly uuid_: string;
+  private name_: string;
+  private status_: UserStatusEnum;
+  private socket_?: Socket;
+  private siteRole_: UserSiteRoleEnum;
+  private banned_: boolean;
+  private disabled_: boolean;
 
   private channels_ = new Set<Channel>; // Array para almacenar los canales a los que pertenece el nick
   private conversations_ = new Set<Conversation>;
   private blockUsers_ = new Set<UserModel>;
   //private watchers_ = new Set<User>;
 
-  constructor(
-    private readonly intraId_: number,
-    private readonly uuid_: string,
-    private name_: string,
-    private siteRole_: UserSiteRole = UserSiteRole.NONE,
-    private banned_: boolean = false,
-    private disabled_: boolean = false,
-    private status_: UserStatus = UserStatus.OFFLINE,
-    private socket_?: Socket,
-  ) {}
-
-  /*
-  constructor1(data: UserData | UserDB) {
-    if (data instanceof UserDB) {
-      this.intraId_ = data.intraId;
-      this.uuid_ = data.id.toString();
-      this.name_ = data.nickname!;
-      this.socket_ = undefined;
-      this.status_ = UserStatus.OFFLINE;
-      this.siteRole_ = UserSiteRole.NONE;
-      this.banned_ = false;
-      this.disabled_ = false;
-    } else {
-      this.intraId_ = data.id;
-      this.uuid_ = data.uuid;
-      this.name_ = data.name;
-      this.socket_ = data.socket;
-      this.status_ = data.status ?? UserStatus.OFFLINE;
-      this.siteRole_ = data.siteRole ?? UserSiteRole.NONE;
-      this.banned_ = data.banned ?? false;
-      this.disabled_ = data.disabled ?? false;
-    }
+  constructor(userPayload: UserPayload) {
+    this.intraId_ = userPayload.intraId;
+    this.uuid_ = userPayload.uuid;
+    this.name_ = userPayload.name;
+    this.socket_ = userPayload.socket;
+    this.status_ = userPayload.status ?? UserStatusEnum.OFFLINE;
+    this.siteRole_ = userPayload.siteRole ?? UserSiteRoleEnum.USER;
+    this.banned_ = userPayload.banned ?? false;
+    this.disabled_ = userPayload.disabled ?? false;
   }
-  */
+
   addChannel(channel: Channel): void {
     // se da por hecho que no existe el canal puesto que esta comprobación se hace antes
     if (channel.uuid !== undefined)
@@ -195,18 +181,18 @@ export class UserModel {
     return this.socket_;
   }
 
-  set status(value: UserStatus) {
+  set status(value: UserStatusEnum) {
     this.status_ = value;
   }
 
-  get siteRole(): UserSiteRole {
+  get siteRole(): UserSiteRoleEnum {
     return this.siteRole_;
   }
 
-  set siteRole(value: UserSiteRole ) {
+  set siteRole(value: UserSiteRoleEnum ) {
     this.siteRole_ = value;
   }
-
+  
   ban() {
     this.banned_ = true;
   }
@@ -224,18 +210,22 @@ export class UserModel {
   }
 
   hasPrivileges(): boolean {
-    return (this.siteRole_ & (UserSiteRole.OWNER | UserSiteRole.MODERATOR)) !== 0;
+    return this.isOwner || this.isModerator;
   }
 
-  isOwner(): boolean {
-    return this.siteRole_ === UserSiteRole.OWNER;
+  get isOwner(): boolean {
+    return this.siteRole_ === UserSiteRoleEnum.OWNER;
   }
 
-  isBanned(): boolean {
+  get isModerator(): boolean {
+    return this.siteRole_ === UserSiteRoleEnum.MODERATOR;
+  }
+
+  get isBanned(): boolean {
     return this.banned_;
   }
 
-  isDisabled(): boolean {
+  get isDisabled(): boolean {
     return this.disabled_;
   }
 
@@ -243,5 +233,8 @@ export class UserModel {
     return this === user;
   }
 
+  get DTO(): UserDTO {
+    return new UserDTO(this);
+  }
   // Otros métodos relacionados con el nick y los canales
 };

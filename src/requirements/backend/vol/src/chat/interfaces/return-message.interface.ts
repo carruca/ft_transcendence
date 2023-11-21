@@ -1,8 +1,10 @@
-import { ReturnCode } from '../enums';
+import {
+  ReturnCodeEnum,
+} from '../enums';
 
 export interface ReturnMessage {
   event?: string;
-  code: ReturnCode;
+  code: ReturnCodeEnum;
   message: string;
   data?: any;
 }

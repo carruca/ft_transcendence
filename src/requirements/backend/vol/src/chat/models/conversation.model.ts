@@ -1,21 +1,34 @@
-import { UserModel as User, EventModel as Event } from '.';
-import { EventManager } from '../managers';
-import { ConversationData } from '../interfaces';
-import { ConversationDTO } from '../dto';
+import {
+  UserModel as User,
+  EventModel as Event,
+} from '.';
 
-export { ConversationData, ConversationDTO };
+import { 
+  EventManager,
+} from '../managers';
+
+import { 
+  ConversationPayload 
+} from '../interfaces';
+
+import { 
+  ConversationDTO, 
+} from '../dto';
+
+import {
+  v4 as uuidv4,
+} from 'uuid';
 
 export class ConversationModel {
-  private uuid_: string;
-  private user1_: User;
-  private user2_: User;
-  private eventManager_: EventManager;
+  private readonly uuid_: string;
+  private readonly user1_: User;
+  private readonly user2_: User;
+  private readonly eventManager_: EventManager;
 
-  constructor(conversationData: ConversationData) {
-    if (conversationData.uuid)
-        this.uuid_ = conversationData.uuid;
-    this.user1_ = conversationData.user1;
-    this.user2_ = conversationData.user2;
+  constructor(conversationPayload: ConversationPayload) {
+    this.uuid_ = conversationPayload.uuid ?? uuidv4();
+    this.user1_ = conversationPayload.user1;
+    this.user2_ = conversationPayload.user2;
     this.eventManager_ = new EventManager();
   }
 
@@ -63,14 +76,6 @@ export class ConversationModel {
 
   countEventsAfterUUID(startEventUUID: string): number {
     return this.countEventsAfterUUID(startEventUUID);
-  }
-
-  getDTO(): ConversationDTO {
-    return {
-      uuid: this.uuid_,
-      user1UUID: this.user1_.uuid,
-      user2UUID: this.user2_.uuid,
-    }
   }
 
   get count(): number {

@@ -1,4 +1,4 @@
-export enum EventType {
+export enum EventTypeEnum {
   MESSAGE,
   CREATE,
   CLOSE,

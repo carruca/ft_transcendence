@@ -1,13 +1,15 @@
-import { ChannelTopic } from '../interfaces';
+import {
+  ChannelTopicModel as ChannelTopic,
+} from '../models';
 
 export class ChannelTopicDTO {
-  readonly userUUID: string;
-  readonly setDate: Date;
-  readonly value: string;
+  public readonly userUUID: string;
+  public readonly establishedDate: Date;
+  public readonly value: string;
 
-  constructor(topic: ChannelTopic) {
-    this.userUUID = topic.user.uuid;
-    this.setDate = topic.setDate;
-    this.value = topic.value;
+  constructor(channelTopic: ChannelTopic) {
+    this.userUUID = channelTopic.user.uuid;
+    this.establishedDate = channelTopic.establishedDate;
+    this.value = channelTopic.value;
   }
 }

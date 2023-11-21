@@ -1,10 +1,14 @@
-import { UserStatus, UserChannelRole, UserSiteRole } from '../enums';
+import {
+  UserStatusEnum,
+  UserChannelRoleEnum,
+  UserSiteRoleEnum,
+} from '../enums';
 
 export interface UserDetails {
   uuid: string;
   name?: string;
-  status?: UserStatus;
-  channelRole?: UserChannelRole;
+  status?: UserStatusEnum;
+  channelRole?: UserChannelRoleEnum;
   isMuted?: boolean;
-  siteRole?: UserSiteRole;
+  siteRole?: UserSiteRoleEnum;
 }

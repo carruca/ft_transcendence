@@ -15,9 +15,13 @@ import {
   UserSiteRoleEnum,
 } from './enum';
 
-import { v4 as uuidv4 } from 'uuid';
+import {
+  v4 as uuidv4,
+} from 'uuid';
 
 import socket from './ws';
+
+import './client';
 
 class ChatClient {
   private channels_: Map<string, Channel> = new Map();
@@ -39,6 +43,8 @@ class ChatClient {
     socket.on('create', this.onCreate.bind(this));
     socket.on('join', this.onJoin.bind(this));
     socket.on('part', this.onPart.bind(this));
+    socket.on('update', this.onUpdate.bind(this));
+
     /*
     socket.on('join', this.onJoin.bind(this));
     socket.on('part', this.onPart.bind(this));
@@ -53,7 +59,6 @@ class ChatClient {
     socket.on('ban', this.onBan.bind(this));
     socket.on('unban', this.onUnban.bind(this));
     socket.on('password', this.onPassword.bind(this));
-    socket.on('update', this.onUpdate.bind(this));
     socket.on('type', this.onType.bind(this));
     socket.on('chanmsg', this.onChanmsg.bind(this));
     socket.on('convmsg', this.onConvmsg.bind(this));
@@ -61,20 +66,23 @@ class ChatClient {
     */
   }
 
-  private onRetErr(dataJSON: string): void {
-    const data = JSON.parse(dataJSON);
+  private onRetErr(responseJSON: string): void {
+    const response = JSON.parse(responseJSON);
 
+    console.log(`%cError: ${response.message}`, "color: red;");
   }
 
-  private onRegister(dataJSON: string): void {
-    const data = JSON.parse(dataJSON);
+  private onRegister(responseJSON: string): void {
+    const response = JSON.parse(responseJSON);
 
-    this.me_ = User(data);
+    console.log(`%cSuccess: Your uuid is '${response.uuid}' and '${response.name}' is your nick`, "color: green;");
+    //this.me_ = User(data)
   }
 
   private onCreate(dataJSON: string): void {
     const data = JSON.parse(dataJSON);
 
+    console.log(data);
   }
 
   private onJoin(dataJSON: string): void {
@@ -85,6 +93,10 @@ class ChatClient {
   private onPart(dataJSON: string): void {
     const data = JSON.parse(dataJSON);
 
+  }
+
+  private onUpdate(dataJSON: string): void {
+    const data = JSON.parse(dataJSON);
   }
 
   private clear_() {
@@ -103,6 +115,7 @@ class ChatClient {
     const user3 = this.createUser("User3", { siteRole: UserSiteRoleEnum.NONE, isBanned: false, isDisabled: false });
     const channel1 = this.createChannel("#test", user1);
     const channel2 = this.createChannel("#wer", user2);
+    this.join(channel1, user3);
     let channel3: Channel;
 
     setTimeout(() => {
@@ -118,6 +131,7 @@ class ChatClient {
     }, 3000);
     setTimeout(() => {
       this.chanmsg(channel1, user1, "Payaso...");
+      this.part(channel1, user3);
       this.closeChannel(channel3);
     }, 4000);
 
@@ -289,3 +303,4 @@ class ChatClient {
 }
 
 export const client = new ChatClient();
+

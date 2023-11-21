@@ -1,10 +1,13 @@
-import { EventModel as Event } from '../models';
-import { EventType } from '../enums';
+import {
+  EventModel as Event,
+} from '../models';
 
-export { EventType };
+import {
+  EventTypeEnum,
+} from '../enums';
 
 export class EventManager {
-  private events_: Event[] = [];
+  private readonly events_: Event[] = [];
 
   addEvent(event: Event): Event {
     this.events_.push(event);
@@ -35,7 +38,7 @@ export class EventManager {
   }
 
   deleteEvents(): void {
-    this.events_ = [];
+    this.events_.splice(0, this.events_.length);
   }
 
   get count(): number {

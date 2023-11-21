@@ -1,19 +1,70 @@
-import { AuthService } from '../auth/auth.service';
-import { ChatManager } from './managers';
-import { ChannelModel as Channel, UserModel as User } from './models';
-import { ChatManagerHandler, ChatManagerInstance, ChatManagerSubscribe } from './decorators';
-import { verifyCookies } from './utils';
-import { UserChannelRole, ReturnCode } from './enums';
+import {
+  AuthService,
+} from '../auth/auth.service';
 
-import { MissingEnvironmentVariableError, InvalidCookieSignatureError, UserNotFoundError } from './errors';
+import {
+  UsersService,
+} from '../users/users.service';
 
-import { UsersService } from '../users/users.service';
+import {
+  ChatManager,
+} from './managers';
 
-import { WebSocketGateway, WebSocketServer, SubscribeMessage, MessageBody, WsException } from '@nestjs/websockets';
-import { Server, Socket } from 'socket.io';
-import { Logger, Injectable } from '@nestjs/common';
-import { Request, Response, NextFunction } from 'express';
-import { v4 as uuidv4 } from 'uuid';
+import {
+  ChannelModel as Channel,
+  UserModel as User,
+} from './models';
+
+import {
+  ChatManagerHandler,
+  ChatManagerInstance,
+  ChatManagerSubscribe,
+} from './decorators';
+
+import {
+  verifyCookies
+} from './utils';
+
+import {
+  UserChannelRoleEnum,
+  ReturnCodeEnum,
+} from './enums';
+
+import {
+  ReturnMessage,
+} from './return-messages';
+
+import {
+  MissingEnvironmentVariableError,
+  InvalidCookieSignatureError,
+  UserNotFoundError,
+} from './errors';
+
+import {
+  WebSocketGateway,
+  WebSocketServer,
+  SubscribeMessage,
+} from '@nestjs/websockets';
+
+import {
+  Server,
+  Socket,
+} from 'socket.io';
+
+import {
+  Logger,
+  Injectable,
+} from '@nestjs/common';
+
+import {
+  Request,
+  Response,
+  NextFunction,
+} from 'express';
+
+import {
+  v4 as uuidv4,
+} from 'uuid';
 
 @ChatManagerHandler()
 @WebSocketGateway({
@@ -88,72 +139,12 @@ export class ChatGateway {
     }
   }
 
-  /*
-  handleConnection1(client: Socket) {
-    try {
-      const cookies = verifyCookies(client.handshake.auth.token);
-      if (
-        cookies.auth_method === undefined ||
-        cookies.token === undefined ||
-        cookies.refresh_token === undefined
-      ) {
-        this.logger_.error(`Undefined cookies: ${cookies}`);
-        // When attempting to disconnect the socket within the handleConnection
-        // event, the socket doesn't disconnect as expected, hence the need to
-        // introduce a deliberate delay.
-        setTimeout(() => {
-          client.disconnect();
-        }, 100);
-        return;
-      }
-      //const userIntra = await this.auth_.getUser(cookies.auth_method, cookies.token, cookies.refresh_token);
-      this.auth_.getUser(cookies.auth_method, cookies.token, cookies.refresh_token).then((userIntra) => {
-        let sourceUser = this.chat_.getUserByID(userIntra.id);
-        if (sourceUser === undefined) {
-          this.usersService_.findOneByIntraId(userIntra.id).then((userDB) => {
-
-            if (!userDB || !userDB.nickname) {
-            //console.log("dbuser ", userDB.nickname);
-              this.logger_.error(`The user ${userIntra.login} (${userIntra.id}) does not appear in the in-memory database of ChatManager.`);
-              client.emit('error', `${userIntra.login} not registered.`);
-              client.disconnect();
-            } else {
-              sourceUser = this.chat_.addUserDB(userDB);
-              sourceUser.socket = client;
-              client.data.user = sourceUser;
-              this.logger_.log("Usuario registrado en la DB. Copiando a memoria.");
-              this.chat_.connectUser(sourceUser);
-            }
-          });
-        } else {
-          this.logger_.log("Usuario en memoria.");
-          sourceUser.socket = client;
-          client.data.user = sourceUser;
-          this.chat_.connectUser(sourceUser);
-        }
-      });
+  private replyToClient_(client: Socket, event: string, response: ReturnMessage) {
+    if (response.code === ReturnCodeEnum.ALLOWED) {
+      client.emit(event, JSON.stringify(response));
+    } else if (response.code !== ReturnCodeEnum.NOTHING_HAPPENED) {
+      client.emit('reterr', JSON.stringify(response));
     }
-    catch(error) {
-      if (error instanceof MissingEnvironmentVariableError)
-        console.error(`${error.message}`);
-      else if (error instanceof InvalidCookieSignatureError)
-        console.error(`${error.message}`);
-      //else if (error instanceof UserNotFoundError)
-        //console.error(`${client.datio.intraID} does not have a created profile yet.`);
-      
-      else
-        throw error;
-    }
-  }
-*/
-  handleDisconnect(client: Socket) {
-    const sourceUser = client.data.user;
-
-    if (sourceUser === undefined) {
-      this.logger_.warn("Unregistered user disconnected.");
-      return;
-    }
-    this.chat_.disconnectUser(sourceUser);
   }
 
   /*
@@ -161,178 +152,223 @@ export class ChatGateway {
   */
 
   @SubscribeMessage('create')
-  async onClientCreate(client: Socket, data: string) {
-    const [channelName, password] = JSON.parse(data);
+  async handleClientCreate(client: Socket, dataJSON: string): Promise<void> {
+    if (!client.data.user) return
+
+    const [ channelName, password ] = JSON.parse(dataJSON);
     const sourceUser = client.data.user;
     const response = await this.chat_.createChannelName(sourceUser, channelName, password);
 
-    if (response.code != ReturnCode.ALLOWED) {
-      client.emit('reterr', JSON.stringify(response));
-    } else {
-      client.emit('create', JSON.stringify(response));
-    }
+    this.replyToClient_(client, 'create', response);
   }
 
   @SubscribeMessage('join')
-  onClientJoin(client: Socket, data: string) {
-    const [channelUUID, password] = data;
-    const sourceUser = client.data.user;
-    const response = this.chat_.joinChannelUUID(sourceUser, channelUUID, password);
+  async handleClientJoin(client: Socket, dataJSON: string): Promise<void> {
+    if (!client.data.user) return
 
-    return JSON.stringify(response);
+    const [ channelUUID, password ] = JSON.parse(dataJSON);
+    const sourceUser = client.data.user;
+    const response = await this.chat_.joinChannelUUID(sourceUser, channelUUID, password);
+
+    this.replyToClient_(client, 'join', response);
   }
 
   @SubscribeMessage('close')
-  onClientClose(client: Socket, data: string) {
-    const [channelUUID, message] = data;
-    const sourceUser = client.data.user;
-    const response = this.chat_.forceCloseChannelUUID(sourceUser, channelUUID, message ?? undefined);
+  async handleClientClose(client: Socket, dataJSON: string): Promise<void> {
+    if (!client.data.user) return
 
-    return JSON.stringify(response);
+    const [ channelUUID, message ] = JSON.parse(dataJSON);
+    const sourceUser = client.data.user;
+    const response = await this.chat_.closeChannelUUID(sourceUser, channelUUID, message);
+
+    this.replyToClient_(client, 'close', response);
   }
 
   @SubscribeMessage('part')
-  onClientPart(client: Socket, data: string) {
-    const [channelUUID] = data;
-    const sourceUser = client.data.user;
-    const response = this.chat_.partChannelUUID(sourceUser, channelUUID);
+  async handleClientPart(client: Socket, dataJSON: string): Promise<void> {
+    if (!client.data.user) return
 
-    return JSON.stringify(response);
+    const [ channelUUID ] = JSON.parse(dataJSON);
+    const sourceUser = client.data.user;
+    const response = await this.chat_.partChannelUUID(sourceUser, channelUUID);
+
+    this.replyToClient_(client, 'part', response);
   }
 
   @SubscribeMessage('list')
-  onClientList(client: Socket) {
-    const sourceUser = client.data.user;
-    const response = this.chat_.listChannels();
+  async handleClientList(client: Socket): Promise<void> {
+    if (!client.data.user) return
 
-    return JSON.stringify(response);
+    const [ sourceUser ] = client.data.user;
+    const response = await this.chat_.summarizeChannels(sourceUser);
+
+    this.replyToClient_(client, 'list', response);
   }
  
   @SubscribeMessage('kick')
-  onClientKick(client: Socket, data: string) {
-    const [channelUUID, targetUserUUID, message] = data;
-    const sourceUser = client.data.user;
-    const response = this.chat_.kickUserFromChannelUUID(sourceUser, channelUUID, targetUserUUID, message);
+  async handleClientKick(client: Socket, dataJSON: string): Promise<void> {
+    if (!client.data.user) return
 
-    return JSON.stringify(response);
+    const [ channelUUID, targetUserUUID, message ] = JSON.parse(dataJSON);
+    const sourceUser = client.data.user;
+    const response = await this.chat_.kickUserFromChannelUUID(sourceUser, channelUUID, targetUserUUID, message);
+
+    this.replyToClient_(client, 'kick', response);
   }
 
   @SubscribeMessage('ban')
-  onClientBan(client: Socket, data: string) {
-    const [channelUUID, targetUserUUID] = data;
-    const sourceUser = client.data.user;
-    const response = this.chat_.banUserFromChannelUUID(sourceUser, channelUUID, targetUserUUID);
+  async handleClientBan(client: Socket, dataJSON: string): Promise<void> {
+    if (!client.data.user) return
 
-    return JSON.stringify(response);
+    const [ channelUUID, targetUserUUID ] = JSON.parse(dataJSON);
+    const sourceUser = client.data.user;
+    const response = await this.chat_.banUserFromChannelUUID(sourceUser, channelUUID, targetUserUUID);
+
+    this.replyToClient_(client, 'ban', response);
   }
 
   @SubscribeMessage('unban')
-  onClientUnban(client: Socket, data: string) {
-    const [channelUUID, targetUserUUID] = data;
-    const sourceUser = client.data.user;
-    const response = this.chat_.unbanUserFromChannelUUID(sourceUser, channelUUID, targetUserUUID);
+  async handleClientUnban(client: Socket, dataJSON: string): Promise<void> {
+    if (!client.data.user) return
 
-    return JSON.stringify(response);
+    const [ channelUUID, targetUserUUID ] = JSON.parse(dataJSON);
+    const sourceUser = client.data.user;
+    const response = await this.chat_.unbanUserFromChannelUUID(sourceUser, channelUUID, targetUserUUID);
+
+    this.replyToClient_(client, 'unban', response);
   }
 
   @SubscribeMessage('promote')
-  onClientPromote(client: Socket, data: string) {
-    const [channelUUID, targetUserUUID] = data;
-    const sourceUser = client.data.user;
-    const response = this.chat_.promoteUserInChannelUUID(sourceUser, channelUUID, targetUserUUID);
+  async handleClientPromote(client: Socket, data: string): Promise<void> {
+    if (!client.data.user) return
 
-    return JSON.stringify(response);
+    const [ channelUUID, targetUserUUID ] = data;
+    const sourceUser = client.data.user;
+    const response = await this.chat_.promoteUserInChannelUUID(sourceUser, channelUUID, targetUserUUID);
+
+    this.replyToClient_(client, 'promote', response);
   }
 
   @SubscribeMessage('demote')
-  onClientDemote(client: Socket, data: string) {
-    const [channelUUID, targetUserUUID] = data;
-    const sourceUser = client.data.user;
-    const response = this.chat_.demoteUserInChannelUUID(sourceUser, channelUUID, targetUserUUID);
+  async handleClientDemote(client: Socket, data: string): Promise<void> {
+    if (!client.data.user) return
 
-    return JSON.stringify(response);
+    const [ channelUUID, targetUserUUID ] = data;
+    const sourceUser = client.data.user;
+    const response = await this.chat_.demoteUserInChannelUUID(sourceUser, channelUUID, targetUserUUID);
+
+    this.replyToClient_(client, 'demote', response);
   }
 
 
   @SubscribeMessage('topic')
-  onClientTopic(client: Socket, data: string) {
-    const [channelUUID, topic] = data;
-    const sourceUser = client.data.user;
-    const response = this.chat_.topicChannelUUID(sourceUser, channelUUID, topic);
+  async handleClientTopic(client: Socket, dataJSON: string): Promise<void> {
+    if (!client.data.user) return
 
-    return JSON.stringify(response);
+    const [ channelUUID, topic ] = JSON.parse(dataJSON);
+    const sourceUser = client.data.user;
+    const response = await this.chat_.topicChannelUUID(sourceUser, channelUUID, topic);
+
+    this.replyToClient_(client, 'topic', response);
   }
 
   @SubscribeMessage('password')
-  onClientPassword(client: Socket, data: string) {
-    const [channelUUID, password] = data;
-    const sourceUser = client.data.user;
-    const response = this.chat_.passwordChannelUUID(sourceUser, channelUUID, password);
+  async handleClientPassword(client: Socket, dataJSON: string): Promise<void> {
+    if (!client.data.user) return
 
-    return JSON.stringify(response);
+    const [ channelUUID, password ] = JSON.parse(dataJSON);
+    const sourceUser = client.data.user;
+    const response = await this.chat_.passwordChannelUUID(sourceUser, channelUUID, password);
+
+    this.replyToClient_(client, 'password', response);
   }
 
   @SubscribeMessage('block')
-  handleClientBlock(client: Socket, data: string): string {
-    const [targetUserUUID] = data;
-    const sourceUser = client.data.user;
-    const response = this.chat_.blockUserUUID(sourceUser, targetUserUUID);
+  async handleClientBlock(client: Socket, dataJSON: string): Promise<void> {
+    if (!client.data.user) return;
 
-    return JSON.stringify(response);
+    const [ targetUserUUID ] = JSON.parse(dataJSON);
+    const sourceUser = client.data.user;
+    const response = await this.chat_.blockUserUUID(sourceUser, targetUserUUID);
+
+    this.replyToClient_(client, 'block', response);
   }
 
   @SubscribeMessage('unblock')
-  handleClientUnblock(client: Socket, data: string): string {
-    const [targetUserUUID] = data;
-    const sourceUser = client.data.user;
-    const response = this.chat_.unblockUserUUID(sourceUser, targetUserUUID);
+  async handleClientUnblock(client: Socket, dataJSON: string): Promise<void>  {
+    if (!client.data.user) return
 
-    return JSON.stringify(response);
+    const [ targetUserUUID ] = JSON.parse(dataJSON);
+    const sourceUser = client.data.user;
+    const response = await this.chat_.unblockUserUUID(sourceUser, targetUserUUID);
+
+    this.replyToClient_(client, 'unblock', response);
   }
 
-  @SubscribeMessage('challenge')
-  handleClientChallenge(client: Socket, data: string): string {
-    const [targetUserUUID, gameMode] = data;
-    const sourceUser = client.data.user;
-    const response = this.chat_.requestChallengeUserUUID(sourceUser, targetUserUUID, parseInt(gameMode, 10));
+  @SubscribeMessage('challengerequest')
+  async handleClientRequestChallenge(client: Socket, dataJSON: string): Promise<void> {
+    if (!client.data.user) return
 
-    return JSON.stringify(response);
+    const [ targetUserUUID, gameMode ] = JSON.parse(dataJSON);
+    const sourceUser = client.data.user;
+    const response = await this.chat_.requestChallengeUserUUID(sourceUser, targetUserUUID, parseInt(gameMode, 10));
+
+    this.replyToClient_(client, 'challenge', response);
   }
 
   @SubscribeMessage('challengeaccept')
-  handleClientAcceptChallenge(client: Socket, data: string): string {
-    const [targetUserUUID] = data;
-    const sourceUser = client.data.user;
-    const response = this.chat_.acceptChallengeUserUUID(sourceUser, targetUserUUID);
+  async handleClientAcceptChallenge(client: Socket, dataJSON: string): Promise<void> {
+    if (!client.data.user) return
 
-    return JSON.stringify(response);
+    const [ targetUserUUID ] = JSON.parse(dataJSON);
+    const sourceUser = client.data.user;
+    const response = await this.chat_.acceptChallengeUserUUID(sourceUser, targetUserUUID);
+
+    this.replyToClient_(client, 'challengeaccept', response);
   }
 
   @SubscribeMessage('challengereject')
-  handleRejectChallenge(client: Socket, data: string): string {
-    const [targetUserUUID] = data;
-    const sourceUser = client.data.user;
-    const response = this.chat_.rejectChallengeUserUUID(sourceUser, targetUserUUID);
+  async handleRejectChallenge(client: Socket, dataJSON: string): Promise<void> {
+    if (!client.data.user) return
 
-    return JSON.stringify(response);
+    const [ targetUserUUID ] = JSON.parse(dataJSON);
+    const sourceUser = client.data.user;
+    const response = await this.chat_.rejectChallengeUserUUID(sourceUser, targetUserUUID);
+
+    this.replyToClient_(client, 'challengereject', response);
+  }
+
+  @SubscribeMessage('userobserve')
+  async handleObserveUser(client: Socket, dataJSON: string): Promise<void> {
+    if (!client.data.user) return
+
+    const [ targetUserUUID ] = JSON.parse(dataJSON);
+    const sourceUser = client.data.user;
+    const response = await this.chat_.observeUserUUID(sourceUser, targetUserUUID)
+ 
+    this.replyToClient_(client, 'userobserve', response);
   }
 
   @SubscribeMessage('chanmsg')
-  onClientChannelMessage(client: Socket, data: string) {
-    const [message, channelUUID] = data;
-    const sourceUser = client.data.user;
-    const response = this.chat_.messageChannelUUID(sourceUser, channelUUID, message);
+  async onClientChannelMessage(client: Socket, dataJSON: string): Promise<void> {
+    if (!client.data.user) return
 
-    if (response.code === ReturnCode.ALLOWED)
+    const [ channelUUID, message ] = JSON.parse(dataJSON);
+    const sourceUser = client.data.user;
+    const response = await this.chat_.messageChannelUUID(sourceUser, channelUUID, message);
+
+    this.replyToClient_(client, 'chanmsg', response);
+    if (response.code === ReturnCodeEnum.ALLOWED)
       console.log("chanmsg:", response.data.messageEvent);
-    return JSON.stringify(response);
   }
 
   @SubscribeMessage('convmsg')
-  onClientConversationMessage(client: Socket, data: string) {
-    const [message, targetUserUUID] = data;
+  async onClientConversationMessage(client: Socket, dataJSON: string): Promise<void> {
+    if (!client.data.user) return
+
+    const [ targetUserUUID, message ] = JSON.parse(dataJSON);
     const sourceUser = client.data.user;
-    const response = this.chat_.messageConversationUUID(sourceUser, targetUserUUID, message);
+    const response = await this.chat_.messageConversationUUID(sourceUser, targetUserUUID, message);
 
     //TODO: Si yo mando un mensaje pero la conversación no se ha creado, se me ha de enviar conversationDetails
     //si ya existe, sólo se enviara messageEventDetails
@@ -344,7 +380,6 @@ export class ChatGateway {
     delete response.data.messageEvent;
 
     console.log("convmsg:", response);
-    return JSON.stringify(response);
   }
   /*
   ** ChatService events handle
@@ -425,6 +460,11 @@ export class ChatGateway {
 
   @ChatManagerSubscribe('onUserConnected')
   onUserConnected(event: any): void {
+   const { sourceUser } = event;
+
+   sourceUser.socket.emit('register', JSON.stringify([ sourceUser.DTO ]));
+   console.log("register", sourceUser.DTO);
+
     //this.logger_.debug(`onUserConnected: user ${event.sourceUser.name}`);
   }
 

@@ -1,6 +1,14 @@
-import { UserModel as User } from '../models';
-import { Mode as GameMode } from '../../game/game.interface';
-import { v4 as uuidv4 } from 'uuid';
+import {
+  UserModel as User,
+} from '../models';
+
+import {
+  Mode as GameMode,
+} from '../../game/game.interface';
+
+import {
+  v4 as uuidv4,
+} from 'uuid';
 
 export class ChallengeModel {
   private readonly uuid_;
@@ -36,7 +44,7 @@ export class ChallengeModel {
     return false;
   }
 
-  isComplete(): boolean {
+  get isComplete(): boolean {
     return (this.count_ == this.numPlayers_);
   }
 

@@ -11,5 +11,7 @@ export class User {
         public siteRole: UserSiteRoleEnum = UserSiteRoleEnum.NONE,
         public status: UserStatusEnum = UserStatusEnum.OFFLINE,
         public isFriend: boolean = false,
+        public isBanned: boolean = false,
+        public isDisabled: boolean = false,
     ) {}
 }

@@ -1,4 +1,8 @@
-import { UserStatus, UserChannelRole, UserSiteRole } from '../enums'
+import {
+  UserStatusEnum,
+  UserChannelRoleEnum,
+  UserSiteRoleEnum,
+} from '../enums'
 
 import {
   UserModel as User,
@@ -8,9 +12,9 @@ import {
 export class ChannelUserDTO {
   readonly uuid: string;
   readonly name: string;
-  readonly status: UserStatus;
-  readonly siteRole: UserSiteRole;
-  readonly channelRole: UserChannelRole;
+  readonly status: UserStatusEnum;
+  readonly siteRole: UserSiteRoleEnum;
+  readonly channelRole: UserChannelRoleEnum;
   readonly isMuted: boolean;
   readonly isBanned: boolean;
 
@@ -21,9 +25,11 @@ export class ChannelUserDTO {
     this.siteRole = user.siteRole;
 
     if (channel.hasOper(user))
-      this.channelRole = UserChannelRole.ADMIN;
-    if (channel.owner === user)
-      this.channelRole = UserChannelRole.OWNER;
+      this.channelRole = UserChannelRoleEnum.ADMIN;
+
+    if (channel.ownerUser === user)
+      this.channelRole = UserChannelRoleEnum.OWNER;
+
     this.isMuted = channel.hasMuted(user);
     this.isBanned = channel.hasBanned(user);
   }

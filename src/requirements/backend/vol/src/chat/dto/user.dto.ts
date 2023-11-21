@@ -1,17 +1,22 @@
-import { UserStatus, UserChannelRole, UserSiteRole } from '../enums';
-import { UserModel as User } from '../models';
+import {
+  UserStatusEnum,
+  UserSiteRoleEnum,
+} from '../enums';
 
-import { Socket } from 'socket.io';
+import {
+  UserModel as User,
+} from '../models';
 
 export class UserDTO {
   readonly intraId: number;
   readonly uuid: string;
   readonly name: string;
-  readonly status: UserStatus;
-  readonly siteRole: UserSiteRole;
+  readonly status: UserStatusEnum;
+  readonly siteRole: UserSiteRoleEnum;
   readonly banned: boolean;
   readonly disabled: boolean;
-  readonly socket?: Socket;
+  friend: boolean;
+  //TODO la amistad se tiene que verificar con hasFriend(sourceUser);
 
   constructor(user: User) {
     this.intraId = user.intraId;
@@ -19,8 +24,7 @@ export class UserDTO {
     this.name = user.name;
     this.status = user.status;
     this.siteRole = user.siteRole;
-    this.banned = user.isBanned();
-    this.disabled = user.isDisabled();
-    this.socket = user.socket;
+    this.banned = user.isBanned;
+    this.disabled = user.isDisabled;
   }
 }

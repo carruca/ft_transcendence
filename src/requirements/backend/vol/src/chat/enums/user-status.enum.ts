@@ -1,6 +1,6 @@
-export enum UserStatus {
+export enum UserStatusEnum {
   OFFLINE,
   ONLINE,
   AWAY,
-  INGAME,
+  IN_GAME,
 }

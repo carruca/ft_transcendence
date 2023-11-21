@@ -1,10 +1,11 @@
-export enum ReturnCode {
+export enum ReturnCodeEnum {
   ALLOWED,
   DENIED,
   USER_NOT_EXISTS,
   USER_NOT_CONNECTED,
   USER_IN_GAME,
   USER_AWAY,
+  YOURE_IN_GAME,
   NAME_IN_USE,
   CHANNEL_NOT_EXISTS,
   CHANNEL_EXISTS,

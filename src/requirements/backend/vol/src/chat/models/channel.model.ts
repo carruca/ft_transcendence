@@ -1,25 +1,25 @@
 import {
   UserModel as User,
+  ChannelTopicModel as ChannelTopic,
   EventModel as Event,
 } from '.';
 
-import { EventManager } from '../managers';
+import {
+  EventManager,
+} from '../managers';
 
 import {
-  ChannelData,
-  ChannelTopic,
+  ChannelPayload,
+  ChannelTopicPayload,
 } from '../interfaces';
 
 import {
-  UserDTO,
   ChannelDTO,
-  ChannelUserDTO,
-  ChannelTopicDTO,
 } from '../dto';
 
 import {
-  EventType,
-  UserChannelRole,
+  EventTypeEnum,
+  UserChannelRoleEnum,
 } from '../enums';
 
 import {
@@ -30,23 +30,28 @@ import {
 
 import { Channel as ChannelDB } from '../../channels/entities/channel.entity';
 
-export { ChannelData, ChannelTopic, ChannelDTO };
-
 export class ChannelModel {
+  private readonly uuid_: string;
+  private name_: string;
+  private readonly ownerUser_: User;
+  private readonly creationDate_;
+  private topic_?: ChannelTopic;
+  private password_?: string;
+
   private users_ = new Map<string, User>;
   private bans_ = new Set<string>;
   private mutes_ = new Set<string>;
   private opers_ = new Set<string>;
   private eventManager_ = new EventManager;
 
-  public constructor(
-    private readonly uuid_: string,
-    private name_: string,
-    private readonly owner_: User,
-    private readonly createdDate_: Date = new Date(),
-    private topic_?: ChannelTopic,
-    private password_?: string,
-  ) {}
+  public constructor(channelPayload: ChannelPayload) {
+    this.uuid_ = channelPayload.uuid;
+    this.name_ = channelPayload.name;
+    this.ownerUser_ = channelPayload.ownerUser;
+    this.creationDate_ = channelPayload.creationDate ?? new Date();
+    this.topic_ = channelPayload.topic ? new ChannelTopic(channelPayload.topic) : undefined;
+    this.password_ = channelPayload.password;
+  }
 
   public addMessageEvent(sourceUser: User, value: string): Event {
     return this.eventManager_.addEvent(Event.message(sourceUser, value));
@@ -56,8 +61,8 @@ export class ChannelModel {
     return this.eventManager_.addEvent(event);
   }
 
-  public addGenericEvent(eventType: EventType, sourceUser: User, targetUser?: User): Event {
-    return this.eventManager_.addEvent(Event.generic(eventType, sourceUser, targetUser));
+  public addGenericEvent(type: EventTypeEnum, sourceUser: User, targetUser?: User): Event {
+    return this.eventManager_.addEvent(Event.generic(type, sourceUser, targetUser));
   }
 
   public addKickEvent(sourceUser: User, targetUser: User, value?: string): Event {
@@ -70,12 +75,12 @@ export class ChannelModel {
 
   public addUser(user: User): boolean {
     // Lógica para agregar un usuario al canal
-    if (!this.hasUser(user)) {
-      this.users_.set(user.uuid, user);
-      return true;
+    if (this.hasUser(user)) {
+      throw new DuplicateValueError("ChannelModel.addUser: User already exists in that channel");
+      return false;
     }
-    throw new DuplicateValueError("ChannelModel.addUser: User already exists in that channel");
-    return false;
+    this.users_.set(user.uuid, user);
+    return true;
   }
 
   public removeUser(user: User) {
@@ -137,7 +142,7 @@ export class ChannelModel {
   }
 
   public isOwner(user: User): boolean {
-    return this.owner == user;
+    return this.ownerUser == user;
   }
 
   public getUsers(): User[] {
@@ -147,20 +152,6 @@ export class ChannelModel {
   public getUsersExcept(exceptUser: User): User[] {
     return this.getUsers().filter((user: User) => user.uuid !== exceptUser.uuid );
   }
-
-  public getDTO(): ChannelDTO {
-    return new ChannelDTO(this);
-  }
-
-  public getTopicDTO(): ChannelTopicDTO | undefined {
-    if (!this.topic_)
-      return undefined;
-    return new ChannelTopicDTO(this.topic_);
-  }
-
-  public getUserDTO(user: User): ChannelUserDTO {
-    return new ChannelUserDTO(this, user);
-  } 
 
   //properties
   get isEmpty(): boolean {
@@ -179,22 +170,14 @@ export class ChannelModel {
     return this.name_;
   }
 
-  get createdDate(): Date {
-    return this.createdDate_;
+  get creationDate(): Date {
+    return this.creationDate_;
   }
 
-  get owner(): User {
-    return this.owner_;
-  }
-/*
-  set successor(user: User | undefined) {
-    this.successor_ = user;
+  get ownerUser(): User {
+    return this.ownerUser_;
   }
 
-  get successor(): User | undefined {
-    return this.successor_;
-  }
-*/
   set topic(value: ChannelTopic | undefined) {
     this.topic_ = value;
   }
@@ -209,5 +192,9 @@ export class ChannelModel {
 
   get password(): string | undefined {
     return this.password_;
+  }
+  
+  get DTO(): ChannelDTO {
+    return new ChannelDTO(this);
   }
 }

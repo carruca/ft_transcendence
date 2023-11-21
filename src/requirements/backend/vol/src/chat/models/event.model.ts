@@ -1,14 +1,22 @@
-import { UserModel as User } from '.';
+import {
+  UserModel as User,
+} from '.';
 
-import { EventData } from '../interfaces';
+import {
+  EventPayload,
+} from '../interfaces';
 
-import { EventDTO } from '../dto';
+import {
+  EventDTO,
+} from '../dto';
 
-import { EventType } from '../enums'
+import {
+  EventTypeEnum,
+} from '../enums'
 
-import { v4 as uuidv4 } from 'uuid';
-
-export { EventData, EventDTO, EventType }
+import {
+  v4 as uuidv4,
+} from 'uuid';
 
 export class EventModel {
   private uuid_: string;
@@ -16,39 +24,39 @@ export class EventModel {
   private modified_: boolean;
   private sourceUser_: User;
   private targetUser_: User | undefined;
-  private eventType_: EventType;
+  private type_: EventTypeEnum;
   private value_: string | undefined;
 
-  constructor(eventData: EventData) {
-    this.uuid_ = eventData.uuid ?? uuidv4();
+  constructor(eventPayload: EventPayload) {
+    this.uuid_ = eventPayload.uuid ?? uuidv4();
     this.timestamp_ = new Date();
-    this.modified_ = eventData.modified ?? false;
-    this.sourceUser_ = eventData.sourceUser;
-    this.targetUser_ = eventData.targetUser;
-    this.eventType_ = eventData.eventType;
-    this.value_ = eventData.value;
+    this.modified_ = eventPayload.modified ?? false;
+    this.sourceUser_ = eventPayload.sourceUser;
+    this.targetUser_ = eventPayload.targetUser;
+    this.type_ = eventPayload.type;
+    this.value_ = eventPayload.value;
   }
 
   public static message(sourceUser: User, value: string): EventModel {
     return new EventModel({
       sourceUser: sourceUser,
-      eventType: EventType.MESSAGE,
+      type: EventTypeEnum.MESSAGE,
       value: value,
     });
   }
 
   public static kick(sourceUser: User, targetUser: User, value?: string): EventModel {
     return new EventModel({
-      eventType: EventType.KICK,
+      type: EventTypeEnum.KICK,
       sourceUser: sourceUser,
       targetUser: targetUser,
       value: value,
     });
   }
 
-  public static generic(eventType: EventType, sourceUser: User, targetUser?: User, value?: string): EventModel {
+  public static generic(type: EventTypeEnum, sourceUser: User, targetUser?: User, value?: string): EventModel {
     return new EventModel({
-      eventType: eventType,
+      type: type,
       sourceUser: sourceUser,
       targetUser: targetUser,
       value: value,
@@ -59,6 +67,9 @@ export class EventModel {
     return this.uuid_;
   }
 
+  get type(): EventTypeEnum {
+    return this.type_
+  }
   get timestamp(): Date {
     return this.timestamp_;
   }
@@ -71,7 +82,15 @@ export class EventModel {
     return this.sourceUser_;
   }
 
-  modifyontent(user: User, value: string): boolean {
+  get targetUser(): User | undefined {
+    return this.targetUser_;
+  }
+
+  get value(): string | undefined {
+    return this.value_;
+  }
+
+  modifyContent(user: User, value: string): boolean {
     const now = new Date();
     const timeDifference = now.getTime() - this.timestamp_.getTime();
     const timeThreshold = 60 * 1000; //1 minute in milliseconds
@@ -79,7 +98,7 @@ export class EventModel {
     if (
          this.sourceUser_ === user
       && timeDifference <= timeThreshold
-      && this.eventType_ === EventType.MESSAGE
+      && this.type_ === EventTypeEnum.MESSAGE
     ) {
         this.value_ = value;
         this.modified_ = true;
@@ -89,15 +108,7 @@ export class EventModel {
     return false;
   }
 
-  getDTO(): EventDTO {
-    return {
-      uuid: this.uuid_,
-      eventType: this.eventType_,
-      timestamp: this.timestamp_,
-      modified: this.modified_,
-      sourceUUID: this.sourceUser_.uuid,
-      targetUUID: this.targetUser_?.uuid,
-      value: this.value_,
-    };
+  get DTO(): EventDTO {
+    return new EventDTO(this);
   }
 }
