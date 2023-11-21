@@ -277,37 +277,26 @@ export class RoomService {
     room.state = State.END;
 
     // send score, winners and losers to API
-    // TODO centralize  this in a function that receives the players[] and returns the UserScore[]
-    const winners_stats: UserStats[] = winners.map((player: Player) => {
-      return {
-        id: player.socket!.data.user.uuid,
-        score: player.stats.score,
-        winRatio: 0,
-        rivalScore: player.stats.rival_score,
-        rivalWinRatio: 0,
-        comeBack: player.stats.come_back,
-        doubleTap: player.stats.double_tap,
-        blocker: player.stats.blocker,
-        winningStreak: player.stats.streak,
-        firstPoint: player.stats.first_point,
-        precision: player.stats.precision,
-      };
-    });
-    const losers_stats: UserStats[] = losers.map((player: Player) => {
-      return {
-        id: player.socket!.data.user.uuid,
-        score: player.stats.score,
-        winRatio: 0,
-        rivalScore: player.stats.rival_score,
-        rivalWinRatio: 0,
-        comeBack: player.stats.come_back,
-        doubleTap: player.stats.double_tap,
-        blocker: player.stats.blocker,
-        winningStreak: player.stats.streak,
-        firstPoint: player.stats.first_point,
-        precision: player.stats.precision,
-      };
-    });
+    function createUserStats(players: Player[]): UserStats[] {
+      return players.map((player: Player) => {
+        return {
+          id: player.socket!.data.user.uuid,
+          score: player.stats.score,
+          winRatio: 0,
+          rivalScore: player.stats.rival_score,
+          rivalWinRatio: 0,
+          comeBack: player.stats.come_back,
+          doubleTap: player.stats.double_tap,
+          blocker: player.stats.blocker,
+          winningStreak: player.stats.streak,
+          firstPoint: player.stats.first_point,
+          precision: player.stats.precision,
+        };
+      });
+    }
+    const winners_stats: UserStats[] = createUserStats(winners);
+    const losers_stats: UserStats[] = createUserStats(losers);
+
     const match: CreateMatchDto = {
       mode: (room.options.mode === 0 ? "normal" : "special"),
       start: room.start,
