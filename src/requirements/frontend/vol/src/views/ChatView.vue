@@ -4,7 +4,7 @@
     <h1>Chat View</h1>
     <div class="channel-list">
       <ul>
-        <li v-for="channel in channelList.values()" :key="channel.uuid" @click="selectChannel(channel.uuid)"
+        <li v-for="channel in channelList" :key="channel.uuid" @click="selectChannel(channel.uuid)"
             :class="{ 'selected': channel.uuid === selectedChannelUUID }">
           {{ channel.name }}
         </li>
@@ -19,95 +19,97 @@
         - Friend: {{ channelUser.isFriend ? 'Yes' : 'No' }}
       </div>
       <div
-            v-for="event in currentChannel.events.values()"
-            :key="event.uuid"
-            :class="{ 'message': event.type === EventTypeEnum.MESSAGE, 'other-event': event.type !== EventTypeEnum.MESSAGE }"
+          v-for="event in currentChannel.events.values()"
+          :key="event.uuid"
+          :title="printTime(event.timestamp)"
+          :class="{ 'message': event.type === EventTypeEnum.MESSAGE, 'other-event': event.type !== EventTypeEnum.MESSAGE }"
       >
-          {{ event.timestamp }} {{ formatEventMessage(event) }}
+        {{ formatEventMessage(event) }}
       </div>
+    </div>
+    <div v-else>
+      <p>No channel selected.</p>
     </div>
   </div>
 </template>
 
 <script>
-import { reactive, ref, onMounted, watch } from 'vue';
-import { chatService } from '@/services/chat.service';
+import { ref, onMounted, watch } from 'vue';
 
-import { EventTypeEnum } from '@/services/event-type.enum';
-import { Event } from '@/services/models';
+import { client } from '@/services/chat-client';
+import { EventTypeEnum } from '@/services/enum';
+import { Event } from '@/services/model';
 
 export default {
   setup() {
+    //const chat = client;
     const selectedChannelUUID = ref('');
     
-    const { channelList, currentChannel, setCurrentChannel, isDarkMode } = chatService;
+    const { channelList, currentChannel, setCurrentChannel } = client;
 
-    // Variables reactivas para los estilos
+
     const textColor = ref('');
     const backgroundColor = ref('');
 
-    // Función para actualizar las variables de estilo
-    const updateStyles = () => {
-      textColor.value = isDarkMode ? 'white' : 'black';
-      backgroundColor.value = isDarkMode ? 'black' : 'white';
-    };
-
     onMounted(() => {
-      chatService.startSimulation();
-
-      // Seleccionar el primer canal por defecto al cargar el componente
-      if (channelList.value.size > 0) {
-        selectedChannelUUID.value = channelList.value.keys().next().value;
-        setCurrentChannel(selectedChannelUUID.value);
-      }
+      client.playSim();
+      selectedChannelUUID.value = currentChannel.value.uuid;
     });
-
-    const formatEventMessage = (event) => {
-        switch (event.type) {
-            case EventTypeEnum.MESSAGE:
-              return `<${event.sourceUser.name}> ${event.value}`;
-            case EventTypeEnum.PART:
-              return `${event.sourceUser.name} has left`;
-            case EventTypeEnum.KICK:
-              return `${event.sourceUser.name} has kicked ${event.targetUser.name}`;
-            case EventTypeEnum.BAN:
-              return `${event.sourceUser.name} has banned ${event.targetUser.name}`;
-            case EventTypeEnum.UNBAN:
-              return `${event.sourceUser.name} has unbanned ${event.targetUser.name}`;
-            case EventTypeEnum.MUTE:
-              return `${event.sourceUser.name} has muted ${event.targetUser.name}`;
-            case EventTypeEnum.UNMUTE:
-              return `${event.sourceUser.name} has unmuted ${event.targetUser.name}`;
-            case EventTypeEnum.PASSWORD:
-              if (event.value === undefined)
-                return `${event.sourceUser.name} unset a password`;
-              return `${event.sourceUser.name} set a password`;
-            case EventTypeEnum.CREATE:
-              return `${event.sourceUser.name} created the channel`;
-            case EventTypeEnum.CLOSE:
-              return `${event.sourceUser.name} closed the channel`;
-            case EventTypeEnum.JOIN:
-              return `${event.sourceUser.name} has joined.`
-            case EventTypeEnum.TOPIC:
-              return `${event.sourceUser.name} has changed topic to '${event.value}'`;
-          }
-          return '';
-      }
 
     const selectChannel = (channelUUID) => {
       selectedChannelUUID.value = channelUUID;
       setCurrentChannel(channelUUID);
     };
 
-    watch(isDarkMode, updateStyles, { immediate: true });
+    const printTime = (time) => {
+      return `${time.getHours()}:${time.getMinutes()}:${time.getSeconds()}`;
+    };
+
+/*
+    watch(() => channelList, (newChannels) => {
+      channelList.value = newChannels;
+    });
+*/
+    const formatEventMessage = (event) => {
+      switch (event.type) {
+        case EventTypeEnum.MESSAGE:
+          return `<${event.sourceUser.name}> ${event.value}`;
+        case EventTypeEnum.PART:
+          return `- ${event.sourceUser.name} has left`;
+        case EventTypeEnum.KICK:
+          return `- ${event.sourceUser.name} has kicked ${event.targetUser.name}`;
+        case EventTypeEnum.BAN:
+          return `- ${event.sourceUser.name} has banned ${event.targetUser.name}`;
+        case EventTypeEnum.UNBAN:
+          return `- ${event.sourceUser.name} has unbanned ${event.targetUser.name}`;
+        case EventTypeEnum.MUTE:
+          return `- ${event.sourceUser.name} has muted ${event.targetUser.name}`;
+        case EventTypeEnum.UNMUTE:
+          return `- ${event.sourceUser.name} has unmuted ${event.targetUser.name}`;
+        case EventTypeEnum.PASSWORD:
+          if (event.value === undefined)
+            return `- ${event.sourceUser.name} unset a password`;
+          return `- ${event.sourceUser.name} set a password`;
+        case EventTypeEnum.CREATE:
+          return `- ${event.sourceUser.name} created the channel`;
+        case EventTypeEnum.CLOSE:
+          return `- ${event.sourceUser.name} closed the channel`;
+        case EventTypeEnum.JOIN:
+          return `- ${event.sourceUser.name} has joined.`
+        case EventTypeEnum.TOPIC:
+          return `- ${event.sourceUser.name} has changed topic to '${event.value}'`;
+      }
+      return '';
+    }
 
     return {
-      selectedChannelUUID,
       channelList,
       currentChannel,
-      selectChannel,
+      selectedChannelUUID,
       EventTypeEnum,
       formatEventMessage,
+      selectChannel,
+      printTime,
     };
   },
 /*  methods: {

@@ -1,16 +1,11 @@
 import socket from './ws';
-import { reactive } from 'vue';
 
-import { chatService } from './chat.service';
+import { ChatService } from './chat.service';
 
-class ClientData {
-  
-}
-
-class Client {
+class ChatGateway {
   private readonly data_ = reactive(ClientData);
 
-  constructor() {
+  constructor( chatService: ChatService) {
     socket.on('reterr', this.onRetErr.bind(this));
     socket.on('register', this.onRegister.bind(this));
     socket.on('create', this.onCreate.bind(this));
@@ -72,5 +67,3 @@ class Client {
   }
 }
 
-window.client = new Client();
-window.cli = chatService;
