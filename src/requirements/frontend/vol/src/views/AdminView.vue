@@ -144,7 +144,7 @@ function ban() {
 .admin-panel {
   display: flex;
   flex-direction: column;
-  height: 100vh; /* Full viewport height */
+  height: 80vh; /* Full viewport height */
   width: 100vw; /* Full viewport width */
   justify-content: center; /* Center content vertically */
   margin: 20px;
@@ -178,7 +178,6 @@ function ban() {
   flex-grow: 1; /* Take up remaining space */
   width: 100%;
   justify-content: space-around; /* Space out the columns evenly */
-  padding-bottom: 20px;
   box-sizing: border-box; /* Ensure padding is included to the height calculated */
   overflow: hidden;
 }
