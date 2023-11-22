@@ -146,6 +146,7 @@ function ban() {
   flex-direction: column;
   height: 100vh; /* Full viewport height */
   width: 100vw; /* Full viewport width */
+  justify-content: center; /* Center content vertically */
   margin: 20px;
   color: white;
   background-color: #333; /* Dark theme color */
@@ -175,17 +176,17 @@ function ban() {
 .content {
   display: flex;
   flex-grow: 1; /* Take up remaining space */
-  width: calc(100% - 40px);
-  height: calc(100% - HeaderHeight);
+  width: 100%;
+  justify-content: space-around; /* Space out the columns evenly */
+  padding-bottom: 20px;
+  box-sizing: border-box; /* Ensure padding is included to the height calculated */
   overflow: hidden;
 }
 
 .section {
-  flex: 1; /* Each section takes equal width */
   display: flex;
   flex-direction: column;
-  /* align-items: stretch; */
-  padding: 0; /* Remove padding for full width */
+  flex: 1; /* Each section takes equal width */
   border-right: 2px solid #444; /* Maintain a border for separation */
   overflow-y: auto; /* Enable scrolling for each section */
 }
