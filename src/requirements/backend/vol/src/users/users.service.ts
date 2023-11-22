@@ -9,7 +9,7 @@ import { CreateBlockDto } from './dto/create-block.dto';
 
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { User, UserPermits } from './entities/user.entity';
+import { User, UserMode } from './entities/user.entity';
 import { Block } from './entities/block.entity';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -81,15 +81,35 @@ export class UsersService {
     return this.usersRepository.save(user);
   }
 
-	async setPermits(id: string, permits: UserPermits) {
+	async setMode(id: string, mode: UserMode) {
     const user = await this.findOne(id);
     if (!user) {
       throw new HttpException('User not found', HttpStatus.NOT_FOUND);
     }
 
-    user.permits = permits;
+    user.mode = mode;
     return this.usersRepository.save(user);
 	}
+
+  async setDisabled(id: string, value: boolean) {
+    const user = await this.findOne(id);
+    if (!user) {
+      throw new HttpException('User not found', HttpStatus.NOT_FOUND);
+    }
+
+    user.disabled = value;
+    return this.usersRepository.save(user);
+  }
+
+  async setMuted(id: string, value: boolean) {
+    const user = await this.findOne(id);
+    if (!user) {
+      throw new HttpException('User not found', HttpStatus.NOT_FOUND);
+    }
+
+    user.muted = value;
+    return this.usersRepository.save(user);
+  }
 
   async createBlock(createBlockDto: CreateBlockDto) : Promise<Block> {
     const newBlock = new Block(
