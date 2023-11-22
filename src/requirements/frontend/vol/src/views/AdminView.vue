@@ -34,10 +34,10 @@
         </div>
         <h2>User Actions</h2>
         <div class="action-buttons">
-          <button v-if="canShowAction('promote')" @click="promote">Promote</button>
-          <button v-if="canShowAction('mute')" @click="mute">Mute</button>
+          <button v-if="canShowAction('promote')" @click="promote">{{ promoteButtonText }}</button>
+          <button v-if="canShowAction('mute')" @click="mute">{{ muteButtonText }}</button>
+          <button v-if="canShowAction('ban')" @click="ban">{{ banButtonText }}</button>
           <button v-if="canShowAction('kick')" @click="kick">Kick</button>
-          <button v-if="canShowAction('ban')" @click="ban">Ban</button>
         </div>
       </div>
     </div>
@@ -91,6 +91,17 @@ watch(
   { deep: true }
 );
 
+// Computed properties for button text based on user properties
+const banButtonText = computed(() => {
+  return selectedUser.value && selectedUser.value.isBanned ? 'Unban' : 'Ban';
+})
+const muteButtonText = computed(() => {
+  return selectedUser.value && selectedUser.value.isMuted ? 'Unmute' : 'Mute';
+})
+const promoteButtonText = computed(() => {
+  return selectedUser.value && selectedUser.value.isAdmin ? 'Demote' : 'Promote';
+})
+
 // Functions to select channel and user
 const selectChannel = (channel) => {
   selectedChannel.value = channel;
@@ -115,10 +126,17 @@ const toggleButtonText = computed(() => currentPanel.value === 'Chat' ? 'Switch 
 function canShowAction(action) {
   if (currentPanel.value === 'Chat') {
     if (selectedChannel.value) {
-      if (selectedUser.value)
+      // TODO show kick button only if not banned
+      if (action === 'destroy' || action === 'passwd') {
         return true;
-      else if (action === 'destroy' || action === 'passwd')
-        return true;
+      } else if (selectedUser.value) {
+        if (selectedUser.value.isBanned)
+          return action === 'ban';
+        else
+          return true;
+      } else { /* shouldnt reach this statement */
+        return false;
+      }
     }
   } else {
     return selectedChannel.value || selectedUser.value;
