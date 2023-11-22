@@ -30,7 +30,7 @@
         <h2>Channel Actions</h2>
         <div class="action-buttons">
           <button v-if="canShowAction('destroy')" @click="destroy">Destroy</button>
-          <button v-if="canShowAction('setpasswd')" @click="setpasswd">{{ passwdButtonText }}</button>
+          <button v-if="canShowAction('setpasswd')" @click="showPasswdModal = true">{{ passwdButtonText }}</button>
           <button v-if="canShowAction('delpasswd')" @click="delpasswd">Delete password</button>
         </div>
         <h2>User Actions</h2>
@@ -42,7 +42,16 @@
         </div>
       </div>
     </div>
-    <br>
+    <div v-if="showPasswdModal" class="passwd-modal">
+      <div class="passwd-modal-content">
+        <h2>Enter password</h2>
+        <input type="passwd" v-model="newPasswd" placeholder="Password (empty for none)" />
+        <div class="action-buttons">
+          <button @click="showPasswdModal = false">Cancel</button>
+          <button @click="setpasswd">Confirm</button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -56,11 +65,11 @@ const selectedUser = ref(null);
 const selectedUserUUID = ref(null);
 const currentPanel = ref('Chat');
 
+const newPasswd = ref('');
+const showPasswdModal = ref(false);
+
 // Destructure the properties and methods from the client you want to use
 const { channelList } = client;
-
-//const textColor = ref('');
-//const backgroundColor = ref('');
 
 onMounted(() => {
   client.playAdminSim(); // FIXME only for testing
@@ -152,8 +161,11 @@ function destroy() {
   client.close(selectedChannelUUID.value);
 }
 function setpasswd() {
-  const passwd = window.prompt('Enter new password (leave empty to remove password):');
-  client.password(selectedChannelUUID.value, passwd);
+  if (newPasswd.value) {
+    client.password(selectedChannelUUID.value, newPasswd.value);
+    newPasswd.value = ''; // Clear the password field
+  }
+  showPasswdModal = false; // Hide modal
 }
 function delpasswd() {
   client.password(selectedChannelUUID.value, "");
@@ -275,5 +287,26 @@ function kick() {
 
 .action-buttons button:hover {
   background-color: #555;
+}
+
+.passwd-modal {
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.5); /* Dimmed background */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.passwd-modal-content {
+  background: white;
+  padding: 20px;
+  border-radius: 5px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px; /* Spacing between elements */
 }
 </style>
