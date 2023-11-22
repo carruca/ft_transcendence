@@ -5,7 +5,8 @@
       <button @click="togglePanel" class="toggle-button">{{ toggleButtonText }}</button>
     </div>
     <div class="content">
-      <div class="section channels">
+      <!-- CHAT ADMIN PANEL -->
+      <div class="section channels" v-if="currentPanel === 'Chat'">
         <h2>Channels</h2>
         <ul class="list">
           <li
@@ -17,7 +18,7 @@
           </li>
         </ul>
       </div>
-      <div class="section users">
+      <div class="section users" v-if="currentPanel === 'Chat'">
         <h2>Users</h2>
         <ul class="list" v-if="selectedChannel">
           <li 
@@ -30,7 +31,35 @@
         </ul>
         <p v-else>No channel selected</p>
       </div>
-      <div class="section actions">
+      <!-- .CHAT ADMIN PANEL -->
+      <!-- WEB ADMIN PANEL -->
+      <div class="section users" v-if="currentPanel === 'Web'">
+        <h2>All Users</h2>
+        <ul class="list">
+          <li
+            v-for="user in allUsers"
+            :key="user.uuid"
+            @click="selectWebUser(user)"
+            :class="[userClass(user), { selected: selectedUserUUID === user.uuid }]">
+            {{ user.name }}
+          </li>
+        </ul>
+      </div>
+      <div class="section users" v-if="currentPanel === 'Web'">
+        <h2>Banned Users</h2>
+        <ul class="list">
+          <li
+            v-for="user in bannedUsers"
+            :key="user.uuid"
+            @click="selectWebUser(user)"
+            :class="[userClass(user), { selected: selectedUserUUID === user.uuid }]">
+            {{ user.name }}
+          </li>
+        </ul>
+      </div>
+      <!-- .WEB ADMIN PANEL -->
+      <!-- CHAT ADMIN PANEL -->
+      <div class="section actions" v-if="currentPanel === 'Chat'">
         <h2>Channel Actions</h2>
         <div class="action-buttons">
           <button v-if="canShowAction('destroy')" @click="destroy">Destroy</button>
@@ -45,6 +74,16 @@
           <button v-if="canShowAction('kick')" @click="kick">Kick</button>
         </div>
       </div>
+      <!-- .CHAT ADMIN PANEL -->
+      <!-- WEB ADMIN PANEL -->
+      <div class="section actions" v-if="currentPanel === 'Web'">
+        <h2>Actions</h2>
+        <div class="action-buttons">
+          <button v-if="canShowAction('webban')" @click="webban">{{ webbanButtonText }}</button>
+          <button v-if="canShowAction('webpromote')" @click="webpromote">{{ webpromoteButtonText }}</button>
+        </div>
+      </div>
+      <!-- .WEB ADMIN PANEL -->
     </div>
     <div v-if="showPasswdModal" class="passwd-modal">
       <div class="passwd-modal-content">
@@ -74,16 +113,34 @@ const showPasswdModal = ref(false);
 
 // Destructure the properties and methods from the client you want to use
 const { channelList } = client;
+import {
+    UserSiteRoleEnum,
+    UserStatusEnum,
+} from '@/services/enum';
+import { User } from '@/services/model';
+const users = ref([
+  new User('uuid1', 'Alice', UserSiteRoleEnum.ADMIN, UserStatusEnum.ONLINE, true, false, false),
+  new User('uuid2', 'Bob', UserSiteRoleEnum.USER, UserStatusEnum.ONLINE, false, true, false),
+  new User('uuid3', 'Charlie', UserSiteRoleEnum.USER, UserStatusEnum.OFFLINE, false, false, true),
+]);
+
+// Computed users and banned users array
+const allUsers = computed(() => users.value.filter(u => !u.isBanned));
+const bannedUsers = computed(() => users.value.filter(u => u.isBanned));
 
 onMounted(() => {
   client.playAdminSim(); // FIXME only for testing
+  selectChannel.value = null;
   selectedChannelUUID.value = null;
+  selectedUser.value = null;
   selectedUserUUID.value = null;
 });
 
 // Watch the channelList for changes
 watch(channelList, (newChannelList) => {
   // Check if selectedChannel still exists in the updated channelList
+  if (currentPanel.value != 'Chat')
+    return;
   if (selectedChannel.value && !newChannelList.some(channel => channel.uuid === selectedChannel.value.uuid)) {
     selectedChannel.value = null;
     selectedChannelUUID.value = null;
@@ -96,14 +153,25 @@ watch(
   () => selectedChannel.value ? Array.from(selectedChannel.value.users.values()) : [],
   (newUsersArray) => {
     // Check if selectedUser still exists in the updated users of selectedChannel
+    if (currentPanel.value != 'Chat')
+      return;
     if (selectedUser.value && !newUsersArray.some(user => user.uuid === selectedUser.value.uuid)) {
-      // If not, reset selectedUser and selectedUserUUID
       selectedUser.value = null;
       selectedUserUUID.value = null;
     }
   },
   { deep: true }
 );
+// Watch the selectedUser for changes to the global user list
+watch(users, (newUsers) => {
+  // Check if selectedUser still exists in the updated users array
+  if (currentPanel.value != 'Web')
+    return;
+  if (selectedUser.value && !newUsers.some(user => user.uuid === selectedUser.value.uuid)) {
+    selectedUser.value = null;
+    selectedUserUUID.value = null;
+  }
+});
 
 // Computed properties for button text based on user properties
 const banButtonText = computed(() => {
@@ -118,6 +186,15 @@ const promoteButtonText = computed(() => {
 const passwdButtonText = computed(() => {
   return selectedChannel.value && selectedChannel.value.hasPassword ? 'Change password' : 'Set password';
 });
+// Computed propertion for Web Admin button
+const webbanButtonText = computed(() => {
+  return selectedUser.value && selectedUser.value.isBanned ? 'Unban' : 'Ban';
+});
+const webpromoteButtonText = computed(() => {
+  // TODO isModerator does not exist
+  //return selectedUser.value && selectedUser.value.isModerator ? 'Demote' : 'Promote';
+  return 'Promote (TODO)';
+})
 
 // Functions to select channel and user
 const selectChannel = (channel) => {
@@ -131,9 +208,19 @@ const selectUser = (user) => {
   selectedUserUUID.value = user.uuid;
 }
 
+// Function to select web user
+const selectWebUser = (user) => {
+  selectedUser.value = user;
+  selectedUserUUID.value = user.uuid;
+}
+
 // Computed property for toggle button text
 const toggleButtonText = computed(() => currentPanel.value === 'Chat' ? 'Switch to Web' : 'Switch to Chat');
 function togglePanel() {
+  selectChannel.value = null;
+  selectedChannelUUID.value = null;
+  selectedUser.value = null;
+  selectedUserUUID.value = null;
   currentPanel.value = currentPanel.value === 'Chat' ? 'Web' : 'Chat';
 }
 
@@ -156,7 +243,22 @@ function userClass(user) {
   return '';
 }
 
+// Web user color
+function webuserClass(user) {
+  if (user.isBanned) {
+    return 'user-banned';
+  /*} else if (user.isOwner) { TODO
+    return 'user-owner';
+  } else if (user.isModerator) {
+    return 'user-admin';*/
+  }
+  // TODO maybe add colors for disabled users (?
+  return '';
+}
+
 // Function to determine if an action can be shown
+// TODO actions can't be done to owners
+// TODO only owners can promote (both in the chat and in the site)
 function canShowAction(action) {
   if (currentPanel.value === 'Chat') {
     if (selectedChannel.value) {
@@ -167,13 +269,17 @@ function canShowAction(action) {
       if (selectedUser.value) {
         if (selectedUser.value.isBanned)
           return action === 'ban';
-        else
-          return true;
+        return true;
       }
       return false;
     }
   } else {
-    return selectedChannel.value || selectedUser.value;
+    if (selectedUser.value) {
+      if (selectedUser.value.isBanned)
+        return action === 'webban';
+      return true;
+    }
+    return false;
   }
 }
 
@@ -192,6 +298,7 @@ function delpasswd() {
   client.password(selectedChannelUUID.value, "");
 }
 // User actions
+// TODO change function to working ones
 function promote() {
   if (selectedUser.value && selectedUser.value.isAdmin)
     client.demote(selectedChannelUUID.value, selectedUserUUID.value);
@@ -212,6 +319,24 @@ function ban() {
 }
 function kick() {
   client.kick(selectedChannelUUID.value, selectedUserUUID.value);
+}
+
+// Web actions
+// TODO change function to working ones
+// TODO maybe more actions ?
+function webban() {
+  if (selectedUser.value && selectedUser.value.isBanned)
+    alert('unban!');
+  else
+    alert('ban!');
+}
+function webpromote() {
+  // TODO isModerator does not exist
+  /*if (selectedUser.value && selectedUser.value.isModerator)
+    alert('Demote!');
+  else
+    alert('Promote!');*/
+  alert('TODO!');
 }
 </script>
 
