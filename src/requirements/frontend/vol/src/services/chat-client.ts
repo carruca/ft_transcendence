@@ -166,7 +166,7 @@ class ChatClient {
     const user24 = this.createUser("User24", { siteRole: UserSiteRoleEnum.NONE, isBanned: false, isDisabled: false });
     const user25 = this.createUser("User25", { siteRole: UserSiteRoleEnum.NONE, isBanned: false, isDisabled: false });
     const channel1 = this.createChannel("#paco", user1);
-    const channel2 = this.createChannel("#jones", user2);
+    const channel2 = this.createChannel("#jones", user2, "patata");
     let channel3: Channel;
 
     setTimeout(() => {

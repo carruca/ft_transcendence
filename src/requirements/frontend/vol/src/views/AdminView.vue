@@ -30,7 +30,8 @@
         <h2>Channel Actions</h2>
         <div class="action-buttons">
           <button v-if="canShowAction('destroy')" @click="destroy">Destroy</button>
-          <button v-if="canShowAction('passwd')" @click="passwd">Change password</button>
+          <button v-if="canShowAction('setpasswd')" @click="setpasswd">{{ passwdButtonText }}</button>
+          <button v-if="canShowAction('delpasswd')" @click="delpasswd">Delete password</button>
         </div>
         <h2>User Actions</h2>
         <div class="action-buttons">
@@ -94,13 +95,16 @@ watch(
 // Computed properties for button text based on user properties
 const banButtonText = computed(() => {
   return selectedUser.value && selectedUser.value.isBanned ? 'Unban' : 'Ban';
-})
+});
 const muteButtonText = computed(() => {
   return selectedUser.value && selectedUser.value.isMuted ? 'Unmute' : 'Mute';
-})
+});
 const promoteButtonText = computed(() => {
   return selectedUser.value && selectedUser.value.isAdmin ? 'Demote' : 'Promote';
-})
+});
+const passwdButtonText = computed(() => {
+  return selectedChannel.value && selectedChannel.value.hasPassword ? 'Change password' : 'Set password';
+});
 
 // Functions to select channel and user
 const selectChannel = (channel) => {
@@ -126,35 +130,55 @@ const toggleButtonText = computed(() => currentPanel.value === 'Chat' ? 'Switch 
 function canShowAction(action) {
   if (currentPanel.value === 'Chat') {
     if (selectedChannel.value) {
-      // TODO show kick button only if not banned
-      if (action === 'destroy' || action === 'passwd') {
+      if (action === 'destroy' || action === 'setpasswd')
         return true;
-      } else if (selectedUser.value) {
+      if (action === 'delpasswd')
+        return selectedChannel.value.hasPassword ? true : false;
+      if (selectedUser.value) {
         if (selectedUser.value.isBanned)
           return action === 'ban';
         else
           return true;
-      } else { /* shouldnt reach this statement */
-        return false;
       }
+      return false;
     }
   } else {
     return selectedChannel.value || selectedUser.value;
   }
 }
 
-// Example action functions
+// Channel actions
+function destroy() {
+  client.close(selectedChannelUUID.value);
+}
+function setpasswd() {
+  const passwd = window.prompt('Enter new password (leave empty to remove password):');
+  client.password(selectedChannelUUID.value, passwd);
+}
+function delpasswd() {
+  client.password(selectedChannelUUID.value, "");
+}
+// User actions
 function promote() {
-  alert(`Muting ${selectedUserUUID.value}`);
+  if (selectedUser.value && selectedUser.value.isAdmin)
+    client.demote(selectedChannelUUID.value, selectedUserUUID.value);
+  else
+    client.promote(selectedChannelUUID.value, selectedUserUUID.value);
 }
 function mute() {
-  alert(`Muting ${selectedUserUUID.value}`);
-}
-function kick() {
-  alert(`Muting ${selectedUserUUID.value}`);
+  if (selectedUser.value && selectedUser.value.isMuted)
+    client.unmute(selectedChannelUUID.value, selectedUserUUID.value);
+  else
+    client.mute(selectedChannelUUID.value, selectedUserUUID.value);
 }
 function ban() {
-  alert(`Muting ${selectedUserUUID.value}`);
+  if (selectedUser.value && selectedUser.value.isBanned)
+    client.unban(selectedChannelUUID.value, selectedUserUUID.value);
+  else
+    client.ban(selectedChannelUUID.value, selectedUserUUID.value);
+}
+function kick() {
+  client.kick(selectedChannelUUID.value, selectedUserUUID.value);
 }
 </script>
 
