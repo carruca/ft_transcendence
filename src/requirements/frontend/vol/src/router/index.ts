@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import HomeView from '../views/HomeView.vue';
+import Leaderboard from '@/components/Leaderboard/Leaderboard.vue'
 import NotFound from '../views/NotFound.vue';
 import Login from '../components/Login.vue';
 import Profile from '@/components/Profile/Profile.vue';//@ its from root
@@ -16,9 +17,14 @@ const routes = [
     component: HomeView,
     children: [
       {
+      path: '',
+      name: 'Leaderboard',
+      component: Leaderboard,
+      },
+      {
         path: 'about',
         name: 'About',
-        component: About
+        component: About,
       },
       {
         path: 'game',
@@ -31,11 +37,6 @@ const routes = [
         component: undefined,
       },
       {
-        path: 'profile',
-        name: 'Profile',
-        component: Profile,
-      },
-      {
         path: 'settings',
         name: 'Settings',
         component: Settings,
@@ -44,7 +45,12 @@ const routes = [
         path: 'admin',
         name: 'Admin',
         component: undefined,
-      }
+      },
+      {
+        path: '/:username',
+        name: 'Profile',
+        component: Profile,
+      },
       // TODO: Add routes that must display the navbar and sidebar here
     ],
   },
@@ -70,7 +76,9 @@ const routes = [
   },
   // 404 -> Always at the end!
   {
-    path: '/:pathMatch(.*)*', component: NotFound,
+    path: '/:pathMatch(.*)*',
+    component: NotFound,
+    alias: '/404',
   },
 ];
 

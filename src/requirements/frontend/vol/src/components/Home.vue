@@ -20,7 +20,7 @@ const props = defineProps({
     <TopBar :user="props.user" />
     <NavBar :admin="props.user.admin || true"/>  <!-- TODO: get props.user.admin-->
     <main>
-      <router-view />
+      <router-view :user="props.user" />
     </main>
   </div>
 </template>
