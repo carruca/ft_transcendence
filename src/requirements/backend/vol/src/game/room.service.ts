@@ -59,7 +59,10 @@ export class RoomService {
       }
     }
     // if playing
-    if (this.get_player(socket.data.user.uuid)) return;
+    if (this.get_player(socket.data.user.uuid)) {
+      socket.emit('error_queue');
+      return;
+    }
 
     // add do queue
     modeQueue.push(socket);
