@@ -216,6 +216,10 @@ function kick() {
 </script>
 
 <style scoped>
+html, body {
+  background: #131313;
+}
+
 .admin-panel {
   display: flex;
   flex-direction: column;
@@ -224,7 +228,7 @@ function kick() {
   justify-content: center; /* Center content vertically */
   margin: 20px;
   color: white;
-  background-color: #333; /* Dark theme color */
+  background-color: #131313;
   box-sizing: border-box;  /* Include padding and border in the element's total width and height */
 }
 
@@ -233,7 +237,7 @@ function kick() {
   justify-content: space-between;
   align-items: center;
   padding: 1em;
-  background-color: #222; /* Slightly darker header background */
+  background-color: #131313; /* Slightly darker header background */
 }
 
 .toggle-button {
@@ -263,6 +267,7 @@ function kick() {
   flex: 1; /* Each section takes equal width */
   border-right: 2px solid #444; /* Maintain a border for separation */
   overflow-y: auto; /* Enable scrolling for each section */
+  margin-left: 10px;
 }
 .section:last-child {
   border-right: none; /* No border for the last section */
@@ -283,11 +288,11 @@ function kick() {
 }
 
 .list li:hover {
-  background-color: #555;
+  background-color: #444;
 }
 
 .list li.selected {
-  background-color: #5c5c5c;
+  background-color: #444;
 }
 
 .action-buttons {
@@ -323,7 +328,7 @@ function kick() {
 }
 
 .passwd-modal-content {
-  background: white;
+  background: #272727;
   padding: 20px;
   border-radius: 5px;
   display: flex;
@@ -336,7 +341,7 @@ function kick() {
 }
 
 .user-muted {
-  color: #a0a0a0;
+  color: #707070;
 }
 .user-banned {
   color: #ff595e;
