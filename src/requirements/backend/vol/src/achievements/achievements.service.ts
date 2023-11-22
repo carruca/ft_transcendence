@@ -87,17 +87,11 @@ export class AchievementsService {
     return all.filter((achievement) => !achieved.includes(achievement.id));
   }
 
-  getMockUser(id: string | number): string {  // FIXME: remove this
-    if (id == 1)
-      return 'paco';
-    return 'jones';
-  }
-
   async verifyByUser(userStats: UserStats): Promise<void> {
     const user = await this.usersRepository.findOne({
       relations: ['achievements'],
       where: {
-        nickname: this.getMockUser(userStats.id),
+        id: userStats.id,
       },
     });
     if (!user) {

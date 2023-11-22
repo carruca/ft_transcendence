@@ -25,7 +25,6 @@ export class Achievement {
 	@Column()
 	image: string;
 
-	@OneToMany(() => AchievementUser, achievementUser => achievementUser.achievement, {
-	})
+	@OneToMany(() => AchievementUser, achievementUser => achievementUser.achievement)
 	users: AchievementUser[];
 }

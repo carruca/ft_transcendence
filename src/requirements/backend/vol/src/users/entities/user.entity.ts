@@ -6,6 +6,8 @@ import {
   ManyToMany,
   JoinTable,
 } from 'typeorm';
+
+import { MatchUser } from '../../matches/entities/match-user.entity';
 import { AchievementUser } from '../../achievements/entities/achievement-user.entity';
 import { ChannelUser } from '../../channels/entities/channel-user.entity';
 import { Friend } from '../../friends/entities/friend.entity';
@@ -59,6 +61,9 @@ export class User {
 
   @Column({ default: UserPermits.user })
   permits: UserPermits;
+
+  @OneToMany(() => MatchUser, (matchUser) => matchUser.user)
+  matches: MatchUser[];
 
   @OneToMany(() => AchievementUser, (achievementUser) => achievementUser.user)
   achievements: AchievementUser[];

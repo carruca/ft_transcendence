@@ -41,6 +41,7 @@ export class UsersService {
     newUser.achievements = [];
     newUser.channels = [];
     newUser.friends = [];
+    newUser.matches = [];
     return this.usersRepository.save(newUser);
   }
 
