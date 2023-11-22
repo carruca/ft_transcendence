@@ -52,7 +52,10 @@ export class RoomService {
     for (const [, otherQueue] of this.queue.entries()) {
       for (const it of otherQueue) {
         if (it == undefined) continue;
-        if (it.id == socket.data.user.uuid) return;
+        if (it.data.user.uuid == socket.data.user.uuid) {
+          socket.emit('error_queue');
+          return;
+        }
       }
     }
     // if playing
@@ -61,7 +64,7 @@ export class RoomService {
     // add do queue
     modeQueue.push(socket);
 
-    // console.log("join queue " + mode + ": " + socket.id);
+    console.log("join queue " + mode + ": " + socket.id);
 
     // try to create room
     const modePlayers = modes.get(mode);
@@ -80,7 +83,7 @@ export class RoomService {
       const index = modeQueue.indexOf(socket);
       if (index != -1) {
         modeQueue.splice(index, 1);
-        //console.log("leave queue " + mode + ": " + socket.id);
+        console.log("leave queue " + mode + ": " + socket.id);
         break;
       }
     }
