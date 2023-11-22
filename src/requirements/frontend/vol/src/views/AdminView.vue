@@ -37,10 +37,11 @@
           <button v-if="canShowAction('promote')" @click="promote">Promote</button>
           <button v-if="canShowAction('mute')" @click="mute">Mute</button>
           <button v-if="canShowAction('kick')" @click="kick">Kick</button>
-          <button v-if="canShowAction('ban')" @click="kick">Ban</button>
+          <button v-if="canShowAction('ban')" @click="ban">Ban</button>
         </div>
       </div>
     </div>
+    <br>
   </div>
 </template>
 
@@ -125,13 +126,17 @@ function canShowAction(action) {
 }
 
 // Example action functions
+function promote() {
+  alert(`Muting ${selectedUserUUID.value}`);
+}
 function mute() {
-  // Muting logic
   alert(`Muting ${selectedUserUUID.value}`);
 }
 function kick() {
-  // Kick logic
-  alert(`Kicking ${selectedUserUUID.value}`);
+  alert(`Muting ${selectedUserUUID.value}`);
+}
+function ban() {
+  alert(`Muting ${selectedUserUUID.value}`);
 }
 </script>
 
@@ -141,9 +146,10 @@ function kick() {
   flex-direction: column;
   height: 100vh; /* Full viewport height */
   width: 100vw; /* Full viewport width */
+  margin: 20px;
   color: white;
   background-color: #333; /* Dark theme color */
-  margin: 20px;
+  box-sizing: border-box;  /* Include padding and border in the element's total width and height */
 }
 
 .header {
@@ -169,16 +175,19 @@ function kick() {
 .content {
   display: flex;
   flex-grow: 1; /* Take up remaining space */
-  width: 100%; /* Use full width */
+  width: calc(100% - 40px);
+  height: calc(100% - HeaderHeight);
+  overflow: hidden;
 }
 
 .section {
   flex: 1; /* Each section takes equal width */
   display: flex;
   flex-direction: column;
-  align-items: stretch;
+  /* align-items: stretch; */
   padding: 0; /* Remove padding for full width */
   border-right: 2px solid #444; /* Maintain a border for separation */
+  overflow-y: auto; /* Enable scrolling for each section */
 }
 .section:last-child {
   border-right: none; /* No border for the last section */
@@ -186,7 +195,7 @@ function kick() {
 
 .list {
   flex-grow: 1;
-  overflow-y: auto;
+  overflow-y: auto; /* Enables vertical scrolling */
   list-style-type: none;
   padding: 0;
   margin: 0;

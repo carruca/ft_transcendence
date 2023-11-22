@@ -526,6 +526,7 @@ onUnmounted(() => {
 const handleButton1Click = () => {
   if (button1Pressed.value == false) {
     socket.emit("join_queue", "normal");
+    console.log("joining...");
     button1Text.value = "Cancel";
   } else {
     socket.emit("leave_queue");
