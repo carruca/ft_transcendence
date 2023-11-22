@@ -8,7 +8,11 @@
       <div class="section channels">
         <h2>Channels</h2>
         <ul class="list">
-          <li v-for="channel in channelList" :key="channel.uuid" @click="selectChannel(channel)" :class="{ selected: selectedChannelUUID === channel.uuid }">
+          <li
+            v-for="channel in channelList"
+            :key="channel.uuid"
+            @click="selectChannel(channel)"
+            :class="[ channelClass(channel), { selected: selectedChannelUUID === channel.uuid }]">
             {{ channel.name }}
           </li>
         </ul>
@@ -17,10 +21,10 @@
         <h2>Users</h2>
         <ul class="list" v-if="selectedChannel">
           <li 
-            v-for="user in selectedChannel.users.values()" 
-            :key="user.uuid" 
-            @click="selectUser(user)" 
-            :class="{ selected: selectedUserUUID === user.uuid }">
+            v-for="user in selectedChannel.users.values()"
+            :key="user.uuid"
+            @click="selectUser(user)"
+            :class="[userClass(user), { selected: selectedUserUUID === user.uuid }]">
             {{ user.name }}
           </li>
         </ul>
@@ -127,13 +131,30 @@ const selectUser = (user) => {
   selectedUserUUID.value = user.uuid;
 }
 
-// Toggle between Chat and Web Admin Panel
+// Computed property for toggle button text
+const toggleButtonText = computed(() => currentPanel.value === 'Chat' ? 'Switch to Web' : 'Switch to Chat');
 function togglePanel() {
   currentPanel.value = currentPanel.value === 'Chat' ? 'Web' : 'Chat';
 }
 
-// Computed property for toggle button text
-const toggleButtonText = computed(() => currentPanel.value === 'Chat' ? 'Switch to Web' : 'Switch to Chat');
+// User color
+function channelClass(channel) {
+  if (channel.hasPassword)
+    return 'channel-passwd';
+  return '';
+}
+function userClass(user) {
+  if (user.isBanned) {
+    return 'user-banned';
+  /*} else if (user.isOwner) { TODO
+    return 'user-owner';*/
+  } else if (user.isAdmin) {
+    return 'user-admin';
+  } else if (user.isMuted) {
+    return 'user-muted';
+  }
+  return '';
+}
 
 // Function to determine if an action can be shown
 function canShowAction(action) {
@@ -309,4 +330,22 @@ function kick() {
   flex-direction: column;
   gap: 10px; /* Spacing between elements */
 }
+
+.channel-passwd {
+  color: #ffca3a;
+}
+
+.user-muted {
+  color: #a0a0a0;
+}
+.user-banned {
+  color: #ff595e;
+}
+.user-admin {
+  color: #ffca3a;
+}
+.user-owner {
+  color: #8ac926;
+}
+/* #ff595e #ffca3a #8ac926 #1982c4 #6a4c93 palette */
 </style>
