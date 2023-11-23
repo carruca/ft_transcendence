@@ -15,9 +15,11 @@ export abstract class InARowCondition extends AchievementCondition {
   protected async evaluateMatchesInARow(userStats: UserStats, maxMatches: number) {
     const matchUsers = await this.matchUsersRepository.find({
       where: {
-        userId: userStats.id
+        user: {
+          id: userStats.id,
+        },
       },
-      relations: ['match'],
+      relations: ['match', 'user'],
       take: maxMatches,
       order: {
         match: {
@@ -34,7 +36,7 @@ export abstract class InARowCondition extends AchievementCondition {
 
     const matches = matchUsers.map(matchUser => matchUser.match);
     let matchesWinInRow = 0;
-
+/*
     for (const match of matches) {
       match.winners.forEach(user => {
         if (user === userStats.id) {
@@ -42,6 +44,7 @@ export abstract class InARowCondition extends AchievementCondition {
         }
       })
     }
+*/
     if (matchesWinInRow === maxMatches) {
       return true;
     }

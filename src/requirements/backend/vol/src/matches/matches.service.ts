@@ -22,15 +22,14 @@ export class MatchesService {
     private usersRepository: Repository<User>,
   ) {}
 
-  async createMatchUsers(match: Match, users: UserStats[]): Promise<void> {
-    for (const user of users) {
-      const matchUser = new MatchUser(
-        user.score,
-        user.id,
-        match,
-	    );
-      match.users.push(matchUser);
-    }
+  async createMatchUser(match: Match, user: User, stats: UserStats) {
+    const matchUser = new MatchUser(
+      stats.score,
+      user,
+      match
+    );
+    match.users.push(matchUser);
+    user.matches.push(matchUser);
   }
 
   async create(createMatchDto: CreateMatchDto): Promise<void> {
@@ -43,39 +42,63 @@ export class MatchesService {
 
     await this.matchesRepository.save(match);
 
-    await this.createMatchUsers(match, createMatchDto.winners);
-    await this.createMatchUsers(match, createMatchDto.losers);
+    const winners = await this.usersRepository.find({
+      relations: ['matches'],
+      where: {
+        id: In(createMatchDto.winners.map((winner) => winner.id)),
+      },
+    });
+    const losers = await this.usersRepository.find({
+      relations: ['matches'],
+      where: {
+        id: In(createMatchDto.losers.map((loser) => loser.id)),
+      },
+    });
+
+    winners.forEach(async (user, index) => {
+      const stats = createMatchDto.winners[index];
+      await this.createMatchUser(match, user, stats);
+    });
+    losers.forEach(async (user, index) => {
+      const stats = createMatchDto.losers[index];
+      await this.createMatchUser(match, user, stats);
+    });
+    await this.updateEloRating(winners, losers);
 
     await this.matchUsersRepository.save(match.users);
-
-    for (const user of createMatchDto.winners) {
-      match.winners.push(user.id)
-    }
     await this.matchesRepository.save(match);
-    await this.updateEloRating(createMatchDto.winners[0].id, createMatchDto.losers[0].id);
+    await this.usersRepository.save([...winners, ...losers]);
   }
 
   async findAll(): Promise<Match[]> {
     return this.matchesRepository.find();
   }
-
+/*
   async history(id: string): Promise<Match[]> {
     const matchUsers = await this.matchUsersRepository.find({
-      where: { userId: id },
-      relations: ['match'],
+      relations: ['match', 'user'],
+      where: {
+        user: {
+          id: id,
+        },
+      },
     });
 
     const matchHistory = matchUsers.map(matchUser => matchUser.match);
     return matchHistory.sort((a,b) => b.start.getTime() - a.start.getTime());
   }
-
+*/
   async paginate(
     id: string,
     options: PaginationOptionsDto,
   ): Promise<PaginationDto<Match>> {
     const [ results, total ] = await this.matchUsersRepository.findAndCount({
-      where: { userId: id },
-      relations: ['match'],
+      relations: ['match', 'user'],
+      where: {
+        user: {
+          id: id,
+        },
+      },
       take: options.limit,
       skip: options.page * options.limit,
       order: {
@@ -92,52 +115,22 @@ export class MatchesService {
     };
   }
 
-  getMockUser(id: string | number): string {  // FIXME: remove this
-    if (id == 1)
-      return 'paco';
-    return 'jones';
-  }
-
-  async updateEloRating(winner: string, loser: string): Promise<void> {
-    const winningUsers = await this.usersRepository.find({
-      where: {
-        nickname: this.getMockUser(winner),
-      }
-    });
-    const losingUsers = await this.usersRepository.find({
-      where: {
-        nickname: this.getMockUser(loser),
-      }
-    });
-	//TODO: change to actual users
-/*    const winningUsers = await this.usersRepository.find({
-      where: {
-        id: In(winners),
-      },
-    });
-    const losingUsers = await this.usersRepository.find({
-      where: {
-        id: In(losers),
-      },
-    });
-*/
-    const ratingDifference = losingUsers.reduce((total, loser) => {
+  async updateEloRating(winners: User[], losers: User[]): Promise<void> {
+    const ratingDifference = losers.reduce((total, loser) => {
       return total + (loser.rating - 100);
     }, 0);
 
     const pointsGained = Math.round(32 * (1 - 1 / (1 + Math.pow(10, ratingDifference / 400))));
 
-    winningUsers.forEach((winner) => {
+    winners.forEach((winner) => {
       winner.rating += pointsGained;
       ++winner.wins;
     });
 
-    losingUsers.forEach((loser) => {
+    losers.forEach((loser) => {
       loser.rating -= pointsGained;
       ++loser.losses;
     });
-
-    await this.usersRepository.save([...winningUsers, ...losingUsers]);
   }
 
   async findOne(id: string) {

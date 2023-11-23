@@ -6,16 +6,16 @@ import {
   ManyToMany,
   JoinTable,
 } from 'typeorm';
+
+import { MatchUser } from '../../matches/entities/match-user.entity';
 import { AchievementUser } from '../../achievements/entities/achievement-user.entity';
 import { ChannelUser } from '../../channels/entities/channel-user.entity';
 import { Friend } from '../../friends/entities/friend.entity';
 
-export enum UserPermits {
-  user,
-  owner,
-  moderator,
-  banned,
-  disabled,
+export enum UserMode {
+	user,
+	owner,
+	moderator,
 }
 
 @Entity()
@@ -53,12 +53,21 @@ export class User {
 
   @Column({ default: 0 })
   losses: number;
-
+/*
   @Column({ default: 0 })
   status: number;
+*/
+  @Column({ default: UserMode.user })
+  mode: UserMode;
 
-  @Column({ default: UserPermits.user })
-  permits: UserPermits;
+  @Column({ default: false })
+  disabled: boolean;
+
+  @Column({ default: false })
+  muted: boolean;
+
+  @OneToMany(() => MatchUser, (matchUser) => matchUser.user)
+  matches: MatchUser[];
 
   @OneToMany(() => AchievementUser, (achievementUser) => achievementUser.user)
   achievements: AchievementUser[];

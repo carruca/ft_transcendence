@@ -18,13 +18,10 @@ export class AchievementUser {
 	@PrimaryGeneratedColumn('uuid')
 	id: string;
 
-	@ManyToOne(() => User, (user) => user.achievements, {
-		cascade: true,
-	})
+	@ManyToOne(() => User, (user) => user.achievements)
 	user: User;
 
 	@ManyToOne(() => Achievement, (achievement) => achievement.users, {
-		cascade: true,
 		eager: true,
 	})
 	achievement: Achievement;

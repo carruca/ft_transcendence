@@ -11,11 +11,11 @@ import { Match } from './match.entity';
 export class MatchUser {
   constructor(
     score: number,
-    userId: string,
+    user: User,
     match: Match,
   ) {
     this.score = score;
-    this.userId = userId;
+    this.user = user;
     this.match = match;
   }
 
@@ -24,11 +24,13 @@ export class MatchUser {
 
   @Column()
   score: number;
-
-  //@ManyToOne(() => User)
+/*
   @Column()
-  userId: string;
-
+  winner: boolean;
+*/
   @ManyToOne(() => Match, (match) => match.users)
   match: Match;
+
+  @ManyToOne(() => User, (user) => user.matches)
+  user: User;
 }

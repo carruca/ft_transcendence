@@ -277,18 +277,62 @@ class ChatClient {
 
   public playAdminSim() {
     this.clear_();
-    const ownerUser = this.createUser({ name: "owner" });
-    const user1 = this.createUser({ name: "User1" });
-    const user2 = this.createUser({ name: "User2" });
-    const user3 = this.createUser({ name: "User3" });
+    const ownerUser = this.createUser("owner", { siteRole: UserSiteRoleEnum.OWNER, isBanned: false, isDisabled: false });
+    const user1 = this.createUser("User1", { siteRole: UserSiteRoleEnum.NONE, isBanned: false, isDisabled: false });
+    const user2 = this.createUser("User2", { siteRole: UserSiteRoleEnum.NONE, isBanned: false, isDisabled: false });
+    const user3 = this.createUser("User3", { siteRole: UserSiteRoleEnum.NONE, isBanned: false, isDisabled: false });
+    const user4 = this.createUser("User4", { siteRole: UserSiteRoleEnum.NONE, isBanned: false, isDisabled: false });
+    const user5 = this.createUser("User5", { siteRole: UserSiteRoleEnum.NONE, isBanned: false, isDisabled: false });
+    const user6 = this.createUser("User6", { siteRole: UserSiteRoleEnum.NONE, isBanned: false, isDisabled: false });
+    const user7 = this.createUser("User7", { siteRole: UserSiteRoleEnum.NONE, isBanned: false, isDisabled: false });
+    const user8 = this.createUser("User8", { siteRole: UserSiteRoleEnum.NONE, isBanned: false, isDisabled: false });
+    const user9 = this.createUser("User9", { siteRole: UserSiteRoleEnum.NONE, isBanned: false, isDisabled: false });
+    const user10 = this.createUser("User10", { siteRole: UserSiteRoleEnum.NONE, isBanned: false, isDisabled: false });
+    const user11 = this.createUser("User11", { siteRole: UserSiteRoleEnum.NONE, isBanned: false, isDisabled: false });
+    const user12 = this.createUser("User12", { siteRole: UserSiteRoleEnum.NONE, isBanned: false, isDisabled: false });
+    const user13 = this.createUser("User13", { siteRole: UserSiteRoleEnum.NONE, isBanned: false, isDisabled: false });
+    const user14 = this.createUser("User14", { siteRole: UserSiteRoleEnum.NONE, isBanned: false, isDisabled: false });
+    const user15 = this.createUser("User15", { siteRole: UserSiteRoleEnum.NONE, isBanned: false, isDisabled: false });
+    const user16 = this.createUser("User16", { siteRole: UserSiteRoleEnum.NONE, isBanned: false, isDisabled: false });
+    const user17 = this.createUser("User17", { siteRole: UserSiteRoleEnum.NONE, isBanned: false, isDisabled: false });
+    const user18 = this.createUser("User18", { siteRole: UserSiteRoleEnum.NONE, isBanned: false, isDisabled: false });
+    const user19 = this.createUser("User19", { siteRole: UserSiteRoleEnum.NONE, isBanned: false, isDisabled: false });
+    const user20 = this.createUser("User20", { siteRole: UserSiteRoleEnum.NONE, isBanned: false, isDisabled: false });
+    const user21 = this.createUser("User21", { siteRole: UserSiteRoleEnum.NONE, isBanned: false, isDisabled: false });
+    const user22 = this.createUser("User22", { siteRole: UserSiteRoleEnum.NONE, isBanned: false, isDisabled: false });
+    const user23 = this.createUser("User23", { siteRole: UserSiteRoleEnum.NONE, isBanned: false, isDisabled: false });
+    const user24 = this.createUser("User24", { siteRole: UserSiteRoleEnum.NONE, isBanned: false, isDisabled: false });
+    const user25 = this.createUser("User25", { siteRole: UserSiteRoleEnum.NONE, isBanned: false, isDisabled: false });
     const channel1 = this.createChannel("#paco", user1);
-    const channel2 = this.createChannel("#jones", user2);
+    const channel2 = this.createChannel("#jones", user2, "patata");
     let channel3: Channel;
 
     setTimeout(() => {
       channel3 = this.createChannel("#vermikins", ownerUser);
       this.join(channel1, user2);
       this.join(channel1, user3);
+      this.join(channel1, user4);
+      this.join(channel1, user5);
+      this.join(channel1, user6);
+      this.join(channel1, user7);
+      this.join(channel1, user8);
+      this.join(channel1, user9);
+      this.join(channel1, user10);
+      this.join(channel1, user11);
+      this.join(channel1, user12);
+      this.join(channel1, user13);
+      this.join(channel1, user14);
+      this.join(channel1, user15);
+      this.join(channel1, user16);
+      this.join(channel1, user17);
+      this.join(channel1, user18);
+      this.join(channel1, user19);
+      this.join(channel1, user20);
+      this.join(channel1, user21);
+      this.join(channel1, user22);
+      this.join(channel1, user23);
+      this.join(channel1, user24);
+      this.join(channel1, user25);
       this.chanmsg(channel1, user2, "Donde caemos gente?");
     }, 1000);
     setTimeout(() => {
