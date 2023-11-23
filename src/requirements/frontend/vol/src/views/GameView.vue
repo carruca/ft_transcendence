@@ -62,12 +62,14 @@ import {
   ref,
 } from 'vue';
 
-import socket from "../services/ws.js";
+import socket from "../services/ws.ts";
 
 // FIXME remove
 const inputText = ref("");
 
 /** VAR  --------------------------------------- */
+
+let connected: boolean = true;
 
 const colorWhite: string = "#c3c3c3"
 const colorBlack: string = "#131313"
@@ -377,6 +379,22 @@ window.addEventListener('resize', resize_canvas);
 
 /** SOCKETS ------------------------------------ */
 
+socket.on('error', (msg: string) => {
+  connected = false;
+  console.log("Fatal error: " + msg);
+})
+
+socket.on('error_queue', () => {
+  if (button1Pressed.value == true) {
+    button1Text.value = button1DefText;
+    button1Pressed.value = !button1Pressed.value;
+  }
+  if (button2Pressed.value == true) {
+    button2Text.value = button2DefText;
+    button2Pressed.value = !button2Pressed.value;
+  }
+});
+
 socket.on('score', (p1: number, p2: number) => {
   score.p1_ = p1;
   score.p2_ = p2;
@@ -513,8 +531,11 @@ onUnmounted(() => {
 /** BUTTON  ------------------------------------ */
 
 const handleButton1Click = () => {
+  if (connected === false)
+    return;
   if (button1Pressed.value == false) {
     socket.emit("join_queue", "normal");
+    console.log("joining...");
     button1Text.value = "Cancel";
   } else {
     socket.emit("leave_queue");
@@ -523,6 +544,8 @@ const handleButton1Click = () => {
   button1Pressed.value = !button1Pressed.value;
 };
 const handleButton2Click = () => {
+  if (connected === false)
+    return;
   if (button2Pressed.value == false) {
     socket.emit("join_queue", "special");
     button2Text.value = "Cancel";

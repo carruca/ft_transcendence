@@ -67,13 +67,19 @@ print:
 	echo $(DATABASE)
 
 logs:
-	$(DOCKER_COMPOSE) $@ -f
+	$(DOCKER_COMPOSE) $@ -f -n 1000
 
 import:
 	$(DOCKER_COMPOSE) exec -u root -t $(POSTGRESQL) pg_restore -d $(DATABASE)
 
 export:
 	$(DOCKER_COMPOSE) exec -u root -t $(POSTGRESQL) pg_dump $(DATABASE) --data-only
+
+data:
+	$(DOCKER_COMPOSE) exec -u root -t $(POSTGRESQL) psql $(DATABASE) -c "SELECT * FROM \"user\"; SELECT * FROM \"channel\"; SELECT * FROM \"channel_user\";"
+
+clear:
+	$(DOCKER_COMPOSE) exec -u root -t $(POSTGRESQL) psql $(DATABASE) -c "DELETE FROM \"channel_user\"; DELETE FROM \"channel\"; DELETE FROM \"user\";"
 
 $(CONTAINERS):
 	$(DOCKER) exec -ti $(addprefix $(CONTAINER_PREFIX), $@) sh

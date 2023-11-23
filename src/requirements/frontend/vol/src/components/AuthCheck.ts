@@ -1,4 +1,5 @@
 import router from "@/router";
+import socket from "../services/ws";
 
 export const loggedInFn = async (): Promise<Object | undefined> => {
   try {
@@ -27,6 +28,8 @@ export const loggedInFn = async (): Promise<Object | undefined> => {
       }
     }
     if (response.ok) {
+      if (!socket.connected)
+        socket.connect();
       return await response.json();
     }
   } catch (error) {

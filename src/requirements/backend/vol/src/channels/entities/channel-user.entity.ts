@@ -22,7 +22,7 @@ export class ChannelUser {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @ManyToOne(() => User, (user) => user.channels)
+  @ManyToOne(() => User, (user) => user.channels, { eager: true })
   user: User;
 
   @ManyToOne(() => Channel, (channel) => channel.users)

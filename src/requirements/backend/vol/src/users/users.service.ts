@@ -1,7 +1,9 @@
 import {
+  Inject,
 	Injectable,
 	HttpException,
 	HttpStatus,
+	forwardRef,
 } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -17,15 +19,17 @@ import { AchievementUser } from '../achievements/entities/achievement-user.entit
 import { ChannelUser } from '../channels/entities/channel-user.entity';
 import { RatingUserDto } from './dto/rating-user.dto';
 import { Friend, FriendStatus } from '../friends/entities/friend.entity';
+import { ChatManager } from '../chat/managers';
 
 @Injectable()
 export class UsersService {
   constructor(
     @InjectRepository(User)
     private usersRepository: Repository<User>,
-
     @InjectRepository(Block)
     private blocksRepository: Repository<Block>,
+    @Inject(forwardRef(() => ChatManager))
+    private chatManager: ChatManager,
   ) { }
 
   async create(createUserDto: CreateUserDto): Promise<User> {
@@ -37,11 +41,18 @@ export class UsersService {
     newUser.achievements = [];
     newUser.channels = [];
     newUser.friends = [];
+    newUser.matches = [];
     return this.usersRepository.save(newUser);
-}
+  }
 
   findAll(): Promise<User[]> {
     return this.usersRepository.find();
+  }
+
+  findAllWithChannels(): Promise<User[]> {
+    return this.usersRepository.find({
+      relations: ['channels'],
+    });
   }
 
   async findOneByIntraId(intraId: number): Promise<User | null> {
@@ -78,6 +89,7 @@ export class UsersService {
     }
 
     user.nickname = nick;
+    this.chatManager.changeNickUserUUID(user.id, nick);
     return this.usersRepository.save(user);
   }
 
@@ -225,7 +237,7 @@ export class UsersService {
     });
 
     return users.map(user => ({
-      nickname: user.nickname,
+      nickname: user.nickname!,
       rating: user.rating,
       wins: user.wins,
       losses: user.losses,

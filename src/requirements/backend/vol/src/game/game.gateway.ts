@@ -10,60 +10,69 @@ import { Server } from 'net';
 
 import { Axis, Axis2, Player, Room } from './game.interface';
 import { RoomService } from './room.service';
+import { ChatManagerHandler, ChatManagerSubscribe, ChatManagerInstance } from '../chat/decorators';
+import { ChatManager } from '../chat/managers';
 
 @WebSocketGateway({
   cors: {
-    // TODO change to ENV var -> process.env.FRONTEND
     origin: process.env.NEST_FRONT_URL
   },
 })
-
+@ChatManagerHandler()
 export class GameGateway implements OnGatewayDisconnect {
+  @ChatManagerInstance()
+  private chat_manager: ChatManager;
   //nicknames: Map<string, string> = new Map();
   constructor(
     private room_service: RoomService,
-  ) {}
+    chat_manager: ChatManager,
+  ) {
+    this.chat_manager = chat_manager;
+  }
 
   @WebSocketServer()
   server: Server;
 
   handleConnection(client: Socket) {
-    // TODO get user
-    // TODO set client.data.user to user
     console.log("CONNECTION: " + client.id);
   }
 
   handleDisconnect(client: Socket) {
-    // TODO check if (client.data.user != null) to know if it was connected successfully
-    this.room_service.disconnect(client);
+    if (client.data.user) {
+      this.room_service.disconnect(client);
+    }
     console.log("DISCONNECTION: " + client.id);
   }
 
   @SubscribeMessage('join_queue')
   join_queue(client: Socket, mode: string): void {
-    // TODO check if auth (client.data.user != null)
+    if (!client.data.user) {
+      client.emit('error_queue');
+      return;
+    }
     this.room_service.join_queue(client, mode);
   }
 
   @SubscribeMessage('leave_queue')
   leave_queue(client: Socket): void {
-    // TODO check if auth (client.data.user != null)
+    if (!client.data.user)
+      return;
     this.room_service.leave_queue(client);
   }
 
   @SubscribeMessage('ready')
   onReady(client: Socket): void {
-    // TODO check if auth (client.data.user != null)
-
-    // TODO check with user id -> !this.room.get_player(client.data.user.id
-    const player: Player | null = this.room_service.get_player(client.id);
-
+    if (!client.data.user)
+      return;
+    const player: Player | null = this.room_service.get_player(client.data.user.uuid);
+    if (!player)
+      return;
     this.room_service.ready(player);
   }
 
   @SubscribeMessage('get-room')
-  get_room(client: Socket, id: string): void {
-    const room: Room | null = this.room_service.get_user_roomcode(id);
+  get_room(client: Socket, uuid: string): void {
+    const room: Room | null = this.room_service.get_user_roomcode(uuid);
     if (room !== null) {
       client.emit('room', room.code);
     }
@@ -71,8 +80,8 @@ export class GameGateway implements OnGatewayDisconnect {
 
   @SubscribeMessage('new-room')
   new_room(client: Socket, mode: string) {
-    // TODO check if auth (client.data.user != null)
-
+    if (!client.data.user)
+      return;
     let room: Room | undefined = this.room_service.new_room(mode);
     if (room === undefined) return;
     this.room_service.join_room(room, client);
@@ -81,8 +90,8 @@ export class GameGateway implements OnGatewayDisconnect {
 
   @SubscribeMessage('join-room')
   join_room(client: Socket, code: string) {
-    // TODO check if auth (client.data.user != null)
-
+    if (!client.data.user)
+      return;
     let room: Room | undefined = this.room_service.get_room(code);
     if (room === undefined) return;
     this.room_service.join_room(room, client);
@@ -90,7 +99,7 @@ export class GameGateway implements OnGatewayDisconnect {
 
   @SubscribeMessage('down')
   keyPress(client: Socket, key: string): void {
-    const player: Player | null = this.room_service.get_player(client.id);
+    const player: Player | null = this.room_service.get_player(client.data.user.uuid);
     if (player === null) return;
     let axis: Axis2 = player.axis;
 
@@ -107,7 +116,7 @@ export class GameGateway implements OnGatewayDisconnect {
 
   @SubscribeMessage('up')
   keyRelease(client: Socket, key: string): void {
-    const player: Player | null = this.room_service.get_player(client.id);
+    const player: Player | null = this.room_service.get_player(client.data.user.uuid);
     if (player === null) return;
     let axis: Axis2 = player.axis;
     if (key === "w" || key === "," || key === "arrowup") {
@@ -127,5 +136,10 @@ export class GameGateway implements OnGatewayDisconnect {
         axis.x = Axis.NONE;
       }
     }
+  }
+
+  @ChatManagerSubscribe('onUserChallengeAccepted')
+  onUserChallengeAccepted(event: any): void {
+    console.log(`onUserChallengeAccepted: source ${event.sourceUser.uuid} | target ${event.targetUser.uuid} | mode ${event.mode}`);
   }
 }

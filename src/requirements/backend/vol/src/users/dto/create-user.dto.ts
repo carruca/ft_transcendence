@@ -1,14 +1,14 @@
 import { IsString, IsNumber } from 'class-validator';
 export class CreateUserDto {
-	@IsNumber()
+  @IsNumber()
   id: number;
 
-	@IsString()
+  @IsString()
   displayname: string;
 
-	@IsString()
+  @IsString()
   login: string;
 
-	@IsString()
-	nickname?: string;
+  @IsString()
+  nickname?: string;
 }

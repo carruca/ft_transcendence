@@ -13,6 +13,7 @@ import { ChannelUser } from './entities/channel-user.entity';
     ChannelUser,
   ])],
   providers: [ChannelsService],
-  controllers: [ChannelsController]
+  controllers: [ChannelsController],
+  exports: [ChannelsService],
 })
 export class ChannelsModule {}

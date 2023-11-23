@@ -1,0 +1,17 @@
+export enum ReturnCode {
+  Allowed,
+  Denied,
+  UserNotExists,
+  UserNotConnected,
+  UserInGame,
+  NameInUse,
+  ChannelNotExists,
+  NotInChannel,
+  NothingHappened,
+  AlreadyInChannel,
+  BadChannelName,
+  CannotSendToChannel,
+  InvalidPassword,
+  InsufficientPrivileges,
+  BannedFromChannel, 
+}

@@ -1,14 +1,35 @@
-'use strict'
-import { Module } from '@nestjs/common';
+import { Module, OnModuleInit } from '@nestjs/common';
+import { ChatManager } from './managers';
 import { ChatGateway } from './chat.gateway';
-import { ChatService } from './chat.service';
-import { Server } from 'socket.io';
+import { ChatDatabase } from './chat.database';
+
+import { ChannelsModule } from '../channels/channels.module';
+import { UsersModule } from '../users/users.module';
+import { FriendsModule } from '../friends/friends.module';
+
+import { AuthModule } from '../auth/auth.module';
 
 @Module({
-  	providers: [
-		ChatGateway,
-		ChatService,
-		Server,
-	]
+  imports: [
+    ChannelsModule,
+    UsersModule,
+    FriendsModule,
+    AuthModule,
+  ],
+  providers: [
+    ChatGateway,
+    ChatManager,
+    ChatDatabase,
+  ],
+  exports: [
+    ChatManager,
+  ]
 })
-export class ChatModule {}
+export class ChatModule implements OnModuleInit {
+  constructor(private readonly chat_: ChatManager) { 
+  }
+
+  onModuleInit() {
+    this.chat_.raiseInitializationEvents();
+  }
+}

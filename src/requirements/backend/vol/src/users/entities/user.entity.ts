@@ -6,6 +6,8 @@ import {
   ManyToMany,
   JoinTable,
 } from 'typeorm';
+
+import { MatchUser } from '../../matches/entities/match-user.entity';
 import { AchievementUser } from '../../achievements/entities/achievement-user.entity';
 import { ChannelUser } from '../../channels/entities/channel-user.entity';
 import { Friend } from '../../friends/entities/friend.entity';
@@ -41,7 +43,7 @@ export class User {
   login: string;
 
   @Column({ nullable: true, unique: true })
-  nickname: string;
+  nickname?: string;
 
   @Column({ default: 100 })
   rating: number;
@@ -63,6 +65,9 @@ export class User {
 
   @Column({ default: false })
   muted: boolean;
+
+  @OneToMany(() => MatchUser, (matchUser) => matchUser.user)
+  matches: MatchUser[];
 
   @OneToMany(() => AchievementUser, (achievementUser) => achievementUser.user)
   achievements: AchievementUser[];

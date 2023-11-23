@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import router from "@/router";
+import socket from "../services/ws";
 
 (async (): Promise<void> => {
   try {
@@ -12,6 +13,7 @@ import router from "@/router";
     });
     if (response.ok) {
       router.replace('/');
+      socket.disconnect();
     }
   } catch (error) {
     console.error(error);

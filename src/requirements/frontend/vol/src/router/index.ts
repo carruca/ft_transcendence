@@ -7,9 +7,11 @@ import Profile from '@/components/Profile/Profile.vue';//@ its from root
 import About from '../views/AboutView.vue';
 import Logout from '../components/Logout.vue';
 import GameView from '../views/GameView.vue';
-import Setup from '@/components/Setup/Setup.vue'
-import Settings from '@/components/Settings.vue'
-import _2FA from '@/components/2FA.vue'
+import Setup from '@/components/Setup/Setup.vue';
+import Settings from '@/components/Settings.vue';
+import _2FA from '@/components/2FA.vue';
+import ChatView from '../views/ChatView.vue';
+import AdminView from '../views/AdminView.vue';
 
 const routes = [
   {
@@ -34,7 +36,7 @@ const routes = [
       {
         path: 'chat',
         name: 'Chat',
-        component: undefined,
+        component: ChatView,
       },
       {
         path: 'settings',
@@ -44,7 +46,7 @@ const routes = [
       {
         path: 'admin',
         name: 'Admin',
-        component: undefined,
+        component: AdminView,
       },
       {
         path: '/:username',

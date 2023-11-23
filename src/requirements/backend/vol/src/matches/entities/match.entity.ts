@@ -33,7 +33,4 @@ export class Match {
     eager: true,
   })
   users: MatchUser[];
-
-  @Column({ type: "varchar", array: true, default: [] })
-  winners: string[];
 }

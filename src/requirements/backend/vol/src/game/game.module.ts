@@ -8,11 +8,14 @@ import { MatchesModule } from '../matches/matches.module';
 
 import { AchievementsModule } from '../achievements/achievements.module';
 
+import { ChatModule } from '../chat/chat.module';
+
 @Module({
   imports: [
     ScheduleModule.forRoot(),
     MatchesModule,
     AchievementsModule,
+    ChatModule,
   ],
   providers: [GameGateway, RoomService, GameService]
 })

@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { UsersController } from './users.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -8,6 +8,7 @@ import { AchievementUser } from '../achievements/entities/achievement-user.entit
 import { Channel } from '../channels/entities/channel.entity';
 import { Friend } from '../friends/entities/friend.entity';
 import { JwtModule } from '@nestjs/jwt';
+import { ChatModule } from '../chat/chat.module';
 
 @Module({
   imports: [
@@ -21,7 +22,8 @@ import { JwtModule } from '@nestjs/jwt';
     JwtModule.register({
       secret: process.env.NEST_COOKIE_SECRET,
       signOptions: { expiresIn: '1d' },
-    })
+    }),
+    forwardRef(() => ChatModule),
   ],
   controllers: [UsersController],
   providers: [UsersService],
