@@ -77,7 +77,7 @@ import {
 
 import {
   User as UserDB,
-  UserPermits,
+  UserMode,
 } from '../../users/entities/user.entity';
 
 import { 
@@ -857,7 +857,7 @@ export class ChatManager {
       intraId: userDB.intraId,
       uuid: userDB.id,
       name: userDB.nickname,
-      siteRole: userDB.permits as number,
+      siteRole: userDB.mode as number,
     });
   }
 
