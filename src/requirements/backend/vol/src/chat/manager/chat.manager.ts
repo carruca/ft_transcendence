@@ -184,23 +184,6 @@ export class ChatManager {
     return Array.from(this.conversationsByUUID_.values());
   }
 
-<<<<<<< HEAD:src/requirements/backend/vol/src/chat/managers/chat.manager.ts
-  public userFromDB(db: UserDB): User {
-    if (!db.nickname)
-      throw new PropertyUndefinedError("userFromDB: nickname is not set"); 
-
-    return new User({
-      intraId: db.intraId,
-      uuid: db.id,
-      name: db.nickname,
-      siteRole: db.mode & UserMode.user | db.mode & UserMode.owner || db.mode & UserMode.moderator,
-      banned: db.banned == true,
-      disabled: db.disabled == true,
-    });
-  }
-
-=======
->>>>>>> 67002c89c2cacfb3b39da0816c06d578cfe723f1:src/requirements/backend/vol/src/chat/manager/chat.manager.ts
   //TODO Esto es realmente necesario? si ya tengo el usuario creado usando userFromDB....
   public addUserDB(userDB: UserDB ): User {
     let sourceUser = this.userFromDB_(userDB);
