@@ -1,30 +1,29 @@
 import {
   UserStatusEnum,
   UserSiteRoleEnum,
-} from '../enums';
+} from '../enum';
 
 import {
   UserModel as User,
-} from '../models';
+} from '../model';
+
+import {
+  ChannelDTO,
+} from '../dto';
 
 export class UserDTO {
-  readonly intraId: number;
-  readonly uuid: string;
-  readonly name: string;
-  readonly status: UserStatusEnum;
-  readonly siteRole: UserSiteRoleEnum;
-  readonly banned: boolean;
-  readonly disabled: boolean;
+  uuid: string;
+  name: string;
+  status: UserStatusEnum;
+  siteRole: UserSiteRoleEnum;
   friend: boolean;
-  //TODO la amistad se tiene que verificar con hasFriend(sourceUser);
+  blocked: boolean;
+  channels: ChannelDTO[];
 
   constructor(user: User) {
-    this.intraId = user.intraId;
     this.uuid = user.uuid;
     this.name = user.name;
     this.status = user.status;
     this.siteRole = user.siteRole;
-    this.banned = user.isBanned;
-    this.disabled = user.isDisabled;
   }
 }

@@ -1,5 +1,5 @@
 import { Module, OnModuleInit } from '@nestjs/common';
-import { ChatManager } from './managers';
+import { ChatManager } from './manager';
 import { ChatGateway } from './chat.gateway';
 import { ChatDatabase } from './chat.database';
 
