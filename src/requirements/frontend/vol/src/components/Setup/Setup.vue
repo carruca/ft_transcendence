@@ -75,7 +75,7 @@ onMounted(async () => {
       <label for="nickname">Nickname</label>
       <input type="text" id="nickname" name="nickname" placeholder="Enter a nickname" minlength="3" maxlength="20" required>
       <label for="avatar">Avatar</label>
-      <input type="file" id="avatar" name="avatar" accept="image/*">
+      <input type="file" id="avatar" name="avatar" accept="image/png" >
       <input type="submit" value="Submit" disabled>
     </form>
   </main>
@@ -94,6 +94,11 @@ main {
   flex-direction: column;
   align-items: center;
   justify-content: center;
+}
+
+form {
+  display: flex;
+  flex-direction: column;
 }
 
 input[type=text] {
