@@ -13,14 +13,10 @@
     <div v-if="currentChannel">
       <h2>{{ currentChannel.name }}</h2>
       <div v-for="channelUser in currentChannel.users.values()" :key="channelUser.uuid">
-        {{ channelUser.name }}
-        - Owner: {{ channelUser.isOwner ? 'Yes' : 'No'}}
-        - Admin: {{ channelUser.isAdmin ? 'Yes' : 'No' }}
+        {{ channelUser.name }} - Admin: {{ channelUser.isAdmin ? 'Yes' : 'No' }}
         - Muted: {{ channelUser.isMuted ? 'Yes' : 'No' }}
         - Banned: {{ channelUser.isBanned ? 'Yes' : 'No' }}
         - Friend: {{ channelUser.isFriend ? 'Yes' : 'No' }}
-        - Blocked: {{ channelUser.isBlocked ? 'Yes' : 'No' }}
-        - Status: {{ ["Offline", "Online", "In Game", "Away"][channelUser.status] }}
       </div>
       <div
           v-for="event in currentChannel.events.values()"

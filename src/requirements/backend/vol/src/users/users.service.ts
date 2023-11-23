@@ -19,7 +19,7 @@ import { AchievementUser } from '../achievements/entities/achievement-user.entit
 import { ChannelUser } from '../channels/entities/channel-user.entity';
 import { RatingUserDto } from './dto/rating-user.dto';
 import { Friend, FriendStatus } from '../friends/entities/friend.entity';
-import { ChatManager } from '../chat/managers';
+import { ChatManager } from '../chat/manager';
 
 @Injectable()
 export class UsersService {
@@ -145,6 +145,10 @@ export class UsersService {
     return blocks.map((block) => block.blockId);
   }
 
+  async removeBlock(userId: string) : Promise<void> {
+    await this.blocksRepository.delete(userId);
+  }
+  
   async update(id: string, updateUserDto?: UpdateUserDto, avatar?: Express.Multer.File): Promise<User> {
     const user = await this.usersRepository.findOneBy({ id });
     if (!user) {

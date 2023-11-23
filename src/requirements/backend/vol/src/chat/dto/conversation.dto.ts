@@ -1,11 +1,11 @@
 import {
   ConversationModel as Conversation,
-} from '../models';
+} from '../model';
 
 export class ConversationDTO {
-  public readonly uuid: string;
-  public readonly user1UUID: string
-  public readonly user2UUID: string;
+  uuid: string;
+  user1UUID: string
+  user2UUID: string;
   
   constructor(conversation: Conversation) {
     this.uuid = conversation.uuid;

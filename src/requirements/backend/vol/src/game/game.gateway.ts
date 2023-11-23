@@ -10,8 +10,8 @@ import { Server } from 'net';
 
 import { Axis, Axis2, Player, Room } from './game.interface';
 import { RoomService } from './room.service';
-import { ChatManagerHandler, ChatManagerSubscribe, ChatManagerInstance } from '../chat/decorators';
-import { ChatManager } from '../chat/managers';
+import { ChatManagerHandler, ChatManagerSubscribe, ChatManagerInstance } from '../chat/decorator';
+import { ChatManager } from '../chat/manager';
 
 @WebSocketGateway({
   cors: {

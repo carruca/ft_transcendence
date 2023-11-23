@@ -14,7 +14,7 @@ $(CONFIG_FILE):
 	echo "export INTRA42_UID=$$INTRA42_UID" > .config; \
 	echo "export INTRA42_SECRET=$$INTRA42_SECRET" >> .config; \
 	echo "export INTRA42_REDIRECT_URI=$$INTRA42_REDIRECT_URI" >> .config; \
-	echo "export INTRA42_MOCK=$$INTRA42_MOCK" >> .config; \
+	echo "export INTRA42_MOCK (true/false)=$$INTRA42_MOCK" >> .config; \
 	echo "Configuration file generated."
 
 include $(CONFIG_FILE)

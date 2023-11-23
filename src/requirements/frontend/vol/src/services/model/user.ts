@@ -1,17 +1,37 @@
 import {
-    EvenTypeEnum,
-    UserSiteRoleEnum,
-    UserStatusEnum,
+  EvenTypeEnum,
+  UserSiteRoleEnum,
+  UserStatusEnum,
 } from '../enum';
 
+import {
+  UserDTO,
+  ChannelDTO,
+} from '../dto';
+
+import {
+  Channel,
+} from '.';
+
 export class User {
-    constructor(
-        public readonly uuid: string,
-        public name: string,
-        public siteRole: UserSiteRoleEnum = UserSiteRoleEnum.NONE,
-        public status: UserStatusEnum = UserStatusEnum.OFFLINE,
-        public isFriend: boolean = false,
-        public isBanned: boolean = false,
-        public isDisabled: boolean = false,
-    ) {}
+  public readonly uuid: string;
+  public name: string;
+  public siteRole: UserSiteRoleEnum;
+  public status: UserStatusEnum;
+  public friend: boolean;
+  public blocked: boolean;
+  public readonly channels = new Map<Channel>;
+
+  constructor(userDTO: UserDTO) {
+    this.uuid = userDTO.uuid;
+    this.name = userDTO.name;
+    this.siteRole = userDTO.siteRole ?? UserSiteRoleEnum.NONE;
+    this.status = userDTO.status ?? UserStatusEnum.OFFLINE;
+    this.friend = userDTO.friend ?? false;
+    this.blocked = userDTO.blocked ?? false;
+  }
+
+  addChannel(channel: Channel) {
+    this.channels.set(channel.uuid, channel);
+  }
 }

@@ -1,6 +1,19 @@
 import socket from './ws';
+import { client } from './chat-client';
 
-class client {
+class Client {
+    get me() {
+        return client.me;
+    }
+
+    get channels() {
+        return client.channels;
+    }
+
+    get users() {
+        return client.users;
+    }
+
     private send_(event: string, data: any) {
         socket.emit(event, JSON.stringify(data));
     }
@@ -86,4 +99,4 @@ class client {
     }
 }
 
-window.c = new client();
+window.c = new Client();

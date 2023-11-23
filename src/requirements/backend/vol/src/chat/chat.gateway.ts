@@ -8,27 +8,26 @@ import {
 
 import {
   ChatManager,
-} from './managers';
+} from './manager';
 
 import {
   ChannelModel as Channel,
   UserModel as User,
-} from './models';
+} from './model';
 
 import {
   ChatManagerHandler,
   ChatManagerInstance,
   ChatManagerSubscribe,
-} from './decorators';
+} from './decorator';
 
 import {
   verifyCookies
-} from './utils';
+} from './util';
 
 import {
-  UserChannelRoleEnum,
   ReturnCodeEnum,
-} from './enums';
+} from './enum';
 
 import {
   ReturnMessage,
@@ -38,7 +37,7 @@ import {
   MissingEnvironmentVariableError,
   InvalidCookieSignatureError,
   UserNotFoundError,
-} from './errors';
+} from './error';
 
 import {
   WebSocketGateway,
@@ -139,6 +138,11 @@ export class ChatGateway {
     }
   }
 
+  async handleDisconnect(client: Socket) {
+    if (client.data.user)
+      this.chat_.disconnectUser(client.data.user);
+  }
+
   private replyToClient_(client: Socket, event: string, response: ReturnMessage) {
     if (response.code === ReturnCodeEnum.ALLOWED) {
       client.emit(event, JSON.stringify(response));
@@ -159,7 +163,10 @@ export class ChatGateway {
     const sourceUser = client.data.user;
     const response = await this.chat_.createChannelName(sourceUser, channelName, password);
 
-    this.replyToClient_(client, 'create', response);
+    response
+      .setEvent('create')
+      .setSourceUser(client.data.user)
+      .send();
   }
 
   @SubscribeMessage('join')
@@ -170,7 +177,10 @@ export class ChatGateway {
     const sourceUser = client.data.user;
     const response = await this.chat_.joinChannelUUID(sourceUser, channelUUID, password);
 
-    this.replyToClient_(client, 'join', response);
+    response
+      .setEvent('join')
+      .setSourceUser(client.data.user)
+      .send();
   }
 
   @SubscribeMessage('close')
@@ -460,10 +470,12 @@ export class ChatGateway {
 
   @ChatManagerSubscribe('onUserConnected')
   onUserConnected(event: any): void {
-   const { sourceUser } = event;
+    const { sourceUser } = event;
+    const sourceUserDTO = sourceUser.DTO;
+    sourceUserDTO.channels = sourceUser.getChannels().map((channel: Channel) => channel.DTO);
 
-   sourceUser.socket.emit('register', JSON.stringify([ sourceUser.DTO ]));
-   console.log("register", sourceUser.DTO);
+    console.log("onUserConnected:", sourceUserDTO);
+    sourceUser.socket.emit('register', JSON.stringify(sourceUserDTO));
 
     //this.logger_.debug(`onUserConnected: user ${event.sourceUser.name}`);
   }

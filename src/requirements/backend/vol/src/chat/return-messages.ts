@@ -1,5 +1,10 @@
-import { ReturnCodeEnum } from './enums';
-import { ReturnMessage } from './interfaces';
+import {
+  ReturnCodeEnum,
+} from './enum';
+
+import { 
+  ReturnMessage,
+} from './interface';
 
 export { ReturnCodeEnum, ReturnMessage };
 
