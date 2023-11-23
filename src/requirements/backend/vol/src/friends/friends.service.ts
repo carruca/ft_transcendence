@@ -5,7 +5,7 @@ import {
 } from '@nestjs/common';
 import { CreateFriendDto } from './dto/create-friend.dto';
 import { UpdateFriendDto } from './dto/update-friend.dto';
-import { ReturnFriendDto } from './dto/return-friend.dto';
+import { ResponseFriendDto } from './dto/response-friend.dto';
 
 import {
   Repository,
@@ -25,7 +25,7 @@ export class FriendsService {
     private usersRepository: Repository<User>,
   ) {}
 
-  async create(createFriendDto: CreateFriendDto) : Promise<ReturnFriendDto> {
+  async create(createFriendDto: CreateFriendDto) : Promise<ResponseFriendDto> {
     const users = await this.usersRepository.find({
       relations: ['friends'],
       where: {
@@ -52,6 +52,7 @@ export class FriendsService {
     return {
       id: newFriend.id,
       receiverId: newFriend.receiverId,
+      senderId: createFriendDto.senderId,
       status: newFriend.status,
     };
   }
