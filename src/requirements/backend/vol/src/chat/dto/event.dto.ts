@@ -1,19 +1,19 @@
 import {
   EventTypeEnum,
-} from '../enums';
+} from '../enum';
 
 import {
   EventModel as Event,
-} from '../models';
+} from '../model';
 
 export class EventDTO {
-  public readonly uuid: string;
-  public readonly type: EventTypeEnum;
-  public readonly sourceUUID: string;
-  public readonly targetUUID?: string;
-  public readonly timestamp: Date;
-  public readonly modified: boolean;
-  public readonly value?: string;
+  uuid: string;
+  type: EventTypeEnum;
+  sourceUUID: string;
+  targetUUID?: string;
+  timestamp: Date;
+  modified: boolean;
+  value?: string;
 
   constructor(event: Event) {
     this.uuid = event.uuid;

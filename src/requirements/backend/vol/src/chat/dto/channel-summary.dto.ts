@@ -1,10 +1,12 @@
-import { ChannelModel as Channel } from '../models';
+import {
+  ChannelModel as Channel,
+} from '../model';
 
 export class ChannelSummaryDTO {
-  readonly uuid: string;
-  readonly name: string;
-  readonly topic: string;
-  readonly hasPassword: boolean;
+  uuid: string;
+  name: string;
+  topic: string;
+  hasPassword: boolean;
 
   constructor(channel: Channel) {
     this.uuid = channel.uuid;

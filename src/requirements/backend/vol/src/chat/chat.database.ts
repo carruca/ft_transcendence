@@ -1,13 +1,32 @@
-import { ChatManager } from './managers';
-import { ChatManagerHandler, ChatManagerInstance, ChatManagerSubscribe } from './decorators';
+import {
+  ChatManager,
+} from './manager';
 
-import { ChannelsService } from '../channels/channels.service';
-import { UsersService } from '../users/users.service';
+import {
+  ChatManagerHandler,
+  ChatManagerInstance,
+  ChatManagerSubscribe,
+} from './decorator';
 
-import { DataLoaderModel as DataLoader } from './models';
+import {
+  ChannelsService,
+} from '../channels/channels.service';
 
-import { Logger } from '@nestjs/common';
-import { v4 as uuidv4 } from 'uuid';
+import {
+  UsersService,
+} from '../users/users.service';
+
+import {
+  DataLoaderModel as DataLoader,
+} from './model';
+
+import { 
+  Logger,
+} from '@nestjs/common';
+
+import { 
+  v4 as uuidv4,
+} from 'uuid';
 
 @ChatManagerHandler()
 export class ChatDatabase {

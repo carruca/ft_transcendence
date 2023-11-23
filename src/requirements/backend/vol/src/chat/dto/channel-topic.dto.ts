@@ -1,11 +1,11 @@
 import {
   ChannelTopicModel as ChannelTopic,
-} from '../models';
+} from '../model';
 
 export class ChannelTopicDTO {
-  public readonly userUUID: string;
-  public readonly establishedDate: Date;
-  public readonly value: string;
+  userUUID: string;
+  establishedDate: Date;
+  value: string;
 
   constructor(channelTopic: ChannelTopic) {
     this.userUUID = channelTopic.user.uuid;

@@ -1,17 +1,30 @@
 import {
     User,
-    ChannelUserProperties,
 } from './';
 
 import {
+    UserStatusEnum,
     UserSiteRoleEnum,
 } from '../enum';
 
+import {
+    ChannelUserPayload,
+} from '../interface';
+
 export class ChannelUser {
-    constructor(
-        public readonly user: User,
-        private readonly props_: ChannelUserProperties,
-    ) {}
+    public readonly user: User;
+    public isAdmin: boolean;
+    public isOwner: boolean;
+    public isBanned: boolean;
+    public isMuted: boolean;
+    
+    constructor(channelUserPayload: ChannelUserPayload) {
+        this.user = channelUserPayload.user;
+        this.isAdmin = channelUserPayload.admin;
+        this.isOwner = channelUserPayload.owner;
+        this.isBanned = channelUserPayload.banned;
+        this.isMuted = channelUserPayload.muted;
+    }
 
     get uuid(): string {
         return this.user.uuid;
@@ -25,32 +38,16 @@ export class ChannelUser {
         return this.user.siteRole;
     }
 
+    get status(): UserStatusEnum {
+        return this.user.status;
+    }
+
     get isFriend(): boolean {
-        return this.user.isFriend;
+        return this.user.friend;
     }
 
-    set isAdmin(value: boolean): void {
-        this.props_.isAdmin = value;
-    }
-
-    get isAdmin(): boolean {
-        return this.props_.isAdmin;
-    }
-
-    set isBanned(value: boolean): void {
-        this.props_.isBanned = value;
-    }
-
-    get isBanned(): boolean {
-        return this.props_.isBanned;
-    }
-
-    set isMuted(value: boolean): void {
-        this.props_.isMuted = value;
-    }
-
-    get isMuted(): boolean {
-        return this.props_.isMuted;
+    get isBlocked(): boolean {
+        return this.user.blocked;
     }
 }
 
