@@ -113,13 +113,13 @@ export class UsersService {
     return this.usersRepository.save(user);
   }
 
-  async setMuted(id: string, value: boolean) {
+  async setBanned(id: string, value: boolean) {
     const user = await this.findOne(id);
     if (!user) {
       throw new HttpException('User not found', HttpStatus.NOT_FOUND);
     }
 
-    user.muted = value;
+    user.banned = value;
     return this.usersRepository.save(user);
   }
 

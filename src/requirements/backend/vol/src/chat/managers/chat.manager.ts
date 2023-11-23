@@ -74,7 +74,7 @@ import {
   Mode as GameMode,
 } from '../../game/game.interface';
 
-import { User as UserDB, UserPermits } from '../../users/entities/user.entity';
+import { User as UserDB, UserMode } from '../../users/entities/user.entity';
 import { Channel as ChannelDB } from '../../channels/entities/channel.entity';
 
 import { Logger, Injectable } from '@nestjs/common';
@@ -177,9 +177,9 @@ export class ChatManager {
       intraId: db.intraId,
       uuid: db.id,
       name: db.nickname,
-      siteRole: db.permits & UserPermits.user | db.permits & UserPermits.owner || db.permits & UserPermits.moderator,
-      banned: db.permits == UserPermits.banned,
-      disabled: db.permits == UserPermits.disabled,
+      siteRole: db.mode & UserMode.user | db.mode & UserMode.owner || db.mode & UserMode.moderator,
+      banned: db.banned == true,
+      disabled: db.disabled == true,
     });
   }
 

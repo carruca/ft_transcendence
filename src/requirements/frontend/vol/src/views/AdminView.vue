@@ -292,7 +292,7 @@ function setpasswd() {
     client.password(selectedChannelUUID.value, newPasswd.value);
     newPasswd.value = ''; // Clear the password field
   }
-  showPasswdModal = false; // Hide modal
+  showPasswdModal.value = false; // Hide modal
 }
 function delpasswd() {
   client.password(selectedChannelUUID.value, "");
