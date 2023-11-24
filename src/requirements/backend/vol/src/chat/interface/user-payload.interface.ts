@@ -14,6 +14,8 @@ export interface UserPayload {
   status?: UserStatusEnum,
   socket?: Socket,
   siteRole?: UserSiteRoleEnum,
+  siteBanned?: boolean,
+  siteDisabled?: boolean,
   friends?: UserPayload[],
   blocks?: UserPayload[],
 }

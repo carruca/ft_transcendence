@@ -59,7 +59,8 @@ export class ChatDatabase {
   @ChatManagerSubscribe('onChatDataLoad')
   async onChatManagerIntialized(dataLoader: DataLoader) { 
     for (const userDB of await this.usersService_.findAll()) {
-      this.chatManager_.addUserDB(userDB);
+      if (userDB.nickname)
+        this.chatManager_.addUserDB(userDB);
     }
     for (const channelDB of await this.channelsService_.findAllWithUsers()) {
       this.chatManager_.addChannelDB(channelDB);

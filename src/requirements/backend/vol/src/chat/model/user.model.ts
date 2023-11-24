@@ -49,6 +49,8 @@ export class UserModel {
     this.socket_ = userPayload.socket;
     this.status_ = userPayload.status ?? UserStatusEnum.OFFLINE;
     this.siteRole_ = userPayload.siteRole ?? UserSiteRoleEnum.USER;
+    this.siteBanned_ = userPayload.siteBanned;
+    this.siteDisabled_ = userPayload.siteDisabled;
     //TODO: blockUsers y friendUsers
     //this.blockUsers_ = ....
     //this.friendUsers_ = ....
@@ -161,10 +163,6 @@ export class UserModel {
   }
   */
 
-  destructor() {
-    console.log("User destructor called");
-  }
-
   get intraId(): number {
     return this.intraId_;
   }
@@ -212,14 +210,6 @@ export class UserModel {
     this.siteRole_ = value;
   }
   
-  ban() {
-    this.siteRole = UserSiteRoleEnum.BANNED;
-  }
-
-  unban() {
-    this.siteRole = UserSiteRoleEnum.USER;
-  }
-
   getChannelsCount(): number {
     return this.channels_.size;
   }
@@ -232,20 +222,28 @@ export class UserModel {
     return this.isOwner || this.isModerator;
   }
 
-  get isOwner(): boolean {
+  get isSiteOwner(): boolean {
     return this.siteRole_ === UserSiteRoleEnum.OWNER;
   }
 
-  get isModerator(): boolean {
+  get isSiteModerator(): boolean {
     return this.siteRole_ === UserSiteRoleEnum.MODERATOR;
   }
 
-  get isDisabled(): boolean {
-    return this.siteRole_ === UserSiteRoleEnum.DISABLED;
+  get isSiteDisabled(): boolean {
+    return this.siteDisabled_;
   }
 
-  get isBanned(): boolean {
-    return this.siteRole_ === UserSiteRoleEnum.BANNED;
+  get isSiteBanned(): boolean {
+    return this.siteBanned_:
+  }
+
+  set siteDisabled(value: boolean): void {
+    this.siteDisabled = value;
+  }
+
+  set siteBanned(value: boolean): void {
+    this.siteBanned = value;
   }
 
   is(user: UserModel): boolean {

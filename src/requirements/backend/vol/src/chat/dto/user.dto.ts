@@ -18,6 +18,8 @@ export class UserDTO {
   siteRole: UserSiteRoleEnum;
   friend: boolean;
   blocked: boolean;
+  siteDisabled: boolean;
+  siteBanned: boolean;
   channels: ChannelDTO[];
 
   constructor(user: User) {
@@ -25,5 +27,7 @@ export class UserDTO {
     this.name = user.name;
     this.status = user.status;
     this.siteRole = user.siteRole;
+    this.siteDisabled = user.siteDisabled;
+    this.siteBanned = user.siteBanned;
   }
 }

@@ -21,19 +21,41 @@ enum ErrorCode {
   INVALID_PASSWORD,
   INSUFFICIENT_PRIVILEGES,
   BANNED_FROM_CHANNEL,
-  BANNED_FROM_SITE,
-  ACCOUNT_DISABLED,
+}
+
+export enum ActionType {
+  NONE,
+  ADD,
+  UPDATE,
+  DELETE,
+}
+
+export enum ObjectType {
+  USER,
+  CHANNEL,
+  EVENT,
 }
 
 export class Response {
   private event: string;
   private error: string = 'reterr';
   private sourceUser: User;
+  private targetUsers: User[];
+  private targetActionType?: ActionType;
+  private targetData?: any;
+  private actionType?: ActionType;
+  private objectType?: ObjectType;
 
   constructor(
     private code: ErrorCode = ErrorCode.SUCCESS,
     private message: string = 'Success',
+    private actionData?: any,
   ) {}
+
+  setActionType(type: ActionType): Response {
+    this.actionType = type;
+    return this;
+  }
 
   setCode(code: ErrorCode): Response {
     this.code = code;
@@ -55,43 +77,62 @@ export class Response {
     return this;
   }
 
+  setObjectType(objectType: ObjectType): Response {
+    this.objectType = objectType;
+    return this;
+  }
+
   setSourceUser(user: User): Response {
     this.sourceUser = user;
     return this;
   }
 
-  get JSON(): string {
+  setTargetUsers(users: User[]): Response {
+    this.targetUsers = users;
+    return this;
+  }
+
+  setTargetData(actionType: ActionType, data?: any): Response {
+    this.targetActionType = actionType;
+    this.targetData = data;
+    return this;
+  }
+
+  get sourceJSON(): string {
     return JSON.stringify({
-      event: this.event,
       code: this.code,
       message: this.message,
+      actionType: this.actionType,
+      objectType: this.objectType,
+      actionDetails: this.actionData,
+    });
+  }
+
+
+  get targetJSON(): string {
+    return JSON.stringify({
+      actionType: this.targetActionType,
+      objectType: this.objectType,
+      actionDetails: this.targetData,
     });
   }
 
   send() {
-    if (this.code !== ErrorCode.SUCCESS) {
-      this.sourceUser.socket.emit(this.error, this.JSON);
-    }
-  }
+    const dataJSON = this.targetJSON;
 
-  static PendingChallenge(): Response {
-    return new Response(ErrorCode.PENDING_CHALLENGE, "Pending Challenge");
+    if (this.code === ErrorCode.SUCCESS) {
+      this.sourceUser.socket.emit(this.event, this.sourceJSON);
+
+      for (const user of this.targetUsers) {
+        user.socket.emit(this.event, dataJSON);
+      }
+    } else {
+      this.sourceUser.socket.emit(this.error, this.sourceJSON);
+    }
   }
 
   static Denied(): Response {
     return new Response(ErrorCode.DENIED, "Denied");
-  }
-
-  static UserAway(): Response {
-    return new Response(ErrorCode.USER_AWAY, "User away");
-  }
-
-  static UserNotConnected(): Response {
-    return new Response(ErrorCode.USER_NOT_CONNECTED, "User not connected");
-  }
-
-  static NotInChannel(): Response {
-    return new Response(ErrorCode.NOT_IN_CHANNEL, "You are not in that channel")
   }
 
   static AlreadyInChannel(): Response {
@@ -106,8 +147,8 @@ export class Response {
     return new Response(ErrorCode.INVALID_PASSWORD, "Invalid password");
   }
 
-  static Success(): Response {
-    return new Response();
+  static Success(actionType: ActionType, objectType: ObjectType, data?: any): Response {
+    return (new Response(ErrorCode.SUCCESS, "Success", data)).setActionType(actionType).setObjectType(objectType);
   }
 
   static BadChannelName(): Response {
@@ -120,33 +161,5 @@ export class Response {
 
   static ChannelNotExists(): Response {
     return new Response(ErrorCode.CHANNEL_NOT_EXISTS, "Channel not exists");
-  }
-
-  static InsufficientPrivileges(): Response {
-    return new Response(ErrorCode.INSUFFICIENT_PRIVILEGES, "Insufficient privileges");
-  }
-
-  static UserNotExists(): Response {
-    return new Response(ErrorCode.USER_NOT_EXISTS, "User not exists");
-  }
-
-  static BannedFromSite(): Response {
-    return new Response(ErrorCode.BANNED_FROM_SITE, "You're banned from this site");
-  }
-
-  static AccountDisabled(): Response {
-    return new Response(ErrorCode.ACCOUNT_DISABLED, "Your account are disabled");
-  }
-
-  static YoureInGame(): Response {
-    return new Response(ErrorCode.YOURE_IN_GAME, "You are in game");
-  }
-
-  static UserInGame(): Response {
-    return new Response(ErrorCode.USER_IN_GAME, "user in game");
-  }
-
-  static CannotSendToChannel(): Response {
-    return new Response(ErrorCode.CANNOT_SEND_TO_CHANNEL, "Cannot send to channel");
   }
 }

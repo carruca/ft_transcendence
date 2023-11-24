@@ -163,10 +163,9 @@ export class ChatGateway {
     const sourceUser = client.data.user;
     const response = await this.chat_.createChannelName(sourceUser, channelName, password);
 
-    response
-      .setEvent('create')
-      .setSourceUser(client.data.user)
-      .send();
+    response.setSourceUser(sourceUser)
+            .setEvent('create')
+            .send();
   }
 
   @SubscribeMessage('join')
@@ -177,10 +176,9 @@ export class ChatGateway {
     const sourceUser = client.data.user;
     const response = await this.chat_.joinChannelUUID(sourceUser, channelUUID, password);
 
-    response
-      .setEvent('join')
-      .setSourceUser(client.data.user)
-      .send();
+    response.setSourceUser(sourceUser)
+            .setEvent('join')
+            .send();
   }
 
   @SubscribeMessage('close')
@@ -191,7 +189,9 @@ export class ChatGateway {
     const sourceUser = client.data.user;
     const response = await this.chat_.closeChannelUUID(sourceUser, channelUUID, message);
 
-    this.replyToClient_(client, 'close', response);
+    response.setSourceUser(sourceUser)
+            .setEvent('close')
+            .send();
   }
 
   @SubscribeMessage('part')
@@ -202,17 +202,21 @@ export class ChatGateway {
     const sourceUser = client.data.user;
     const response = await this.chat_.partChannelUUID(sourceUser, channelUUID);
 
-    this.replyToClient_(client, 'part', response);
+    response.setSourceUser(sourceUser)
+            .setEvent('part')
+            .send();
   }
 
   @SubscribeMessage('list')
   async handleClientList(client: Socket): Promise<void> {
     if (!client.data.user) return
 
-    const [ sourceUser ] = client.data.user;
+    const sourceUser = client.data.user;
     const response = await this.chat_.summarizeChannels(sourceUser);
 
-    this.replyToClient_(client, 'list', response);
+    response.setSourceUser(sourceUser)
+            .setEvent('part')
+            .send();
   }
  
   @SubscribeMessage('kick')
@@ -223,7 +227,9 @@ export class ChatGateway {
     const sourceUser = client.data.user;
     const response = await this.chat_.kickUserFromChannelUUID(sourceUser, channelUUID, targetUserUUID, message);
 
-    this.replyToClient_(client, 'kick', response);
+    response.setSourceUser(sourceUser)
+            .setEvent('part')
+            .send();
   }
 
   @SubscribeMessage('ban')
@@ -234,7 +240,9 @@ export class ChatGateway {
     const sourceUser = client.data.user;
     const response = await this.chat_.banUserFromChannelUUID(sourceUser, channelUUID, targetUserUUID);
 
-    this.replyToClient_(client, 'ban', response);
+    response.setSourceUser(sourceUser)
+            .setEvent('ban')
+            .send();
   }
 
   @SubscribeMessage('unban')
@@ -245,7 +253,9 @@ export class ChatGateway {
     const sourceUser = client.data.user;
     const response = await this.chat_.unbanUserFromChannelUUID(sourceUser, channelUUID, targetUserUUID);
 
-    this.replyToClient_(client, 'unban', response);
+    response.setSourceUser(sourceUser)
+            .setEvent('uban')
+            .send();
   }
 
   @SubscribeMessage('promote')
@@ -256,7 +266,9 @@ export class ChatGateway {
     const sourceUser = client.data.user;
     const response = await this.chat_.promoteUserInChannelUUID(sourceUser, channelUUID, targetUserUUID);
 
-    this.replyToClient_(client, 'promote', response);
+    response.setSourceUser(sourceUser)
+            .setEvent('promote')
+            .send();
   }
 
   @SubscribeMessage('demote')
@@ -267,7 +279,9 @@ export class ChatGateway {
     const sourceUser = client.data.user;
     const response = await this.chat_.demoteUserInChannelUUID(sourceUser, channelUUID, targetUserUUID);
 
-    this.replyToClient_(client, 'demote', response);
+    response.setSourceUser(sourceUser)
+            .setEvent('demote')
+            .send();
   }
 
 
@@ -279,7 +293,9 @@ export class ChatGateway {
     const sourceUser = client.data.user;
     const response = await this.chat_.topicChannelUUID(sourceUser, channelUUID, topic);
 
-    this.replyToClient_(client, 'topic', response);
+    response.setSourceUser(sourceUser)
+            .setEvent('topic')
+            .send();
   }
 
   @SubscribeMessage('password')
@@ -290,7 +306,9 @@ export class ChatGateway {
     const sourceUser = client.data.user;
     const response = await this.chat_.passwordChannelUUID(sourceUser, channelUUID, password);
 
-    this.replyToClient_(client, 'password', response);
+    response.setSourceUser(sourceUser)
+            .setEvent('password')
+            .send();
   }
 
   @SubscribeMessage('block')
@@ -301,7 +319,9 @@ export class ChatGateway {
     const sourceUser = client.data.user;
     const response = await this.chat_.blockUserUUID(sourceUser, targetUserUUID);
 
-    this.replyToClient_(client, 'block', response);
+    response.setSourceUser(sourceUser)
+            .setEvent('block')
+            .send();
   }
 
   @SubscribeMessage('unblock')
@@ -312,7 +332,9 @@ export class ChatGateway {
     const sourceUser = client.data.user;
     const response = await this.chat_.unblockUserUUID(sourceUser, targetUserUUID);
 
-    this.replyToClient_(client, 'unblock', response);
+    response.setSourceUser(sourceUser)
+            .setEvent('unblock')
+            .send();
   }
 
   @SubscribeMessage('challengerequest')
@@ -323,7 +345,9 @@ export class ChatGateway {
     const sourceUser = client.data.user;
     const response = await this.chat_.requestChallengeUserUUID(sourceUser, targetUserUUID, parseInt(gameMode, 10));
 
-    this.replyToClient_(client, 'challenge', response);
+    response.setSourceUser(sourceUser)
+            .setEvent('challengerequest')
+            .send();
   }
 
   @SubscribeMessage('challengeaccept')
@@ -334,7 +358,9 @@ export class ChatGateway {
     const sourceUser = client.data.user;
     const response = await this.chat_.acceptChallengeUserUUID(sourceUser, targetUserUUID);
 
-    this.replyToClient_(client, 'challengeaccept', response);
+    response.setSourceUser(sourceUser)
+            .setEvent('challengeaccept')
+            .send();
   }
 
   @SubscribeMessage('challengereject')
@@ -345,7 +371,9 @@ export class ChatGateway {
     const sourceUser = client.data.user;
     const response = await this.chat_.rejectChallengeUserUUID(sourceUser, targetUserUUID);
 
-    this.replyToClient_(client, 'challengereject', response);
+    response.setSourceUser(sourceUser)
+            .setEvent('challengereject')
+            .send();
   }
 
   @SubscribeMessage('userobserve')
@@ -356,7 +384,9 @@ export class ChatGateway {
     const sourceUser = client.data.user;
     const response = await this.chat_.observeUserUUID(sourceUser, targetUserUUID)
  
-    this.replyToClient_(client, 'userobserve', response);
+    response.setSourceUser(sourceUser)
+            .setEvent('userobserve')
+            .send();
   }
 
   @SubscribeMessage('chanmsg')
@@ -367,11 +397,17 @@ export class ChatGateway {
     const sourceUser = client.data.user;
     const response = await this.chat_.messageChannelUUID(sourceUser, channelUUID, message);
 
-    this.replyToClient_(client, 'chanmsg', response);
+
+    response.setSourceUser(sourceUser)
+            .setEvent('chanmsg')
+            .send();
+    /*
     if (response.code === ReturnCodeEnum.ALLOWED)
       console.log("chanmsg:", response.data.messageEvent);
+      */
   }
 
+  /*
   @SubscribeMessage('convmsg')
   async onClientConversationMessage(client: Socket, dataJSON: string): Promise<void> {
     if (!client.data.user) return
@@ -391,6 +427,7 @@ export class ChatGateway {
 
     console.log("convmsg:", response);
   }
+  */
   /*
   ** ChatService events handle
   */
@@ -475,7 +512,7 @@ export class ChatGateway {
     sourceUserDTO.channels = sourceUser.getChannels().map((channel: Channel) => channel.DTO);
 
     console.log("onUserConnected:", sourceUserDTO);
-    sourceUser.socket.emit('register', JSON.stringify(sourceUserDTO));
+    sourceUser.socket.emit('registered', JSON.stringify(sourceUserDTO));
 
     //this.logger_.debug(`onUserConnected: user ${event.sourceUser.name}`);
   }

@@ -70,32 +70,24 @@ class ChatClient {
   }
   private setupSocketEventHandlers_() {
     socket.on('reterr', this.onRetErr.bind(this));
-    socket.on('register', this.onRegister.bind(this));
-    socket.on('create', this.onCreate.bind(this));
-    socket.on('join', this.onJoin.bind(this));
-    socket.on('part', this.onPart.bind(this));
-    socket.on('update', this.onUpdate.bind(this));
+    socket.on('registered', this.onRegistered.bind(this));
 
-    /*
-    socket.on('join', this.onJoin.bind(this));
-    socket.on('part', this.onPart.bind(this));
-    socket.on('kick', this.onKick.bind(this));
-    socket.on('register', this.onRegister.bind(this));
-    socket.on('name', this.onName.bind(this));
-    socket.on('topic', this.onTopic.bind(this));
-    socket.on('promote', this.onPromote.bind(this));
-    socket.on('demote', this.onDemote.bind(this));
-    socket.on('mute', this.onMute.bind(this));
-    socket.on('unmute', this.onUnmute.bind(this));
-    socket.on('ban', this.onBan.bind(this));
-    socket.on('unban', this.onUnban.bind(this));
-    socket.on('password', this.onPassword.bind(this));
-    socket.on('type', this.onType.bind(this));
-    socket.on('chanmsg', this.onChanmsg.bind(this));
-    socket.on('convmsg', this.onConvmsg.bind(this));
-    socket.on('convopen', this.onConvopen.bind(this));
-    */
+    socket.on('channelCreated', this.onChannelCreated.bind(this));
+    socket.on('channelUpdated', this.onChannelUpdated.bind(this));
+    socket.on('channelDeleted', this.onChannelDeleted.bind(this));
+
+    socket.on('userCreated', this.onUserCreated.bind(this));
+    socket.on('userUpdated', this.onUserUpdated.bind(this));
+    socket.on('userDeleted', this.onUserDeleted.bind(this));
+
+    socket.on('eventCreated', this.onEventCreated.bind(this));
+    socket.on('eventUpdated', this.onEventUpdated.bind(this));
+
+    socket.on('userChannelCreated', this.onUserChannelCreated.bind(this));
+    socket.on('userChannelUpdated', this.onUserChannelUpdated.bind(this));
+    socket.on('userChannelDeleted', this.onUserChannelDeleted.bind(this));
   }
+
 
   private onRetErr(responseJSON: string): void {
     const response = JSON.parse(responseJSON);
@@ -103,9 +95,11 @@ class ChatClient {
     console.log(`%cError: ${response.message}`, "color: red;");
   }
 
-  private onRegister(responseJSON: string): void {
+  private onRegistered(responseJSON: string): void {
     const meUserDTO = JSON.parse(responseJSON);
 
+    //TODO: Aquí lo que llega es la información de nuestro usuario, eso contempla
+    //todos los canales y de estos, los usuarios y los eventos.
     this.me_ = this.addUserFromDTO_(meUserDTO);
     //meUserDTO.channels.map((channelDTO: ChannelDTO) => this.me_.channels.set(channelDTO.uuid, this.addChannel_(this.channelFromDTO_(channelDTO))));
 
@@ -114,6 +108,72 @@ class ChatClient {
     //console.log(meUserDTO);
     this.channelList_.value = Array.from(this.me_.channels.values());
     this.currentChannel_.value = this.channelList.value[0]; //this.me_.channels.values().next().value;
+  }
+
+  private onChannelCreated(dataJSON: string) {
+    const data = JSON.parse(dataJSON);
+
+    console.log('onChannelCreated', data);
+  }
+
+  private onChannelUpdated(dataJSON: string) {
+    const data = JSON.parse(dataJSON);
+
+    console.log('onChannelUpdated', data);
+  }
+
+  private onChannelDeleted(dataJSON: string) {
+    const data = JSON.parse(dataJSON);
+
+    console.log('onChannelDeleted', data);
+  }
+
+  private onUserCreated(dataJSON: string) {
+    const data = JSON.parse(dataJSON);
+
+    console.log('onChannelCreated', data);
+  }
+
+  private onUserUpdated(dataJSON: string) {
+    const data = JSON.parse(dataJSON);
+
+    console.log('onUserUpdated', data);
+  }
+
+  private onUserDeleted(dataJSON: string) {
+    const data = JSON.parse(dataJSON);
+
+    console.log('onUserDeleted', data);
+  }
+
+  private onEventCreated(dataJSON: string) {
+    const data = JSON.parse(dataJSON);
+
+    console.log('onEventCreated', data);
+  }
+
+  private onEventUpdated(dataJSON: string) {
+    const data = JSON.parse(dataJSON);
+
+    console.log('onEventUpdated', data);
+  }
+
+  private onUserChannelCreated(dataJSON: string) {
+    const data = JSON.parse(dataJSON);
+
+    console.log('onUserChannelCreated', data);
+  }
+
+  private onUserChannelUpdated(dataJSON: string) {
+    const data = JSON.parse(dataJSON);
+
+    console.log('onUserChannelUpdated', data);
+  }
+
+  private onUserChannelDeleted(dataJSON: string) {
+    const data = JSON.parse(dataJSON);
+
+    console.log('onUserChannelDeleted', data);
   }
 
   private addUserFromDTO_(userDTO: UserDTO): User {
@@ -212,28 +272,6 @@ class ChatClient {
     channel.addUsers(channelUsers);
     channel.addEvents(events);
     return channel;
-  }
-
-  private onCreate(responseJSON: string): void {
-    const { code, message, data } = JSON.parse(responseJSON);
-
-    this.addChannelFromDTO_(data.channelDTO);
-  }
-
-  private onJoin(dataJSON: string): void {
-    const { code, message, data } = JSON.parse(dataJSON);
-
-    console.log(data.channelDTO);
-    this.addChannelFromDTO_(data.channelDTO);
-  }
-
-  private onPart(dataJSON: string): void {
-    const data = JSON.parse(dataJSON);
-
-  }
-
-  private onUpdate(dataJSON: string): void {
-    const data = JSON.parse(dataJSON);
   }
 
   private clear_() {
