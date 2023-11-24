@@ -509,6 +509,7 @@ export class ChatGateway {
   onUserConnected(event: any): void {
     const { sourceUser } = event;
     const sourceUserDTO = sourceUser.DTO;
+
     sourceUserDTO.channels = sourceUser.getChannels().map((channel: Channel) => channel.DTO);
 
     console.log("onUserConnected:", sourceUserDTO);

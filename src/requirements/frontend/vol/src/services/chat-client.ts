@@ -95,11 +95,17 @@ class ChatClient {
     console.log(`%cError: ${response.message}`, "color: red;");
   }
 
+<<<<<<< HEAD
   private onRegistered(responseJSON: string): void {
     const meUserDTO = JSON.parse(responseJSON);
 
     //TODO: Aquí lo que llega es la información de nuestro usuario, eso contempla
     //todos los canales y de estos, los usuarios y los eventos.
+=======
+  private onRegister(responseJSON: string): void {
+    const meUserDTO = JSON.parse(responseJSON);
+
+>>>>>>> master
     this.me_ = this.addUserFromDTO_(meUserDTO);
     //meUserDTO.channels.map((channelDTO: ChannelDTO) => this.me_.channels.set(channelDTO.uuid, this.addChannel_(this.channelFromDTO_(channelDTO))));
 
@@ -110,6 +116,7 @@ class ChatClient {
     this.currentChannel_.value = this.channelList.value[0]; //this.me_.channels.values().next().value;
   }
 
+<<<<<<< HEAD
   private onChannelCreated(dataJSON: string) {
     const data = JSON.parse(dataJSON);
 
@@ -120,6 +127,117 @@ class ChatClient {
     const data = JSON.parse(dataJSON);
 
     console.log('onChannelUpdated', data);
+=======
+  private addUserFromDTO_(userDTO: UserDTO): User {
+    let user = this.getUserByUUID_(userDTO.uuid);
+    let channel: Channel;
+    let channelUser: ChannelUser[];
+
+    if (!user) {
+      user = this.userFromDTO_(userDTO);
+      this.addUser_(user);
+    }
+
+    for (const channelDTO of userDTO.channels) {
+      this.addChannelFromDTO_(channelDTO);
+    }
+    return user;
+  }
+
+  private channelFromDTO_(channelDTO: ChannelDTO): Channel {
+    let ownerUser = this.getUserByUUID_(channelDTO.ownerUserDTO.uuid);
+
+    if (!ownerUser) {
+      user = this.userFromDTO_(channelDTO.ownerUserDTO);
+      this.addUser_(user);
+    }
+
+    return new Channel({
+      uuid: channelDTO.uuid,
+      name: channelDTO.name,
+      ownerUser: ownerUser,
+      creationDate: channelDTO.creationDate,
+      hasPassword: channelDTO.hasPassword,
+    });
+  }
+
+  private userFromDTO_(userDTO: UserDTO): User {
+    return new User({
+      uuid: userDTO.uuid,
+      name: userDTO.name,
+      siteRole: userDTO.siteRole,
+      status: userDTO.status,
+      blocked: userDTO.blocked,
+      friend: userDTO.friend,
+    });
+  }
+
+  private channelUserFromDTO_(channelUserDTO: ChannelUserDTO): ChannelUser {
+    let user = this.getUserByUUID_(channelUserDTO.uuid);
+    
+    if (!user) {
+      user = this.userFromDTO_(channelUserDTO);
+      this.addUser_(user);
+    }
+
+    return new ChannelUser({
+      user: user,
+      admin: channelUserDTO.admin,
+      owner: channelUserDTO.owner,
+      muted: channelUserDTO.muted,
+      banned: channelUserDTO.manned,
+    });
+  }
+
+  private eventFromDTO_(eventDTO: EventDTO): Event {
+    let sourceUser = this.getUserByUUID_(eventDTO.sourceUUID);
+    let targetUser = this.getUserByUUID_(eventDTO.targetUUID);
+
+    return new Event({
+      uuid: eventDTO.uuid,
+      type: eventDTO.type,
+      timestamp: eventDTO.timestamp,
+      modified: eventDTO.modified,
+      sourceUser: sourceUser,
+      targetUser: targetUser,
+      value: eventDTO.value,
+    }); 
+  }
+
+  private addChannelFromDTO_(channelDTO: ChannelDTO): Channel {
+    const channelUsers: ChannelUser[] = [];
+    const events: Event[] = [];
+    let channel = this.getChannelByUUID_(channelDTO);
+
+    for (const channelUserDTO of channelDTO.users) {
+      channelUsers.push(this.channelUserFromDTO_(channelUserDTO));
+    }
+    for (const eventDTO of channelDTO.events) {
+      events.push(this.eventFromDTO_(eventDTO));
+    }
+
+    if (!channel) {
+      channel = this.channelFromDTO_(channelDTO);
+      this.addChannel_(channel);
+    }
+ 
+    channel.addUsers(channelUsers);
+    channel.addEvents(events);
+    return channel;
+  }
+
+  private onCreate(responseJSON: string): void {
+    const { code, message, data } = JSON.parse(responseJSON);
+
+    this.addChannelFromDTO_(data.channelDTO);
+  }
+
+  private onJoin(dataJSON: string): void {
+    const { code, message, data } = JSON.parse(dataJSON);
+
+    console.log(data.channelDTO);
+    this.addChannelFromDTO_(data.channelDTO);
+>>>>>>> master
   }
 
   private onChannelDeleted(dataJSON: string) {

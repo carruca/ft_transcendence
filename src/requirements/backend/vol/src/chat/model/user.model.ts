@@ -35,6 +35,8 @@ export class UserModel {
   private status_: UserStatusEnum;
   private socket_?: Socket;
   private siteRole_: UserSiteRoleEnum;
+  private siteBanned_: boolean;
+  private siteDisabled_: boolean;
 
   private channels_ = new Set<Channel>; // Array para almacenar los canales a los que pertenece el nick
   private conversations_ = new Set<Conversation>;
@@ -49,8 +51,8 @@ export class UserModel {
     this.socket_ = userPayload.socket;
     this.status_ = userPayload.status ?? UserStatusEnum.OFFLINE;
     this.siteRole_ = userPayload.siteRole ?? UserSiteRoleEnum.USER;
-    this.siteBanned_ = userPayload.siteBanned;
-    this.siteDisabled_ = userPayload.siteDisabled;
+    this.siteBanned_ = userPayload.siteBanned ?? false;
+    this.siteDisabled_ = userPayload.siteDisabled ?? false;
     //TODO: blockUsers y friendUsers
     //this.blockUsers_ = ....
     //this.friendUsers_ = ....
@@ -219,7 +221,7 @@ export class UserModel {
   }
 
   hasPrivileges(): boolean {
-    return this.isOwner || this.isModerator;
+    return this.isSiteOwner || this.isSiteModerator;
   }
 
   get isSiteOwner(): boolean {
@@ -235,15 +237,15 @@ export class UserModel {
   }
 
   get isSiteBanned(): boolean {
-    return this.siteBanned_:
+    return this.siteBanned_;
   }
 
-  set siteDisabled(value: boolean): void {
-    this.siteDisabled = value;
+  set siteDisabled(value: boolean) {
+    this.siteDisabled_ = value;
   }
 
-  set siteBanned(value: boolean): void {
-    this.siteBanned = value;
+  set siteBanned(value: boolean) {
+    this.siteBanned_ = value;
   }
 
   is(user: UserModel): boolean {
