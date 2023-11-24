@@ -12,8 +12,8 @@
   },
   "dependencies": {
     "@vitejs/plugin-vue": "^4.0.0",
-    "uuid": "^9.0.1",
     "md5": "^2.3.0",
+    "uuid": "^9.0.1",
     "vite-plugin-html": "^3.2.0",
     "vue": "^3.2.45",
     "vue-3-ts-socket.io": "^1.0.3",

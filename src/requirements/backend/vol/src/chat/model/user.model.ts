@@ -212,6 +212,14 @@ export class UserModel {
     this.siteRole_ = value;
   }
   
+  ban() {
+    this.siteRole = UserSiteRoleEnum.BANNED;
+  }
+
+  unban() {
+    this.siteRole = UserSiteRoleEnum.USER;
+  }
+
   getChannelsCount(): number {
     return this.channels_.size;
   }

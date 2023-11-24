@@ -64,7 +64,7 @@ export class User {
   disabled: boolean;
 
   @Column({ default: false })
-  muted: boolean;
+  banned: boolean;
 
   @OneToMany(() => MatchUser, (matchUser) => matchUser.user)
   matches: MatchUser[];

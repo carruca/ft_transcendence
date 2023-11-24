@@ -509,11 +509,10 @@ export class ChatGateway {
   onUserConnected(event: any): void {
     const { sourceUser } = event;
     const sourceUserDTO = sourceUser.DTO;
-
     sourceUserDTO.channels = sourceUser.getChannels().map((channel: Channel) => channel.DTO);
 
     console.log("onUserConnected:", sourceUserDTO);
-    sourceUser.socket.emit('registered', JSON.stringify(sourceUserDTO));
+    sourceUser.socket.emit('register', JSON.stringify(sourceUserDTO));
 
     //this.logger_.debug(`onUserConnected: user ${event.sourceUser.name}`);
   }

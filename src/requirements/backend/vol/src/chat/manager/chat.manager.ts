@@ -80,7 +80,7 @@ import {
   UserMode,
 } from '../../users/entities/user.entity';
 
-import {
+import { 
   Channel as ChannelDB,
 } from '../../channels/entities/channel.entity';
 
@@ -270,6 +270,7 @@ export class ChatManager {
     this.updateUserStatus(sourceUser, UserStatusEnum.OFFLINE);
     this.raise_<void>('onUserDisconnect', { sourceUser });
     this.usersBySocket_.delete(sourceUser.socket);
+
     return Response.Success();
   }
 
@@ -877,7 +878,7 @@ export class ChatManager {
           establishedDate: channelDB.topicSetDate!,
           value: channelDB.topic!,
         };
-      } else {
+      } else { 
         throw new UserNotFoundError("channelFromDB: topicUserId user not found.");
       }
     }

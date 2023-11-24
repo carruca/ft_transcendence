@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, defineEmits, ref } from 'vue';
+import { defineEmits, ref } from 'vue';
 
 //TODO: create interface
 
@@ -14,7 +14,7 @@ const emit = defineEmits(['close']);
 
 let selectedImage : File;
 const username = ref<string>(props.user);
-const profilePicture = ref(`${import.meta.env.VITE_BACKEND_URL}/avatars/${username.value}.png`);
+const profilePicture = ref(`${import.meta.env.VITE_BACKEND_URL}/public/avatars/${username.value}.png`);
 
 
 function sendChanges() {
@@ -78,7 +78,7 @@ const hidePopup = () => {
             <i class="fas fa-cloud-upload-alt"></i> Change Profile Picture
           </label>
           <label for="nicknameInput">New Nickname:</label>
-          <input type="file" id="imageInput" name="avatar" accept="image/*" @change="handleImageUpload">
+          <input type="file" id="imageInput" name="avatar" accept="image/png" @change="handleImageUpload">
           <input type="text" id="nicknameInput" name="nickname" required>
         </form>
         <button class="fancy-button-green" @click="sendChanges">Confirm changes</button>
