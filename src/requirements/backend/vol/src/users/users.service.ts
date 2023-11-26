@@ -73,8 +73,7 @@ export class UsersService {
   }
 
   async findOneByIntraId(intraId: number): Promise<User | null> {
-    const user = await this.usersRepository.findOneBy({ intraId: intraId });
-    return user;
+    return await this.usersRepository.findOneBy({ intraId });
   }
 
   async findOne(id: string): Promise<User | null> {
@@ -330,7 +329,6 @@ export class UsersService {
   }
 
   async findFriendsUser(userId: string, status?: FriendStatus) : Promise<Friend[]> {
-    console.log(userId);
     const user = await this.usersRepository.findOne({
       relations: ['friends'],
       where: {

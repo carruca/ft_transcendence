@@ -28,6 +28,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { APP_FILTER } from '@nestjs/core';
 import { ExceptionInterceptor } from './exception.interceptor';
 import * as path from 'path';
+import { RateLimitedFetchModule } from './rate-limited/rate-limited-module';
 
 const routes = [
   {
@@ -66,6 +67,7 @@ const routes = [
     AchievementsModule,
     ChannelsModule,
     FriendsModule,
+    RateLimitedFetchModule,
     JwtModule.register({
       secret: process.env.NEST_COOKIE_SECRET,
       signOptions: { expiresIn: '3d' },

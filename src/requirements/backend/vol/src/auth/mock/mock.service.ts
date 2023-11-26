@@ -1,9 +1,10 @@
 'use strict';
 import { Injectable } from '@nestjs/common';
+import { RateLimitedFetchService } from '../../rate-limited/rate-limited-fetch.service';
 
 @Injectable()
 export class MockService {
-  private fetching: boolean = false;
+  constructor(private readonly rateLimitedFetchService: RateLimitedFetchService) {}
 
   async login(code: string): Promise<any> {
     try {
@@ -17,7 +18,7 @@ export class MockService {
   }
 
   async intraBearer(): Promise<any> {
-    const response = await fetch(`${process.env.NEST_INTRA_API_URL}/oauth/token`, {
+    const response = await this.rateLimitedFetchService.fetch(`${process.env.NEST_INTRA_API_URL}/oauth/token`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -37,9 +38,8 @@ export class MockService {
 
   async getUser(token: string, _refresh_token: string): Promise<any> {
     try {
-      if (this.fetching) return;
       const { access_token } = await this.intraBearer();
-      const response = await fetch(`${process.env.NEST_INTRA_API_URL}/v2/users/${token}`, {
+      const response = await this.rateLimitedFetchService.fetch(`${process.env.NEST_INTRA_API_URL}/v2/users/${token}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -47,22 +47,13 @@ export class MockService {
         },
       });
       if (!response.ok) {
-        if (response.status === 429) {
-          this.fetching = true
-          console.log("42 API - ", response.statusText, " - waiting 2secs");
-          setTimeout(() => {
-            this.fetching = false;
-          }, 2000);
-          return ;
-        } else {
-          throw new Error(response.statusText);
-        }
+        throw new Error(response.statusText);
       }
 			const data = await response.json();
 			//console.log(data);
       return data;
     } catch (error) {
-      console.error(`'${error}'`);
+      console.error(error);
       throw new Error(error);
     }
   }

@@ -3,13 +3,14 @@ import { MockService } from './mock.service';
 
 @Injectable()
 export class MockCallbackInterceptor implements NestInterceptor {
+  constructor(private readonly intraService: MockService) {}
 
   async intercept(context: ExecutionContext, next: CallHandler): Promise<any> {  // TODO: Typing
     const req = context.switchToHttp().getRequest();
     const res = context.switchToHttp().getResponse();
     const { secure } = req;
     if (process.env.NEST_AUTH_MOCK === 'true' && req.query.mock === 'true') {
-      const data = await new MockService().login(req.query.code);
+      const data = await this.intraService.login(req.query.code);
       res.cookie(
         'token',
         data.access_token,
