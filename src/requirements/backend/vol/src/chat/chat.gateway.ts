@@ -215,7 +215,7 @@ export class ChatGateway {
     const response = await this.chat_.summarizeChannels(sourceUser);
 
     response.setSourceUser(sourceUser)
-            .setEvent('part')
+            .setEvent('list')
             .send();
   }
 
@@ -430,6 +430,7 @@ export class ChatGateway {
             .setEvent('adminunwatch')
             .send();
   }
+
   /*
   @SubscribeMessage('convmsg')
   async onClientConversationMessage(client: Socket, dataJSON: string): Promise<void> {
@@ -486,6 +487,12 @@ export class ChatGateway {
     event.sourceUser.socket.emit('challengerejected', event.targetUser.id, event.gameMode);
   }
 
+  @ChatManagerSubscribe('onUserChannelsSummarized')
+  onUserChannelsSummarized(event: any): void {
+    const { sourceUser, channelsSummaryDTO } = event;
+
+    sourceUser.socket.emit("list", JSON.stringify(channelsSummaryDTO)); 
+  }
 
   @ChatManagerSubscribe('onUserConnected')
   onUserConnected(event: any): void {

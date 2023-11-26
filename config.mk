@@ -7,9 +7,9 @@ configure:
 
 $(CONFIG_FILE):
 	echo "Please enter the following information:"
-	read -p "Intra 42 UID: <none>" INTRA42_UID; \
-	read -p "Intra 42 Secret: <none>" INTRA42_SECRET; \
-	read -p "Intra 42 Redirect URI: <none>" INTRA42_REDIRECT_URI; \
+	read -p "Intra 42 UID <none>:" INTRA42_UID; \
+	read -p "Intra 42 Secret <none>:" INTRA42_SECRET; \
+	read -p "Intra 42 Redirect URI <none>:" INTRA42_REDIRECT_URI; \
 	read -p "Enable MOCK? <false>: " INTRA42_MOCK; \
 	echo "export INTRA42_UID=$$INTRA42_UID" > .config; \
 	echo "export INTRA42_SECRET=$$INTRA42_SECRET" >> .config; \

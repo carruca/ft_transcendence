@@ -20,7 +20,7 @@ export class User {
   public status: UserStatusEnum;
   public friend: boolean;
   public blocked: boolean;
-  public readonly channels = new Set<Channel>;
+  public readonly channels = new Map<string, Channel>;
 
   constructor(userDTO: UserDTO) {
     this.id = userDTO.id;
@@ -32,11 +32,11 @@ export class User {
   }
 
   addChannel(channel: Channel) {
-    this.channels.add(channel);
+    this.channels.set(channel.id, channel);
   }
 
   delChannel(channel: Cannel) {
-    this.channels.delete(channel);
+    this.channels.delete(channel.id);
   }
 
   update(changes: UserDTO) {
@@ -53,7 +53,7 @@ export class User {
   }
 
   clear() {
-    for (channel of this.channels) {
+    for (channel of this.channels.values()) {
       channel.removeUser(this);
     }
     this.channels.clear();

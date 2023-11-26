@@ -23,7 +23,7 @@ export class ChannelUser {
     public isMuted: boolean;
     
     constructor(channelUserPayload: ChannelUserPayload) {
-        this.user = reactive(channelUserPayload.user);
+        this.user = channelUserPayload.user;
         this.isAdmin = channelUserPayload.admin;
         this.isOwner = channelUserPayload.owner;
         this.isBanned = channelUserPayload.banned;

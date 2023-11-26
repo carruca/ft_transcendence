@@ -18,6 +18,7 @@ import {
 import {
   //UserDTO,
   ChannelDTO,
+  ChannelSummmaryDTO,
 } from './dto';
 
 import {
@@ -37,6 +38,9 @@ class ChatClient {
   private me_: User;
   private channels_: Map<string, Channel> = new Map();
   private users_: Map<string, User> = new Map();
+
+  private channelsSummary_ = ref<ChannelSummaryDTO[]>([]);
+  public channelsSummary = readonly(this.channelsSummary_);
 
   private channelList_ = ref<Channel[]>([]);
   public channelList = readonly(this.channelList_);
@@ -72,6 +76,7 @@ class ChatClient {
     socket.on('reterror', this.onRetError.bind(this));
     socket.on('retsuccess', this.onRetSuccess.bind(this));
     socket.on('registered', this.onRegistered.bind(this));
+    socket.on('list', this.onList.bind(this));
 
     socket.on('channelCreated', this.onChannelCreated.bind(this));
     socket.on('channelUpdated', this.onChannelUpdated.bind(this));
@@ -87,6 +92,13 @@ class ChatClient {
     socket.on('userChannelCreated', this.onUserChannelCreated.bind(this));
     socket.on('userChannelUpdated', this.onUserChannelUpdated.bind(this));
     socket.on('userChannelDeleted', this.onUserChannelDeleted.bind(this));
+  }
+
+  private onList(responseJSON: string): void {
+    const channelsDTO = JSON.parse(responseJSON);
+
+    this.channelsSummary_.value = channelsDTO; //.map(item => item.name);
+    console.log("channelsDTO", this.channelsSummary_.value);
   }
 
   private onRetError(responseJSON: string): void {
@@ -125,8 +137,6 @@ class ChatClient {
   updateChannelList_(): void {
     this.currentChannel_.value = this.channelList.value[0]; //this.me_.channels.values().next().value;
   }
-
-
 
   private onChannelCreated(dataJSON: string) {
     const channelDTO = JSON.parse(dataJSON);
@@ -312,46 +322,72 @@ class ChatClient {
     return channel;
   }
 
-  public deleteUser(user: User) {
+  public chanmsg(channelId: string, message: string) {
+    socket.emit('chanmsg', JSON.stringify([ channelId, message ]));
   }
 
-  public createChannel(name: string, ownerUser: User, password?: boolean): Channel {
+  public create(channelName: string, password?: string) {
+    socket.emit('create', JSON.stringify([ channelName, password === "" ? undefined : password ]));
   }
 
-  public closeChannel(channel: Channel, sourceUser: User) {
+  public join(channelId: string, password?: string) {
+    socket.emit('join', JSON.stringify([ channelId, password ]));
   }
 
-  public ban(channel: Channel, sourceUser: User, targetUser: User) {
+  public part(channelId: string) {
+    socket.emit('part', JSON.stringify([ channelId ]));
   }
 
-  public unban(channel: Channel, sourceUser: User, targetUser: User) {
+  public close(channelId: string) {
+    socket.emit('close', JSON.stringify([ channelId ]));
   }
 
-  public mute(channel: Channel, sourceUser: User, targetUser: User) {
+  public kick(channelId: string, userId: string, message?: string) {
+    socket.emit('kick', JSON.stringify([ channelId, userId, message ]));
   }
 
-  public unmute(channel: Channel, sourceUser: User, targetUser: User) {
+  public ban(channelId: string, userId: string) {
+    socket.emit('ban', JSON.stringify([ channelId, userId ]));
   }
 
-  public promote(channel: Channel, sourceUser: User, targetUser: User) {
+  public unban(channelId: string, userId: string) {
+    socket.emit('unban', JSON.stringify([ channelId, userId ]));
   }
 
-  public demote(channel: Channel, sourceUser: User, targetUser: User) {
+  public promote(channelId: string, userId: string) {
+    socket.emit('promote', JSON.stringify([ channelId, userId ]));
   }
 
-  public kick(channel: Channel, sourceUser: User, targetUser: User) {
+  public demote(channelId: string, userId: string) {
+    socket.emit('demote', JSON.stringify([ channelId, userId ]));
   }
 
-  public join(channel: Channel, sourceUser: User) {
+  public password(channelId: string, password?: string) {
+    socket.emit('password', JSON.stringify([ channelId, password ]));
   }
 
-  public part(channel: Channel, sourceUser: User) {
+  public mute(channelId: string, userId: string) {
+    socket.emit('mute', JSON.stringify([ channelId, userId ]));
   }
 
-  public chanmsg(channel: Channel, sourceUser: User, message: string) {
+  public unmute(channelId: string, userId: string) {
+    socket.emit('unmute', JSON.stringify([ channelId, userId ]));
   }
 
-  public privmsg(targetUser: User, sourceUser: User, message: string) {
+  public topic(channelId: string, topic: string) {
+    socket.emit('topic', JSON.stringify([ channelId, topic ]));
+  }
+
+  public block(userId: string) {
+    socket.emit('block', JSON.stringify([ userId ]));
+  }
+
+  public unblock(userId: string) {
+    socket.emit('unblock', JSON.stringify([ userId ]));
+  }
+
+  public list() {
+    socket.emit('list');
   }
 
   public setCurrentChannel = (channelId: string): void => {

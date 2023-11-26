@@ -482,6 +482,7 @@ export class ChatManager {
     if (channel.owner === targetUser) return Response.InsufficientPrivileges();
 
     channel.createEventAction(EventTypeEnum.KICK, sourceUser, targetUser, message);
+    this.raise_<void>("onChannelClosed", { channel, targetUser });
     await this.removeUserFromChannel_(targetUser, channel);
     return Response.Success();
   }
