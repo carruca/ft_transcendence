@@ -129,7 +129,7 @@ const allUsers = computed(() => users.value.filter(u => !u.isBanned));
 const bannedUsers = computed(() => users.value.filter(u => u.isBanned));
 
 onMounted(() => {
-  client.playAdminSim(); // FIXME only for testing
+  //client.playAdminSim(); // FIXME only for testing
   selectChannel.value = null;
   selectedChannelUUID.value = null;
   selectedUser.value = null;

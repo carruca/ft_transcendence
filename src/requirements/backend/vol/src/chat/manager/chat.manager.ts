@@ -1,35 +1,34 @@
 import {
-  UserModel as User,
-  ChannelModel as Channel,
-  ChannelTopicModel as ChannelTopic,
-  ConversationModel as Conversation,
-  ChallengeModel as Challenge,
-  EventModel as Event,
-  DataLoaderModel as DataLoader,
+  User,
+  Channel,
+  Conversation,
+  Challenge,
+  Event,
   Response,
 } from '../model';
 
 import {
   UserPayload,
   ChannelPayload,
-  ChannelTopicPayload,
+  ChannelUserPayload,
   ChallengePayload,
   ConversationPayload,
+  EventPayload
 } from '../interface';
 
 import {
   UserDTO,
   ChannelDTO,
-  ChannelTopicDTO,
+  ChannelUserDTO,
   ChannelSummaryDTO,
   ConversationDTO,
 } from '../dto';
 
 import {
   UserStatusEnum,
-  //UserChannelRoleEnum,
   UserSiteRoleEnum,
   EventTypeEnum,
+  NotifyEventTypeEnum,
 } from '../enum';
 
 import {
@@ -80,7 +79,7 @@ import {
   UserMode,
 } from '../../users/entities/user.entity';
 
-import { 
+import {
   Channel as ChannelDB,
 } from '../../channels/entities/channel.entity';
 
@@ -102,17 +101,19 @@ export class ChatManager {
     timestamp: true,
   });
 
-  private usersByUUID_ = new Map<string, User>();
-  private usersByName_ = new Map<string, User>();
+  private usersById_ = new Map<string, User>();
+  private usersByNickname_ = new Map<string, User>();
   private usersBySocket_ = new Map<Socket, User>();
-  private usersByID_ = new Map<number, User>();
+  private usersByintraId_ = new Map<number, User>();
+  private channelsById_ = new Map<string, Channel>();
   private channelsByName_ = new Map<string, Channel>();
-  private channelsByUUID_ = new Map<string, Channel>();
-  private conversationsByUUID_ = new Map<string, Conversation>();
+  private conversationsById_ = new Map<string, Conversation>();
   private conversationsByUsers_ = new BidirectionalMap<User, Conversation>();
+  private adminWatchers_ = new Set<User>();
   //TODO Challenge no anda fino aquí, debería ser el gestor y no la carga de datos
   private challengesByUsers_ = new BidirectionalMap<User, ChallengePayload>();
   private events_ = new MultiMap<string, Function>();
+  private initialized_: boolean = false;
 
   constructor(
     private channelsService_: ChannelsService,
@@ -126,19 +127,19 @@ export class ChatManager {
   */
 
   public getUserByID(userIntraID: number): User | undefined {
-    let user = this.usersByID_.get(userIntraID);
+    let user = this.usersByintraId_.get(userIntraID);
 
 //    if (!user)
   //    this.raise_<void>('onChatUserGetInfo', { userIntraID, user });
     return user;
   }
 
-  public getUserByUUID(userUUID: string): User | undefined {
-    return this.usersByUUID_.get(userUUID);
+  public getUserById(userid: string): User | undefined {
+    return this.usersById_.get(userid);
   }
 
-  public getUserByName(userName?: string): User | undefined {
-    return this.usersByName_.get(userName!);
+  public getUserByNickname(userNickname?: string): User | undefined {
+    return this.usersByNickname_.get(userNickname!);
   }
 
   public getUserBySocket(userSocket: Socket): User {
@@ -152,12 +153,12 @@ export class ChatManager {
     return this.channelsByName_.get(channelName);
   }
 
-  public getChannelByUUID(channelUUID: string): Channel | undefined {
-    return this.channelsByUUID_.get(channelUUID);
+  public getChannelByid(channelId: string): Channel | undefined {
+    return this.channelsById_.get(channelId);
   }
 
-  public getConversationByUUID(conversationUUID: string): Conversation | undefined {
-    return this.conversationsByUUID_.get(conversationUUID);
+  public getConversationByid(conversationid: string): Conversation | undefined {
+    return this.conversationsById_.get(conversationid);
   }
 
   public getConversationByUsers(user1: User, user2: User): Conversation | undefined {
@@ -173,39 +174,39 @@ export class ChatManager {
   }
 
   public getChannels(): Channel[] {
-    return Array.from(this.channelsByName_.values());
+    return Array.from(this.channelsById_.values());
   }
 
   public getUsers(): User[] {
-    return Array.from(this.usersByName_.values());
+    return Array.from(this.usersById_.values());
   }
 
   public getConversations(): Conversation[] {
-    return Array.from(this.conversationsByUUID_.values());
+    return Array.from(this.conversationsById_.values());
   }
 
   //TODO Esto es realmente necesario? si ya tengo el usuario creado usando userFromDB....
   public addUserDB(userDB: UserDB ): User {
     let sourceUser = this.userFromDB_(userDB);
 
-    if (this.usersByUUID_.has(sourceUser.uuid))
-      return this.getUserByUUID(sourceUser.uuid)!;
+    if (this.usersById_.has(sourceUser.id))
+      return this.getUserById(sourceUser.id)!;
 
-    this.usersByID_.set(sourceUser.intraId, sourceUser);
-    this.usersByUUID_.set(sourceUser.uuid, sourceUser);
-    this.usersByName_.set(sourceUser.name, sourceUser);
+    this.usersByintraId_.set(sourceUser.intraId, sourceUser);
+    this.usersById_.set(sourceUser.id, sourceUser);
+    this.usersByNickname_.set(sourceUser.nickname, sourceUser);
     //this.usersBySocket_.set(sourceUser.socket, sourceUser);
 
     //this.raise_<void>('onUserAdded', { sourceUser });
     return sourceUser;
   }
 
-  public changeNickUserUUID(sourceUserUUID: string, nickname: string) {
-    const sourceUser = this.getUserByUUID(sourceUserUUID);
+  public changeNickUserId(sourceUserid: string, nickname: string) {
+    const sourceUser = this.getUserById(sourceUserid);
 
     if (sourceUser) {
-      this.raise_<void>('onUserNickChanged', { sourceUser, nickname });
-      sourceUser.name = nickname;
+//      this.raise_<void>('onUserNickChanged', { sourceUser, nickname });
+      sourceUser.nickname = nickname;
     }
   }
 
@@ -219,58 +220,44 @@ export class ChatManager {
 
   private addChannel_(channel: Channel) {
     this.channelsByName_.set(channel.name, channel);
-    this.channelsByUUID_.set(channel.uuid, channel);
+    this.channelsById_.set(channel.id, channel);
   }
 
   /*
   **  methods
   */
 
-  public async topicChannelUUID(sourceUser: User, channelUUID: string, value: string): Promise<Response> {
-    const channel = this.getChannelByUUID(channelUUID);
-    const channelTopicPayload: ChannelTopicPayload = {
-      user: sourceUser,
-      value: value,
-    };
+  public async topicChannelId(sourceUser: User, channelId: string, topic: string): Promise<Response> {
+    const channel = this.getChannelByid(channelId);
 
     if (!channel) return Response.ChannelNotExists();
     if (!channel.hasUser(sourceUser)) return Response.NotInChannel();
     if (!channel.hasPrivileges(sourceUser)) return Response.InsufficientPrivileges();
-    if (channel.topic?.value === value) return Response.Success();
+    if (channel.topic === topic) return Response.Success();
 
-    const channelTopic = new ChannelTopic(channelTopicPayload);
-
-    if (this.raise_<boolean>('onChannelTopicChanging', { channel, channelTopic }).includes(true))
-      return Response.Denied();
-
-    this.raise_<void>('onChannelTopicChanged', { channel, channelTopic });
-    channel.topic = channelTopic;
+    channel.topic = topic;
     return Response.Success();
   }
 
   public async connectUser(sourceUser: User): Promise<Response> {
     if (sourceUser === undefined) return Response.UserNotExists();
-    if (sourceUser.isSiteDisabled) return Response.Denied();
-    if (sourceUser.isSiteBanned) return Response.Denied();
-
-    /*
-    if (this.raise_<boolean>('onUserConnecting', { sourceUser }).includes(true))
-      return Response.Denied();
-    */
+    if (sourceUser.isSiteDisabled) return Response.AccountDisabled();
+    if (sourceUser.isSiteBanned) return Response.BannedFromSite();
 
     //TODO falta la gestión de más de una conexión simultánea con el mismo usuario
     this.usersBySocket_.set(sourceUser.socket, sourceUser);
-    this.updateUserStatus(sourceUser, UserStatusEnum.ONLINE);
+    sourceUser.status = UserStatusEnum.ONLINE;
     //console.log(sourceUser);
     this.raise_<void>('onUserConnected', { sourceUser });
     return Response.Success();
   }
 
   public async disconnectUser(sourceUser: User): Promise<Response> {
-    this.updateUserStatus(sourceUser, UserStatusEnum.OFFLINE);
-    this.raise_<void>('onUserDisconnect', { sourceUser });
+    this.adminWatchers_.delete(sourceUser);
     this.usersBySocket_.delete(sourceUser.socket);
 
+    this.raise_<void>('onUserDisconnect', { sourceUser });
+    sourceUser.status = UserStatusEnum.OFFLINE;
     return Response.Success();
   }
 
@@ -294,12 +281,12 @@ export class ChatManager {
     if (this.raise_<boolean>('onConversationCreating', { conversationData }).includes(true))
       return Response.Denied();
 
-    if (!conversationData.uuid) {
-      this.logger_.debug("No UUID provided for new conversation. Generating one...");
-      conversationData.uuid = uuidv4();
+    if (!conversationData.id) {
+      this.logger_.debug("No id provided for new conversation. Generating one...");
+      conversationData.id = uuidv4();
     }
-    conversation = new Conversation(conversationData);
-    this.conversationsByUUID_.set(conversation.uuid, conversation);
+    conversation = new Conversation(this.notify_.bind(this), conversationData);
+    this.conversationsById_.set(conversation.id, conversation);
     this.conversationsByUsers_.set(conversation.user1, conversation.user2, conversation);
     this.raise_<void>('onConversationCreated', { conversation });
     return Response.Success();
@@ -307,9 +294,9 @@ export class ChatManager {
 
   public async deleteConversation(conversation?: Conversation | string): Promise<Response> {
     if (typeof conversation === "string")
-      conversation = this.getConversationByUUID(conversation);
+      conversation = this.getConversationByid(conversation);
     if (!conversation) return Response.Success();
-    this.conversationsByUUID_.delete(conversation.uuid);
+    this.conversationsById_.delete(conversation.id);
     this.conversationsByUsers_.delete(conversation.user1, conversation.user2);
     this.raise_<void>('onConversationDeleted', { conversation });
     return Response.Success();
@@ -317,8 +304,8 @@ export class ChatManager {
 
   private async addUserToChannel_(user: User, channel: Channel): Promise<void> {
     const createChannelUserDto: CreateChannelUserDto = {
-      channelId: channel.uuid,
-      userId: user.uuid,
+      channelId: channel.id,
+      userId: user.id,
       admin: false,
     };
 
@@ -328,9 +315,34 @@ export class ChatManager {
   }
 
   private async removeUserFromChannel_(user: User, channel: Channel): Promise<void> {
+/*    await this.channelsService_.setActiveToChannel({
+      channelId: channel.id,
+      userId: user.id,
+      mode: false,
+    });
+*/
+    await this.channelsService_.removeChannelUser(channel.id, user.id);
+
     channel.removeUser(user);
     user.removeChannel(channel);
-    await this.channelsService_.removeChannelUser(channel.uuid, user.uuid);
+
+    if (channel.isEmpty) {
+       this.deleteChannel_(channel);
+    }
+  }
+
+  public async adminWatch(sourceUser: User): Promise<Response> {
+    if (!sourceUser.hasPrivileges()) return Response.InsufficientPrivileges();
+
+    this.adminWatchers_.add(sourceUser);
+    return Response.Success();
+  }
+
+  public async adminUnwatch(sourceUser: User): Promise<Response> {
+    if (!sourceUser.hasPrivileges()) return Response.InsufficientPrivileges();
+
+    this.adminWatchers_.delete(sourceUser);
+    return Response.Success();
   }
 
   public async createChannelName(sourceUser: User, channelName: string, password?: string): Promise<Response> {
@@ -341,109 +353,104 @@ export class ChatManager {
 
     const channelDB = await this.channelsService_.create({
       name: channelName,
-      ownerId: sourceUser.uuid,
+      ownerId: sourceUser.id,
       password: password,
     });
     channel = this.addChannelDB(channelDB);
-    channel.addGenericEvent(EventTypeEnum.CREATE, sourceUser);
-    this.raise_<void>('onChannelCreated', { channel, sourceUser });
+    channel.createEventGeneric(EventTypeEnum.CREATE, sourceUser);
+    //this.raise_<void>('onChannelCreated', { channel, sourceUser });
     //TODO enviar a los que están en el panel de admin.
     return Response.Success();
   }
 
-  public async deleteChannelUUID(user: User, channelUUID: string): Promise<Response> {
-    const channel = this.getChannelByUUID(channelUUID);
+  public async deleteChannelId(user: User, channelId: string): Promise<Response> {
+    const channel = this.getChannelByid(channelId);
 
     if (!channel) return Response.ChannelNotExists();
     if (!channel.isOwner(user)) return Response.InsufficientPrivileges();
 
-    this.raise_<void>('onChannelDeleted', { channel, user });
-    this.destroyChannel_(channel);
+    //this.raise_<void>('onChannelDeleted', { channel, user });
+    this.deleteChannel_(channel);
     //this.destroyChannel_(channel);
 
     return Response.Success();
   }
 
-  public async joinChannelUUID(sourceUser: User, channelUUID: string, password?: string): Promise<Response> {
-    let channel = this.getChannelByUUID(channelUUID);
+  public async joinChannelId(sourceUser: User, channelId: string, password?: string): Promise<Response> {
+    let channel = this.getChannelByid(channelId);
 
     if (!channel) return Response.ChannelNotExists();
     if (channel.password !== password) return Response.InvalidPassword();
-    if (channel.hasBanned(sourceUser)) return Response.BannedFromChannel();
+    if (channel.isBanned(sourceUser)) return Response.BannedFromChannel();
     if (channel.hasUser(sourceUser)) return Response.AlreadyInChannel();
 
-    if (this.raise_<boolean>('onUserJoining', { channel, sourceUser }).includes(true))
-      return Response.Denied();
-
-    await this.addUserToChannel_(sourceUser, channel);
-    channel.addGenericEvent(EventTypeEnum.JOIN, sourceUser);
     //this.raise_<void>('onUserJoined', { channel, sourceUser });
+    await this.addUserToChannel_(sourceUser, channel);
+    this.raise_<void>('onChannelCreated', { channel, targetUsers: [ sourceUser ] });
+    channel.createEventGeneric(EventTypeEnum.JOIN, sourceUser);
     return Response.Success();
   }
 
-  public async partChannelUUID(sourceUser: User, channelUUID: string): Promise<Response> {
-    let channel = this.getChannelByUUID(channelUUID);
+  public async partChannelId(sourceUser: User, channelId: string): Promise<Response> {
+    let channel = this.getChannelByid(channelId);
 
     if (!channel) return Response.ChannelNotExists();
     if (!channel.hasUser(sourceUser)) return Response.NotInChannel();
 
-    this.raise_<void>('onUserParted', { channel, sourceUser });
-    //TODO await this.delUserFromChannel_(sourceUser, channel);
-    if (channel.isEmpty)
-      this.destroyChannel_(channel);
+    this.raise_<void>('onChannelDeleted', { channel, targetUsers: [ sourceUser ] });
+    channel.createEventGeneric(EventTypeEnum.PART, sourceUser);
+    await this.removeUserFromChannel_(sourceUser, channel);
     return Response.Success();
   }
 
-  private destroyChannel_(channel: Channel): void {
-    this.raise_<void>('onChannelDestroyed', { channel });
-    this.channelsByUUID_.delete(channel.uuid);
+  private async deleteChannel_(channel: Channel): Promise<void> {
+    this.channelsById_.delete(channel.id);
     this.channelsByName_.delete(channel.name);
 
-    for (const user of channel.getUsers()) {
-      user.removeChannel(channel);
-    }
+    await this.channelsService_.remove(channel.id);
+    channel.delete();
   }
 
   public async summarizeChannels(sourceUser: User): Promise<Response> {
     let channelsSummaryDTO: ChannelSummaryDTO[] = [];
 
     for (const channel of this.getChannels()) {
-      channelsSummaryDTO.push(new ChannelSummaryDTO(channel));
+      channelsSummaryDTO.push(channel.summaryDTO);
     }
 
     this.raise_<void>('onUserChannelsSummarized', { sourceUser, channelsSummaryDTO })
     return Response.Success();
   }
 
-  public async observeUserUUID(sourceUser: User, targetUserUUID: string): Promise<Response> {
-    const targetUser = this.getUserByUUID(targetUserUUID);
+  public async observeUserId(sourceUser: User, targetUserid: string): Promise<Response> {
+    const targetUser = this.getUserById(targetUserid);
 
     if (!targetUser) return Response.UserNotExists();
     if (sourceUser.status === UserStatusEnum.IN_GAME) return Response.YoureInGame();
     if (targetUser.status !== UserStatusEnum.IN_GAME) return Response.UserInGame();
 
     //TODO advertir al resto de usuarios el cambio de estado.
-    this.updateUserStatus(sourceUser, UserStatusEnum.IN_GAME);
+    sourceUser.status = UserStatusEnum.IN_GAME;
     this.raise_<void>('onUserUserObserved', { sourceUser, targetUser })
     return Response.Success();
   }
 
-  public async closeChannelUUID(sourceUser: User, channelUUID: string, message: string): Promise<Response> {
-    const channel = this.getChannelByUUID(channelUUID);
+  public async closeChannelId(sourceUser: User, channelId: string, message: string): Promise<Response> {
+    const channel = this.getChannelByid(channelId);
 
     if (!channel) return Response.ChannelNotExists();
-    if (!channel.hasPrivileges(sourceUser) && !sourceUser.hasPrivileges()) return Response.InsufficientPrivileges();
+    if (!sourceUser.hasPrivileges()) return Response.InsufficientPrivileges();
+    //if (!channel.isActive(sourceUser)) return Response.NotInChannel();
 
     this.raise_<void>("onChannelClosed", { channel, sourceUser });
-    //TODO: hacer que los usuarios dejen de tener ese canal y eliminar el canal
-    //DONE: Creo que ya está hecho, verificar esta parte:
-    this.cleanChannel_(channel);
-    this.destroyChannel_(channel);
+    // TODO: vaciar el canal antes de borrarlo o la base de datos no lo soportará
+    await this.cleanChannel_(channel);
+    await this.deleteChannel_(channel);
     return Response.Success();
   }
 
-  public async passwordChannelUUID(sourceUser: User, channelUUID: string, newPassword: string): Promise<Response> {
-    const channel = this.getChannelByUUID(channelUUID);
+  public async passwordChannelId(sourceUser: User, channelId: string, newPassword: string): Promise<Response> {
+    const channel = this.getChannelByid(channelId);
 
     //TODO: newPassword se debería verificar los caracteres?
     if (!channel)
@@ -452,131 +459,164 @@ export class ChatManager {
       return Response.InsufficientPrivileges();
     if (channel.password === newPassword) return Response.Success();
 
-    if (this.raise_<boolean>("onChannelPasswordChanging", { channel, sourceUser, newPassword }).includes(true))
-      return Response.Denied();
+    //if (this.raise_<boolean>("onChannelPasswordChanging", { channel, sourceUser, newPassword }).includes(true))
+    //  return Response.Denied();
     this.raise_<void>("onChannelPasswordChanged", { channel, sourceUser, newPassword });
     channel.password = newPassword;
-    channel.addGenericEvent(EventTypeEnum.PASSWORD, sourceUser);
+    channel.createEventGeneric(EventTypeEnum.PASSWORD, sourceUser);
     return Response.Success();
   }
 
-  public async kickUserFromChannelUUID(sourceUser: User, channelUUID: string, targetUserUUID: string, message?: string): Promise<Response> {
-    const channel = this.getChannelByUUID(channelUUID);
-    const targetUser = this.getUserByUUID(targetUserUUID);
+  public async kickUserFromChannelId(sourceUser: User, channelId: string, targetUserid: string, message?: string): Promise<Response> {
+    const channel = this.getChannelByid(channelId);
+    const targetUser = this.getUserById(targetUserid);
 
-    //TODO: En un UUID no se verifica los nombres
+    //TODO: En un id no se verifica los nombres
     //if (!checkChannelName(channelName)) return Response.BadChannelName);
     if (!channel) return Response.ChannelNotExists();
-    if (!channel.hasUser(sourceUser)) return Response.NotInChannel();
+    if (channel.isBanned(sourceUser)) return Response.BannedFromChannel();
     if (!channel.hasPrivileges(sourceUser)) return Response.InsufficientPrivileges();
+    if (!channel.hasUser(sourceUser)) return Response.NotInChannel();
     if (!targetUser) return Response.UserNotExists();
     if (!channel.hasUser(targetUser)) return Response.NotInChannel();
-    if (channel.ownerUser === targetUser) return Response.InsufficientPrivileges();
+    if (channel.owner === targetUser) return Response.InsufficientPrivileges();
 
-    if (this.raise_<boolean>("onUserKicking", {channel, sourceUser, targetUser}).includes(true))
-      return Response.Denied();
-
-    this.raise_<void>("onUserKicked", {channel, sourceUser, targetUser, message});
-    channel.removeUser(targetUser);
-    targetUser.removeChannel(channel);
-    channel.addKickEvent(sourceUser, targetUser, message);
-    if (channel.isEmpty)
-      this.destroyChannel_(channel);
+    channel.createEventAction(EventTypeEnum.KICK, sourceUser, targetUser, message);
+    await this.removeUserFromChannel_(targetUser, channel);
     return Response.Success();
   }
 
-  public async banUserFromChannelUUID(sourceUser: User, channelUUID: string, targetUserUUID: string): Promise<Response> {
-    const channel = this.getChannelByUUID(channelUUID);
-    const targetUser = this.getUserByUUID(targetUserUUID);
+  public async muteUserFromChannelId(sourceUser: User, channelId: string, targetUserid: string): Promise<Response> {
+    const channel = this.getChannelByid(channelId);
+    const targetUser = this.getUserById(targetUserid);
 
-    //TODO: En un UUID no se verifica los nombres
+    if (!channel) return Response.ChannelNotExists();
+    if (channel.isBanned(sourceUser)) return Response.BannedFromChannel();
+    if (!channel.hasPrivileges(sourceUser)) return Response.InsufficientPrivileges();
+    if (!targetUser) return Response.UserNotExists();
+    if (!channel.hasUser(sourceUser)) return Response.NotInChannel();
+    if (!channel.hasUser(targetUser)) return Response.NotInChannel();
+    if (channel.owner == targetUser) return Response.InsufficientPrivileges();
+    if (channel.isMuted(targetUser)) return Response.Success();
+
+    channel.muteUser(targetUser);
+    channel.createEventAction(EventTypeEnum.MUTE, sourceUser, targetUser);
+    return Response.Success();
+
+  }
+
+  public async unmuteUserFromChannelId(sourceUser: User, channelId: string, targetUserid: string): Promise<Response> {
+    const channel = this.getChannelByid(channelId);
+    const targetUser = this.getUserById(targetUserid);
+
+    if (!channel) return Response.ChannelNotExists();
+    if (channel.isBanned(sourceUser)) return Response.BannedFromChannel();
+    if (!channel.hasPrivileges(sourceUser)) return Response.InsufficientPrivileges();
+    if (!targetUser) return Response.UserNotExists();
+    if (!channel.hasUser(sourceUser)) return Response.NotInChannel();
+    if (!channel.hasUser(targetUser)) return Response.NotInChannel();
+    if (channel.owner === targetUser) return Response.InsufficientPrivileges();
+    if (!channel.isMuted(targetUser)) return Response.Success();
+
+    channel.unmuteUser(targetUser);
+    channel.createEventAction(EventTypeEnum.UNMUTE, sourceUser, targetUser);
+    return Response.Success();
+  }
+
+  public async banUserFromChannelId(sourceUser: User, channelId: string, targetUserid: string): Promise<Response> {
+    const channel = this.getChannelByid(channelId);
+    const targetUser = this.getUserById(targetUserid);
+
+    //TODO: En un id no se verifica los nombres
     //if (!this.checkChannelName_(channelName)) return this.chatMessage(ChatReturnCodeEnum.BadChannelName);
     if (!channel) return Response.ChannelNotExists();
+    if (channel.isBanned(sourceUser)) return Response.BannedFromChannel();
+    if (!channel.hasPrivileges(sourceUser)) return Response.InsufficientPrivileges();
     if (!targetUser) return Response.UserNotExists();
     if (!channel.hasUser(sourceUser)) return Response.NotInChannel();
-    if (!channel.hasPrivileges(sourceUser)) return Response.InsufficientPrivileges();
     if (!channel.hasUser(targetUser)) return Response.NotInChannel();
-    if (channel.ownerUser === targetUser) return Response.InsufficientPrivileges();
-    if (channel.hasBanned(targetUser)) return Response.Success();
+    if (channel.owner === targetUser) return Response.InsufficientPrivileges();
+    if (channel.isBanned(targetUser)) return Response.UserAlreadyBanned();
 
-    if (this.raise_<boolean>("onUserBanning", { channel, sourceUser, targetUser }).includes(true))
-      return Response.Denied();
 
-    this.raise_<void>("onUserBanned", { channel, sourceUser, targetUser });
-    channel.addBan(targetUser);
-    channel.removeUser(targetUser);
-    channel.addGenericEvent(EventTypeEnum.BAN, targetUser);
-    targetUser.removeChannel(channel);
+    //if (this.raise_<boolean>("onUserBanning", { channel, sourceUser, targetUser }).includes(true))
+    //  return Response.Denied();
+
+    //this.raise_<void>("onUserBanned", { channel, sourceUser, targetUser });
+    channel.banUser(targetUser);
+    channel.createEventAction(EventTypeEnum.BAN, sourceUser, targetUser);
     return Response.Success();
   }
 
-  public async unbanUserFromChannelUUID(sourceUser: User, channelUUID: string, targetUserUUID: string): Promise<Response> {
-    const channel = this.getChannelByUUID(channelUUID);
-    const targetUser = this.getUserByUUID(targetUserUUID);
+  public async unbanUserFromChannelId(sourceUser: User, channelId: string, targetUserid: string): Promise<Response> {
+    const channel = this.getChannelByid(channelId);
+    const targetUser = this.getUserById(targetUserid);
 
-    //TODO: En un UUID no se verifica los nombres
+    //TODO: En un id no se verifica los nombres
     //if (!this.checkChannelName_(channelName)) return this.chatMessage(ChatReturnCodeEnum.BadChannelName);
     if (!channel) return Response.ChannelNotExists();
+    if (channel.isBanned(sourceUser)) return Response.BannedFromChannel();
+    if (!channel.hasPrivileges(sourceUser)) return Response.InsufficientPrivileges();
     if (!targetUser) return Response.UserNotExists();
     if (!channel.hasUser(sourceUser)) return Response.NotInChannel();
-    if (!channel.hasPrivileges(sourceUser)) return Response.InsufficientPrivileges();
-  //   if (!channel.hasUser(targetUser)) return this.chatMessage(ChatReturnCodeEnum.NotInChannel();
-    if (channel.ownerUser === targetUser) return Response.InsufficientPrivileges();
-    if (!channel.hasBanned(targetUser)) return Response.Success();
+    if (!channel.hasUser(targetUser)) return Response.NotInChannel();
+    if (channel.owner === targetUser) return Response.InsufficientPrivileges();
+    if (!channel.isBanned(targetUser)) return Response.UserNotBanned();
 
-    if (this.raise_<boolean>("onUserUnbanning", { channel, sourceUser, targetUser }).includes(true))
-        return Response.Denied();
+    //if (this.raise_<boolean>("onUserUnbanning", { channel, sourceUser, targetUser }).includes(true))
+    //    return Response.Denied();
 
-    channel.addGenericEvent(EventTypeEnum.UNBAN, targetUser);
-    this.raise_<void>("onUserUnbanned", { channel, sourceUser, targetUser });
-    channel.removeBan(targetUser);
+    //this.raise_<void>("onUserUnbanned", { channel, sourceUser, targetUser });
+    channel.unbanUser(targetUser);
+    channel.createEventAction(EventTypeEnum.UNBAN, sourceUser, targetUser);
     return Response.Success();
   }
 
-  public async promoteUserInChannelUUID(sourceUser: User, channelUUID: string, targetUserUUID: string): Promise<Response> {
-    const channel = this.getChannelByUUID(channelUUID);
-    const targetUser = this.getUserByUUID(targetUserUUID);
+  public async promoteUserInChannelId(sourceUser: User, channelId: string, targetUserid: string): Promise<Response> {
+    const channel = this.getChannelByid(channelId);
+    const targetUser = this.getUserById(targetUserid);
 
     if (!channel) return Response.ChannelNotExists();
-    if (!channel.hasUser(sourceUser)) return Response.NotInChannel();
+    if (channel.isBanned(sourceUser)) return Response.BannedFromChannel();
     if (!channel.hasPrivileges(sourceUser)) return Response.InsufficientPrivileges();
     if (!targetUser) return Response.UserNotExists();
+    if (!channel.hasUser(sourceUser)) return Response.NotInChannel();
     if (!channel.hasUser(targetUser)) return Response.NotInChannel();
-    //if (channel.owner === targetUser) return this.chatMessage(ChatReturnCodeEnum.InsufficientPrivileges();
-    if (channel.hasOper(targetUser)) return Response.Success();
+    if (channel.isAdmin(targetUser)) return Response.Success();
 
-    if (this.raise_<boolean>("onUserPromoting", { channel, sourceUser, targetUser }).includes(true))
-      return Response.Denied();
+    //if (this.raise_<boolean>("onUserPromoting", { channel, sourceUser, targetUser }).includes(true))
+    //  return Response.Denied();
 
-    this.raise_<void>("onUserPromoted", { channel, sourceUser, targetUser });
-    channel.addOper(targetUser);
-    channel.addGenericEvent(EventTypeEnum.PROMOTE, sourceUser, targetUser);
+    //this.raise_<void>("onUserPromoted", { channel, sourceUser, targetUser });
+    channel.promoteUser(targetUser);
+    channel.createEventAction(EventTypeEnum.PROMOTE, sourceUser, targetUser);
     return Response.Success();
   }
 
-  public async demoteUserInChannelUUID(sourceUser: User, channelUUID: string, targetUserUUID: string): Promise<Response> {
-    const channel = this.getChannelByUUID(channelUUID);
-    const targetUser = this.getUserByUUID(targetUserUUID);
+  public async demoteUserInChannelId(sourceUser: User, channelId: string, targetUserid: string): Promise<Response> {
+    const channel = this.getChannelByid(channelId);
+    const targetUser = this.getUserById(targetUserid);
 
     if (!channel) return Response.ChannelNotExists();
-    if (!channel.hasUser(sourceUser)) return Response.NotInChannel();
+    if (channel.isBanned(sourceUser)) return Response.BannedFromChannel();
     if (!channel.hasPrivileges(sourceUser)) return Response.InsufficientPrivileges();
     if (!targetUser) return Response.UserNotExists();
+    if (!channel.hasUser(sourceUser)) return Response.NotInChannel();
     if (!channel.hasUser(targetUser)) return Response.NotInChannel();
     //if (channel.owner === targetUser) return this.chatMessage(ChatReturnCodeEnum.InsufficientPrivileges();
-    if (!channel.hasOper(targetUser)) return Response.Success();
+    if (!channel.isAdmin(targetUser)) return Response.Success();
 
-    if (this.raise_<boolean>('onUserDemoting', { channel, sourceUser, targetUser }).includes(true))
-      return Response.Denied();
+    //if (this.raise_<boolean>('onUserDemoting', { channel, sourceUser, targetUser }).includes(true))
+    //  return Response.Denied();
 
-    channel.addGenericEvent(EventTypeEnum.DEMOTE, sourceUser, targetUser);
-    this.raise_<void>('onUserDemoted', { channel, sourceUser, targetUser });
-    channel.removeOper(targetUser);
+    channel.demoteUser(targetUser);
+    channel.createEventAction(EventTypeEnum.DEMOTE, sourceUser, targetUser);
+    //this.raise_<void>('onUserDemoted', { channel, sourceUser, targetUser });
     return Response.Success();
   }
 
-  public async requestChallengeUserUUID(sourceUser: User, targetUserUUID: string, gameMode: GameMode): Promise<Response> {
-    const targetUser = this.getUserByUUID(targetUserUUID);
+  public async requestChallengeUserId(sourceUser: User, targetUserid: string, gameMode: GameMode): Promise<Response> {
+    const targetUser = this.getUserById(targetUserid);
 
     if (!targetUser) return Response.UserNotExists();
     if (sourceUser === targetUser) return Response.Success();
@@ -594,8 +634,8 @@ export class ChatManager {
     return Response.Success();
   }
 
-  public async acceptChallengeUserUUID(sourceUser: User, targetUserUUID: string): Promise<Response> {
-    const targetUser = this.getUserByUUID(targetUserUUID);
+  public async acceptChallengeUserId(sourceUser: User, targetUserid: string): Promise<Response> {
+    const targetUser = this.getUserById(targetUserid);
 
     if (!targetUser) return Response.UserNotExists();
     if (sourceUser === targetUser) return Response.Success();
@@ -611,13 +651,13 @@ export class ChatManager {
     if (this.raise_<boolean>('onUserChallengeAccepting', { sourceUser, targetUser }).includes(true))
       return Response.Denied();
     this.deleteChallenge(sourceUser, targetUser);
-    this.updateUserStatus(targetUser, UserStatusEnum.IN_GAME);
+    targetUser.status = UserStatusEnum.IN_GAME;
     this.raise_<void>('onUserChallengeAccepted', { sourceUser, targetUser });
     return Response.Success();
   }
 
-  public async rejectChallengeUserUUID(sourceUser: User, targetUserUUID: string): Promise<Response> {
-    const targetUser = this.getUserByUUID(targetUserUUID);
+  public async rejectChallengeUserId(sourceUser: User, targetUserid: string): Promise<Response> {
+    const targetUser = this.getUserById(targetUserid);
 
     if (!targetUser) return Response.UserNotExists();
     if (sourceUser === targetUser) return Response.Success();
@@ -634,106 +674,102 @@ export class ChatManager {
     return Response.Success();
   }
 
-  public async blockUserUUID(sourceUser: User, targetUserUUID: string): Promise<Response> {
-    const targetUser = this.getUserByUUID(targetUserUUID);
+  public async blockUserId(sourceUser: User, targetUserid: string): Promise<Response> {
+    const targetUser = this.getUserById(targetUserid);
 
     if (!targetUser) return Response.UserNotExists();
     if (sourceUser === targetUser) return Response.Success();
     if (sourceUser.hasBlocked(targetUser)) return Response.Success();
 
-    if (this.raise_<boolean>('onUserBlocking', { sourceUser, targetUser }).includes(true))
-      return Response.Denied();
+//    if (this.raise_<boolean>('onUserBlocking', { sourceUser, targetUser }).includes(true))
+  //    return Response.Denied();
 
-    this.raise_<void>('onUserBlocked', { sourceUser, targetUser });
+  //  this.raise_<void>('onUserBlocked', { sourceUser, targetUser });
     sourceUser.addBlock(targetUser);
+    await this.usersService_.createBlock({
+      userId: sourceUser.id,
+      blockId: targetUser.id,
+    });
     return Response.Success();
   }
 
-  public async unblockUserUUID(sourceUser: User, targetUserUUID: string): Promise<Response> {
-    const targetUser = this.getUserByUUID(targetUserUUID);
+  public async unblockUserId(sourceUser: User, targetUserid: string): Promise<Response> {
+    const targetUser = this.getUserById(targetUserid);
 
     if (!targetUser) return Response.UserNotExists();
     if (sourceUser === targetUser) return Response.Success();
     if (!sourceUser.hasBlocked(targetUser)) return Response.Success();
 
-    if (this.raise_<boolean>('onUserUnblocking', { sourceUser, targetUser }).includes(true))
-      return Response.Denied();
+ //   if (this.raise_<boolean>('onUserUnblocking', { sourceUser, targetUser }).includes(true))
+   //   return Response.Denied();
 
-    this.raise_<void>('onUserUnblocked', { sourceUser, targetUser });
+    //this.raise_<void>('onUserUnblocked', { sourceUser, targetUser });
     sourceUser.removeBlock(targetUser);
+    await this.usersService_.removeBlock(sourceUser.id, targetUser.id);
     return Response.Success();
   }
 
-  public async banUserUUID(sourceUser: User, targetUserUUID: string): Promise<Response> {
-    const targetUser = this.getUserByUUID(targetUserUUID);
+  public async banUserId(sourceUser: User, targetUserid: string): Promise<Response> {
+    const targetUser = this.getUserById(targetUserid);
 
+    if (!sourceUser.hasPrivileges()) return Response.InsufficientPrivileges();
     if (!targetUser) return Response.UserNotExists();
-    if (!targetUser.isSiteBanned) return Response.Success();
-    if (!sourceUser.hasPrivileges) return Response.Denied();
+    if (targetUser.isSiteBanned) return Response.UserAlreadyBanned();
     if (sourceUser.is(targetUser)) return Response.Success();
     if (targetUser.isSiteOwner) return Response.Denied();
 
-    if (this.raise_<boolean>('onUserBanning', { sourceUser, targetUser }).includes(true))
-      return Response.Denied();
+    //if (this.raise_<boolean>('onUserBanning', { sourceUser, targetUser }).includes(true))
+    //  return Response.Denied();
 
-    this.raise_<void>('onUserBanned', { sourceUser, targetUser });
+    //this.raise_<void>('onUserBanned', { sourceUser, targetUser });
     sourceUser.siteBanned = true;
+    await this.usersService_.setDisabled(sourceUser.id, true)
     return Response.Success();
   }
 
-  public async unbanUserUUID(sourceUser: User, targetUserUUID: string): Promise<Response> {
-    const targetUser = this.getUserByUUID(targetUserUUID);
+  public async unbanUserid(sourceUser: User, targetUserid: string): Promise<Response> {
+    const targetUser = this.getUserById(targetUserid);
 
+    if (!sourceUser.hasPrivileges()) return Response.InsufficientPrivileges();
     if (!targetUser) return Response.UserNotExists();
-    if (targetUser.isSiteBanned) return Response.Success();
-    if (!sourceUser.hasPrivileges) return Response.Denied();
+    if (!targetUser.isSiteBanned) return Response.UserNotBanned();
+    if (sourceUser.is(targetUser)) return Response.Success();
 
-    if (this.raise_<boolean>('onUserUnbanning', { sourceUser, targetUser }).includes(true))
-      return Response.Denied();
+    //if (this.raise_<boolean>('onUserUnbanning', { sourceUser, targetUser }).includes(true))
+    //  return Response.Denied();
 
-    this.raise_<void>('onUserUnbanned', { sourceUser, targetUser });
-    sourceUser.siteBanned = false;
+    //this.raise_<void>('onUserUnbanned', { sourceUser, targetUser });
+    targetUser.siteBanned = false;
+    await this.usersService_.setDisabled(sourceUser.id, false)
     return Response.Success();
   }
 
-  public async messageChannelUUID(sourceUser: User, targetChannelUUID: string, message: string): Promise<Response> {
-    const targetChannel = this.getChannelByUUID(targetChannelUUID);
-    const event = Event.message(sourceUser, message);
-    const payload = {
-      senderUser: sourceUser,
-      targetChannel: targetChannel,
-      event: event
-    }
+  public async messageChannelId(sourceUser: User, channelId: string, message: string): Promise<Response> {
+    const channel = this.getChannelByid(channelId);
 
-    if (!targetChannel) return Response.ChannelNotExists();
-    if (!targetChannel.hasUser(sourceUser)) return Response.NotInChannel();
-    if (targetChannel.hasMuted(sourceUser)) return Response.CannotSendToChannel();
-    if (targetChannel.hasBanned(sourceUser)) return Response.CannotSendToChannel();
+    if (!channel) return Response.ChannelNotExists();
+    if (channel.isBanned(sourceUser)) return Response.BannedFromChannel();
+    if (!channel.hasUser(sourceUser)) return Response.NotInChannel();
+    if (channel.isMuted(sourceUser)) return Response.CannotSendToChannel();
 
-    if (this.raise_<boolean>("onChannelMessageSending", payload).includes(true))
-      return Response.Denied();
+  //  if (this.raise_<boolean>("onChannelMessageSending", payload).includes(true))
+ //     return Response.Denied();
 
-    targetChannel.addEvent(event);
-    this.raise_<void>("onChannelMessageSended", payload);
+    channel.createEventGeneric(EventTypeEnum.MESSAGE, sourceUser, message);
+    //this.raise_<void>("onChannelMessageSended", { sourceUser, channel, event });
     return Response.Success();
   }
 
-  public async messageConversationUUID(sourceUser: User, targetConversationUUID: string, message: string): Promise<Response> {
-    const targetConversation = this.getConversationByUUID(targetConversationUUID);
-    const event = Event.message(sourceUser, message);
-    let payload = {
-      senderUser: sourceUser,
-      targetConversation: targetConversation,
-      event: event,
-    }
+  public async messageConversationid(sourceUser: User, conversationid: string, message: string): Promise<Response> {
+    const conversation = this.getConversationByid(conversationid);
 
-    if (!targetConversation) return Response.UserNotExists();
-    if (targetConversation.hasBlocked(sourceUser)) return Response.Success();
+    if (!conversation) return Response.ConversationNotExists();
+    if (conversation.hasBlocked(sourceUser)) return Response.Success();
 
-    if (this.raise_<boolean>("onUserMessageSending", payload).includes(true))
-      return Response.Denied();
-    targetConversation.addEvent(event);
-    this.raise_<void>("onUserMessageSended", payload);
+    //if (this.raise_<boolean>("onUserMessageSending", payload).includes(true))
+    //  return Response.Denied();
+    conversation.createEventMessage(sourceUser, message);
+    //this.raise_<void>("onUserMessageSended", { sourceUser, targetConversation, event });
     return Response.Success();
   }
 
@@ -770,12 +806,12 @@ export class ChatManager {
     return this.events_.delete(event, method.bind(instance));
   }
 
-  public raiseInitializationEvents(): void {
-    const dataLoader = new DataLoader;
+  public async raiseInitializationEvents(): Promise<void> {
     this.logger_.log("Raising initialization events");
-    this.raise_<void>('onChatManagerInitialized');
-    this.raise_<void>('onChatDataLoad', dataLoader);
-    console.log("raiseInit finalizado");
+    //await this.asyncRaise_<void>('onChatManagerInitialized');
+    await this.asyncRaise_<void>('onChatDataLoad');
+    this.initialized_ = true;
+    this.logger_.log("Finalize initialization events");
   }
 
   private raise_<T>(event: string, ...params: any[]): T[] {
@@ -791,14 +827,14 @@ export class ChatManager {
 
   //TODO: A eliminar
   async test() {
-    if ((await this.asyncRaise<boolean>('test', "value")).includes(true)) {
+    if ((await this.asyncRaise_<boolean>('test', "value")).includes(true)) {
       console.log("stop");
     } else {
       console.log("continue");
     }
   }
 
-  private async asyncRaise<T>(event: string, ...params: any[]): Promise<T[]> {
+  private async asyncRaise_<T>(event: string, ...params: any[]): Promise<T[]> {
     const results: T[] = [];
     const callbacks = this.events_.get(event);
 
@@ -819,17 +855,17 @@ export class ChatManager {
   }
   /*
   private channelFromDTO_(dto: ChannelDTO): Channel {
-    const owner = this.getUserByUUID(dto.ownerUUID);
+    const owner = this.getUserById(dto.ownerid);
     let topic: ChannelTopic | undefined;
 
     if (!owner)
-      throw new UserNotFoundError("channelFromDTO: ownerUUID user not found.");
+      throw new UserNotFoundError("channelFromDTO: ownerid user not found.");
 
     if (dto.topic) {
-      const topicUser = this.getUserByUUID(dto.topic.userUUID);
+      const topicUser = this.getUserById(dto.topic.userid);
 
       if (!topicUser)
-        throw new UserNotFoundError("channelFromDTO: topicUserUUID user not found.");
+        throw new UserNotFoundError("channelFromDTO: topicUserid user not found.");
       topic = {
         user: topicUser,
         setDate: dto.topic.setDate,
@@ -838,7 +874,7 @@ export class ChatManager {
     }
 
     return new Channel(
-      dto.uuid,
+      dto.id,
       dto.name,
       owner,
       dto.createdDate,
@@ -848,80 +884,165 @@ export class ChatManager {
   }
   */
 
+  private getObserversOf(object: any): Set<any> {
+    if (object instanceof User) {
+      return new Set([...object.getCommonUsersOnline(), ...this.adminWatchers_]);
+    }
+    else if (object instanceof Channel) {
+      return new Set([...object.getUsersOnline(), ...this.adminWatchers_]);
+    }
+    return new Set();
+  }
+
+  private notifyUser_(objects: any[], type: NotifyEventTypeEnum, changes: {}) {
+    const [ sourceUser ] = objects;
+	  const targetUsers = this.getObserversOf(sourceUser);
+	  console.log(`notifyUser ${type}: ${sourceUser.name} ${changes}`);
+
+    if (type === NotifyEventTypeEnum.UPDATE) {
+	    this.raise_<void>('onUserUpdated', { sourceUser, targetUsers, changes });
+	  }
+	  else if (type === NotifyEventTypeEnum.CREATE) {
+	    this.raise_<void>('onUserCreated', { sourceUser, targetUsers });
+	  }
+	  else if (type === NotifyEventTypeEnum.DELETE) {
+	    this.raise_<void>('onUserDeleted', { sourceUser, targetUsers });
+	  //const targetUSers = this.
+	  //   this.raise_<void>('onUserDeleted', { sourceUser, targetUsers });
+	  }
+  }
+
+  private notifyChannel_(objects: any[], type: NotifyEventTypeEnum, changes: {}) {
+    const [ channel ] = objects;
+	  const targetUsers = this.getObserversOf(channel);
+	  console.log(`notifyChannel ${type}: ${channel.name} ${changes}`);
+
+    if (type === NotifyEventTypeEnum.UPDATE) {
+	    this.raise_<void>('onChannelUpdated', { channel, targetUsers, changes });
+	  }
+	  else if (type === NotifyEventTypeEnum.CREATE) {
+      console.log("notifyChannel_", targetUsers);
+      this.raise_<void>('onChannelCreated', { channel, targetUsers });
+	  }
+	  else if (type === NotifyEventTypeEnum.DELETE) {
+      this.raise_<void>('onChannelDeleted', { channel, targetUsers });
+	  }
+  }
+
+  private notifyConversation_(objects: any[], type: NotifyEventTypeEnum, changes: {}) {
+    const [ conversation ] = objects;
+	  const targetUsers = conversation.getUsers();
+	  console.log(`notifyConversation ${type}: ${conversation.id} ${changes}`);
+
+    if (type === NotifyEventTypeEnum.UPDATE) {
+	    this.raise_<void>('onConversationUpdated', { conversation, targetUsers, changes });
+    }
+    else if (type === NotifyEventTypeEnum.CREATE) {
+      this.raise_<void>('onConversationCreated', { conversation, targetUsers });
+    }
+    else if (type === NotifyEventTypeEnum.DELETE) {
+	    this.raise_<void>('onConversationDeleted', { conversation, targetUsers });
+
+    }
+	}
+
+	private notifyEvent_(objects: any[], type: NotifyEventTypeEnum, changes: {}) {
+	  const [ event, object ] = objects;
+	  const targetUsers = object.getUsers();
+	 // console.log(`notifyEvent ${type}: ${object.id} ${event.id} ${changes}`);
+    if (type === NotifyEventTypeEnum.UPDATE) {
+      if (object instanceof Channel)
+	      this.raise_<void>('onChannelEventUpdated', { channel: object, event, targetUsers, changes });
+	    else if (object instanceof Conversation)
+	      this.raise_<void>('onConversationEventUpdated', { conversation: object, event, targetUsers, changes });
+    }
+    else if (type === NotifyEventTypeEnum.CREATE) {
+      if (object instanceof Channel) {
+	      this.raise_<void>('onChannelEventCreated', { channel: object, event, targetUsers });
+	    }
+	    else if (object instanceof Conversation)
+	      this.raise_<void>('onConversationEventCreated', { conversation: object, event, targetUsers });
+    }
+    else if (type === NotifyEventTypeEnum.DELETE) {
+      if (object instanceof Channel)
+	      this.raise_<void>('onChannelEventDeleted', { channel: object, event, targetUsers });
+	    else if (event instanceof Conversation)
+	      this.raise_<void>('onConversationEventDeleted', { conversation: object, event, targetUsers });
+    }
+	}
+
+  private notify_(objects: any[], type: NotifyEventTypeEnum, changes: {} = {}) {
+    if (!this.initialized_) return;
+    if (objects[0] instanceof User) return this.notifyUser_(objects, type, changes);
+    if (objects[0] instanceof Channel) return this.notifyChannel_(objects, type, changes);
+	  if (objects[0] instanceof Conversation) return this.notifyConversation_(objects, type, changes);
+	  if (objects[0] instanceof Event) return this.notifyEvent_(objects, type, changes);
+  }
+
   private userFromDB_(userDB: UserDB): User {
     //console.log("userFromDB_: ", userDB) ;
     if (!userDB.nickname)
       throw new PropertyUndefinedError("userFromDB: nickname is not set");
 
-    return new User({
+    return new User(this.notify_.bind(this), {
       intraId: userDB.intraId,
-      uuid: userDB.id,
-      name: userDB.nickname,
+      id: userDB.id,
+      nickname: userDB.nickname,
       siteRole: userDB.mode as number,
     });
   }
 
   private channelFromDB_(channelDB: ChannelDB): Channel {
-    //console.log("channelFromDB_: ", channelDB) ;
-    const ownerUser = this.getUserByUUID(channelDB.ownerId);
-    let channelTopicPayload: ChannelTopicPayload | undefined;
+    const owner = this.getUserById(channelDB.ownerId);
+    let topicUser: User | undefined;
 
-    if (!ownerUser)
+    if (!owner) {
       throw new UserNotFoundError("channelFromDB: ownerId user not found.");
+    }
 
     if (channelDB.topicUser) {
-      const topicUser = this.getUserByUUID(channelDB.topicUser);
+      topicUser = this.getUserById(channelDB.topicUser);
 
-      if (topicUser) {
-        channelTopicPayload = {
-          user: topicUser,
-          establishedDate: channelDB.topicSetDate!,
-          value: channelDB.topic!,
-        };
-      } else { 
-        throw new UserNotFoundError("channelFromDB: topicUserId user not found.");
+      if (!topicUser) {
+        throw new UserNotFoundError("channelFromDB: topicUser not found on database.")
       }
     }
 
-    const channel = new Channel({
-      uuid: channelDB.id,
+    const channel = new Channel(this.notify_.bind(this), {
+      id: channelDB.id,
       name: channelDB.name,
-      ownerUser: ownerUser,
-      creationDate: channelDB.createdDate,
-      topic: channelTopicPayload,
+      owner: owner,
+      topicUser: topicUser,
+      topicSetDate: channelDB.topicSetDate!,
+      topic: channelDB.topic!,
+      createdDate: channelDB.createdDate,
       password: channelDB.password,
     });
 
     if (channelDB.users) {
       channelDB.users.map(channelUserDB => this.addChannelUserFromDB_(channel, channelUserDB));
     }
+    this.notify_([ channel ], NotifyEventTypeEnum.CREATE);
     return channel;
   }
 
   private addChannelUserFromDB_(channel: Channel, channelUserDB: ChannelUserDB) {
-    const user = this.getUserByUUID(channelUserDB.user.id);
+    const user = this.getUserById(channelUserDB.user.id);
 
-    console.log("addChannelUserFromDB", channelUserDB);
+    //console.log("addChannelUserFromDB", channelUserDB);
     if (!user) {
-      throw new UserNotFoundError("addChannelUserFromDB_: userUUID user not found in memory");
+      throw new UserNotFoundError("addChannelUserFromDB_: getUserById not found in memory");
     }
-    channel.addUser(user);
     user.addChannel(channel);
-    if (channelUserDB.admin) {
-      channel.addOper(user);
-    }
-    if (channelUserDB.banned) {
-      channel.addBan(user);
-    }
-    if (channelUserDB.muted) {
-      channel.addMute(user);
-    }
+    channel.addUser(user);
+    channel.setOptions(user, channelUserDB);
  }
 
-  private cleanChannel_(channel: Channel): void {
+  private async cleanChannel_(channel: Channel): Promise<void> {
     for (const user of channel.getUsers()) {
       channel.removeUser(user);
       user.removeChannel(channel);
+      await this.channelsService_.removeChannelUser(channel.id, user.id);
     }
   }
 }

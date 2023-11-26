@@ -1,6 +1,5 @@
 export * from './channel.dto';
 export * from './channel-user.dto';
-export * from './channel-topic.dto';
 export * from './channel-summary.dto';
 export * from './user.dto';
 export * from './conversation.dto';

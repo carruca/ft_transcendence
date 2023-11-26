@@ -1,24 +1,26 @@
 import {
-  UserModel as User,
-  ChannelTopicModel as ChannelTopic,
-  EventModel as Event,
+  User,
+  Event,
 } from '.';
 
 import {
-  EventManager,
-} from '../manager';
+  RollingLogger,
+} from '../util';
 
 import {
+  EventPayload,
   ChannelPayload,
-  ChannelTopicPayload,
 } from '../interface';
 
 import {
   ChannelDTO,
+  ChannelSummaryDTO,
 } from '../dto';
 
 import {
+  NotifyEventTypeEnum,
   EventTypeEnum,
+  UserStatusEnum,
 } from '../enum';
 
 import {
@@ -27,133 +29,146 @@ import {
   DuplicateValueError,
 } from '../error';
 
-import { Channel as ChannelDB } from '../../channels/entities/channel.entity';
+import {
+  Channel as ChannelDB,
+} from '../../channels/entities/channel.entity';
 
-export class ChannelModel {
-  private readonly uuid_: string;
-  private name_: string;
-  private readonly ownerUser_: User;
-  private readonly creationDate_;
-  private topic_?: ChannelTopic;
+import {
+  ChannelUser as ChannelUserDB,
+} from '../../channels/entities/channel-user.entity';
+
+const EVENTS_MAX = 100;
+
+export class Channel {
+  private readonly id_: string;
+  private readonly name_: string;
+  private owner_: User;
+  private readonly createdDate_;
+  private topic_?: string;
+  private topicSetDate_?: Date;
+  private topicUser_?: User;
   private password_?: string;
 
-  private users_ = new Map<string, User>;
-  private bans_ = new Set<string>;
-  private mutes_ = new Set<string>;
-  private opers_ = new Set<string>;
-  private eventManager_ = new EventManager;
+  private readonly users_ = new Set<User>;
+  private readonly admins_ = new Set<User>;
+  private readonly bans_ = new Set<User>;
+  private readonly mutes_ = new Set<User>;
+  private readonly events_ = new RollingLogger<Event>(EVENTS_MAX);
 
-  public constructor(channelPayload: ChannelPayload) {
-    this.uuid_ = channelPayload.uuid;
+  private readonly notifyCallback_: Function;
+
+  public constructor(notifyCallback: Function, channelPayload: ChannelPayload) {
+    if (!channelPayload.id)
+      throw new PropertyUndefinedError("userPayload.id not defined");
+    this.id_ = channelPayload.id;
+    if (!channelPayload.name)
+      throw new PropertyUndefinedError("userPayload.name not defined");
     this.name_ = channelPayload.name;
-    this.ownerUser_ = channelPayload.ownerUser;
-    this.creationDate_ = channelPayload.creationDate ?? new Date();
-    this.topic_ = channelPayload.topic ? new ChannelTopic(channelPayload.topic) : undefined;
+    if (!channelPayload.owner)
+      throw new PropertyUndefinedError("userPayload.owner not defined");
+    this.owner_ = channelPayload.owner;
+    this.createdDate_ = channelPayload.createdDate ?? new Date();
+    this.topic_ = channelPayload.topic;
+    this.topicSetDate_ = channelPayload.topicSetDate;
+    this.topicUser_ = channelPayload.topicUser;
     this.password_ = channelPayload.password;
+    this.notifyCallback_ = notifyCallback;
   }
 
-  public addMessageEvent(sourceUser: User, value: string): Event {
-    return this.eventManager_.addEvent(Event.message(sourceUser, value));
+  public delete(): void {
+    this.notify_(NotifyEventTypeEnum.DELETE);
+
+    for (const user of this.users_.values()) {
+      user.removeChannel(this);
+    }
   }
 
-  public addEvent(event: Event): Event {
-    return this.eventManager_.addEvent(event);
+  private notify_(type: NotifyEventTypeEnum, changes?: {}) {
+    this.notifyCallback_([ this ], type, changes);
   }
 
-  public addGenericEvent(type: EventTypeEnum, sourceUser: User, targetUser?: User): Event {
-    return this.eventManager_.addEvent(Event.generic(type, sourceUser, targetUser));
+  private childNotify_(object: any[], type: NotifyEventTypeEnum, changes?: {}) {
+    this.notifyCallback_( [...object, this ], type, changes);
   }
 
-  public addKickEvent(sourceUser: User, targetUser: User, value?: string): Event {
-    return this.eventManager_.addEvent(Event.kick(sourceUser, targetUser, value));
+  public createEvent(eventPayload: EventPayload): Event {
+    const event = new Event(this.childNotify_.bind(this), eventPayload);
+
+    this.events_.add(event);
+    this.childNotify_([ event ], NotifyEventTypeEnum.CREATE);
+    return event;
+  }
+
+  public createEventAction(type: EventTypeEnum, sourceUser: User, targetUser: User, value?: string): Event {
+    return this.createEvent({
+      type: type,
+      sourceUser: sourceUser,
+      targetUser: targetUser,
+      value: value,
+    });
+  }
+
+  public createEventGeneric(type: EventTypeEnum, sourceUser: User, value?: string): Event {
+    console.log("createEventGeneric:", type);
+    return this.createEvent({
+      type: type,
+      sourceUser: sourceUser,
+      value: value,
+    });
   }
 
   public hasUser(user: User): boolean {
-    return this.users_.has(user.uuid);
+    return this.users_.has(user);
   }
 
-  public addUser(user: User): boolean {
-    // Lógica para agregar un usuario al canal
-    if (this.hasUser(user)) {
-      throw new DuplicateValueError("ChannelModel.addUser: User already exists in that channel");
-      return false;
-    }
-    this.users_.set(user.uuid, user);
-    return true;
+  public addUser(user: User) {
+    this.users_.add(user);
   }
 
   public removeUser(user: User) {
-    // Lógica para eliminar un usuario del canal
-    this.users_.delete(user.uuid);
-    this.opers_.delete(user.uuid);
+    this.users_.delete(user);
   }
 
-  public addBan(user: User): boolean {
-    if (!this.hasBanned(user)) {
-      this.bans_.add(user.uuid);
-      return true;
-    }
-    return false;
-  }
+  public setOptions(user: User, channelUserDB: ChannelUserDB) {
+    if (channelUserDB.admin)
+      this.admins_.add(user);
+    else
+      this.admins_.delete(user);
+    
+    if (channelUserDB.banned)
+      this.admins_.add(user);
+    else
+      this.admins_.delete(user);
 
-  public hasBanned(user: User): boolean {
-    return this.bans_.has(user.uuid);
-  }
-
-  public removeBan(user: User): void {
-    this.bans_.delete(user.uuid);
-  }
-
-  public addMute(user: User): boolean {
-    if (!this.hasMuted(user)) {
-      this.mutes_.add(user.uuid);
-      return true;
-    }
-    return false;
-  }
-
-  public hasMuted(user: User): boolean {
-    return this.mutes_.has(user.uuid);
-  }
-
-  public removeMute(user: User): void {
-    this.mutes_.delete(user.uuid);
-  }
-
-  public addOper(user: User): boolean {
-    if (!this.hasOper(user)) {
-      this.opers_.add(user.uuid);
-      return true;
-    }
-    return false;
-  }
-
-  public hasOper(user: User): boolean {
-    return this.opers_.has(user.uuid);
-  }
-
-  public removeOper(user: User): void {
-    this.opers_.delete(user.uuid);
+    if (channelUserDB.muted)
+      this.admins_.add(user);
+    else
+      this.admins_.delete(user);
   }
 
   public hasPrivileges(user: User): boolean {
-    return this.isOwner(user) || this.hasOper(user);
+    return this.isOwner(user) || this.isAdmin(user);
   }
 
   public isOwner(user: User): boolean {
-    return this.ownerUser == user;
+    return this.owner == user;
   }
 
   public getUsers(): User[] {
     return Array.from(this.users_.values());
   }
 
-  public getUsersExcept(exceptUser: User): User[] {
-    return this.getUsers().filter((user: User) => user.uuid !== exceptUser.uuid );
+  public getUsersOnline(): User[] {
+    return Array.from(this.users_.values()).filter((user) => user.status !== UserStatusEnum.OFFLINE); 
   }
-  
+
+  public getUsersExcept(exceptUser: User): User[] {
+    return this.getUsers().filter((user: User) => user.id !== exceptUser.id );
+  }
+
   public getEvents(): Event[] {
-    return this.eventManager_.getEvents();
+    console.log("channel::getEvents -> ", this.events_.values());
+    return this.events_.values();
   }
 
   //properties
@@ -165,39 +180,110 @@ export class ChannelModel {
     return this.users_.size;
   }
 
-  get uuid(): string {
-    return this.uuid_;
+  get id(): string {
+    return this.id_;
   }
 
   get name(): string {
     return this.name_;
   }
 
-  get creationDate(): Date {
-    return this.creationDate_;
+  get createdDate(): Date {
+    return this.createdDate_;
   }
 
-  get ownerUser(): User {
-    return this.ownerUser_;
+  get owner(): User {
+    return this.owner_;
   }
 
-  set topic(value: ChannelTopic | undefined) {
-    this.topic_ = value;
+  isBanned(user: User): boolean {
+    return this.bans_.has(user);
   }
 
-  get topic(): ChannelTopic | undefined {
+  isMuted(user: User): boolean {
+    return this.mutes_.has(user);
+  }
+
+  isAdmin(user: User): boolean {
+    return this.admins_.has(user);
+  }
+
+  banUser(user: User) {
+    this.bans_.add(user); 
+  }
+
+  unbanUser(user: User) {
+    this.bans_.delete(user);
+  }
+
+  muteUser(user: User) {
+    this.mutes_.add(user);
+  }
+
+  unmuteUser(user: User) {
+    this.mutes_.delete(user);
+  }
+
+  promoteUser(user: User) {
+    this.admins_.add(user);
+  }
+
+  demoteUser(user: User) {
+    this.admins_.delete(user);
+  }
+
+  set owner(value: User) {
+    if (this.owner_ !== value) {
+      this.owner_ = value;
+      this.notify_(NotifyEventTypeEnum.UPDATE, { owner: value });
+    }
+  }
+
+  set topic(value: string | undefined) {
+    if (this.topic_ !== value) {
+      this.topic_ = value;
+      this.notify_(NotifyEventTypeEnum.UPDATE, { topic: value });
+    }
+  }
+
+  get topic(): string | undefined {
     return this.topic_;
   }
 
+  set topicSetDate(value: Date | undefined) {
+    if (this.topicSetDate_ !== value) {
+      this.topicSetDate_ = value;
+      this.notify_(NotifyEventTypeEnum.UPDATE, { topicSetDate: value });
+    }
+  }
+
+  get topicSetDate(): Date | undefined {
+    return this.topicSetDate_;
+  }
+
+  set topicUser(value: User) {
+    if (this.topicUser_ !== value) {
+      this.topicUser_ = value;
+      this.notify_(NotifyEventTypeEnum.UPDATE, { topicUser: value });
+    }
+  }
+
   set password(value: string | undefined) {
-    this.password_ = value;
+    if (this.password_ !== value) {
+      this.password_ = value;
+      this.notify_(NotifyEventTypeEnum.UPDATE, { password: value });
+    }
   }
 
   get password(): string | undefined {
     return this.password_;
   }
-  
+
   get DTO(): ChannelDTO {
     return new ChannelDTO(this);
+  }
+
+  get summaryDTO(): ChannelSummaryDTO {
+    return new ChannelSummaryDTO(this);
   }
 }

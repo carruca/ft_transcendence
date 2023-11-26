@@ -1,35 +1,27 @@
 import {
-  UserStatusEnum,
-  UserSiteRoleEnum,
-} from '../enum'
+  UserDTO,
+} from '.';
 
 import {
-  UserModel as User,
-  ChannelModel as Channel,
+  User,
+  Channel,
 } from '../model';
 
 export class ChannelUserDTO {
-  uuid: string;
-  name: string;
-  status: UserStatusEnum;
-  siteRole: UserSiteRoleEnum;
-  blocked: boolean;
-  friend: boolean;
-  admin: boolean;
   owner: boolean;
+  admin: boolean;
   muted: boolean;
   banned: boolean;
+  active: boolean;
+  userDTO: UserDTO;
+  channelId: string;
 
   constructor(channel: Channel, user: User) {
-    this.uuid = user.uuid;  //User
-    this.name = user.name;  //User
-    this.status = user.status;  //User
-    this.siteRole = user.siteRole;
-    this.blocked = false; //User
-    this.friend = false;  //User
-    this.admin = channel.hasOper(user);
-    this.owner = (channel.ownerUser === user);
-    this.muted = channel.hasMuted(user); //ChannelUser
-    this.banned = channel.hasBanned(user); //ChannelUser
+    this.owner = (channel.owner == user);
+    this.admin = channel.isAdmin(user);
+    this.muted = channel.isMuted(user);
+    this.banned = channel.isBanned(user);
+    this.userDTO = user.DTO;
+    this.channelId = channel.id;
   }
 }

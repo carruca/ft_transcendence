@@ -89,7 +89,7 @@ export class UsersService {
     }
 
     user.nickname = nick;
-    this.chatManager.changeNickUserUUID(user.id, nick);
+    this.chatManager.changeNickUserId(user.id, nick);
     return this.usersRepository.save(user);
   }
 
@@ -145,8 +145,8 @@ export class UsersService {
     return blocks.map((block) => block.blockId);
   }
 
-  async removeBlock(userId: string) : Promise<void> {
-    await this.blocksRepository.delete(userId);
+  async removeBlock(userId: string, blockId: string) : Promise<void> {
+    await this.blocksRepository.delete({ userId, blockId });
   }
   
   async update(id: string, updateUserDto?: UpdateUserDto, avatar?: Express.Multer.File): Promise<User> {

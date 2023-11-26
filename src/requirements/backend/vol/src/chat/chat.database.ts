@@ -16,10 +16,6 @@ import {
   UsersService,
 } from '../users/users.service';
 
-import {
-  DataLoaderModel as DataLoader,
-} from './model';
-
 import { 
   Logger,
 } from '@nestjs/common';
@@ -57,7 +53,7 @@ export class ChatDatabase {
   }
 
   @ChatManagerSubscribe('onChatDataLoad')
-  async onChatManagerIntialized(dataLoader: DataLoader) { 
+  async onChatManagerIntialized(event: any) {
     for (const userDB of await this.usersService_.findAll()) {
       if (userDB.nickname)
         this.chatManager_.addUserDB(userDB);
@@ -65,7 +61,6 @@ export class ChatDatabase {
     for (const channelDB of await this.channelsService_.findAllWithUsers()) {
       this.chatManager_.addChannelDB(channelDB);
     }
-    this.logger_.warn(`onChatDataLoad: ${dataLoader}`);
   }
 
   @ChatManagerSubscribe('onChannelCreated')

@@ -1,6 +1,6 @@
 import {
-  ChannelModel as Channel,
-  ConversationModel as Conversation,
+  Channel,
+  Conversation,
 } from '.';
 
 import {
@@ -14,13 +14,14 @@ import {
 import {
   UserStatusEnum,
   UserSiteRoleEnum,
+  NotifyEventTypeEnum,
 } from '../enum';
 
 import {
   PropertyUndefinedError,
 } from '../error';
 
-import { 
+import {
   User as UserDB,
 } from '../../users/entities/user.entity';
 
@@ -28,39 +29,64 @@ import {
   Socket,
 } from 'socket.io';
 
-export class UserModel {
+export class User {
   private readonly intraId_: number;
-  private readonly uuid_: string;
-  private name_: string;
+  private readonly id_: string;
+  private name_?: string;
+  private nickname_: string;
   private status_: UserStatusEnum;
   private socket_?: Socket;
   private siteRole_: UserSiteRoleEnum;
   private siteBanned_: boolean;
   private siteDisabled_: boolean;
 
-  private channels_ = new Set<Channel>; // Array para almacenar los canales a los que pertenece el nick
-  private conversations_ = new Set<Conversation>;
-  private blockUsers_ = new Set<UserModel>;
-  private friendUsers_ = new Set<UserModel>;
+  private readonly channels_ = new Set<Channel>; // Array para almacenar los canales a los que pertenece el nick
+  private readonly conversations_ = new Set<Conversation>;
+  private readonly blockUsers_ = new Set<User>;
+  private readonly friendUsers_ = new Set<User>;
   //private watchers_ = new Set<User>;
+  //
+  private readonly notifyCallback_: Function;
 
-  constructor(userPayload: UserPayload) {
+  constructor(notifyCallback: Function, userPayload: UserPayload) {
+    if (!userPayload.intraId)
+      throw new PropertyUndefinedError("userPayload.intraId not defined");
     this.intraId_ = userPayload.intraId;
-    this.uuid_ = userPayload.uuid;
+    if (!userPayload.id)
+      throw new PropertyUndefinedError("userPayload.id not defined");
+    this.id_ = userPayload.id;
+    if (!userPayload.nickname)
+      throw new PropertyUndefinedError("userPayload.nickname not defined");
+    this.nickname_ = userPayload.nickname;
     this.name_ = userPayload.name;
     this.socket_ = userPayload.socket;
     this.status_ = userPayload.status ?? UserStatusEnum.OFFLINE;
     this.siteRole_ = userPayload.siteRole ?? UserSiteRoleEnum.USER;
     this.siteBanned_ = userPayload.siteBanned ?? false;
     this.siteDisabled_ = userPayload.siteDisabled ?? false;
+    this.notifyCallback_ = notifyCallback;
+    this.notify_(NotifyEventTypeEnum.CREATE);
     //TODO: blockUsers y friendUsers
     //this.blockUsers_ = ....
     //this.friendUsers_ = ....
   }
 
+  delete(): void {
+    this.notify_(NotifyEventTypeEnum.DELETE);
+  }
+
+  private notify_(type: NotifyEventTypeEnum, changes?: {}) {
+    this.notifyCallback_( [ this ], type, changes);
+  }
+
+  private childNotify_(objects: any[], type: NotifyEventTypeEnum, changes?: {}) {
+    this.notifyCallback_( [...objects, this ], type, changes);
+  }
+
   addChannel(channel: Channel): void {
+    //throw new Error("bye");
     // se da por hecho que no existe el canal puesto que esta comprobación se hace antes
-    if (channel.uuid !== undefined)
+    if (channel.id !== undefined)
       this.channels_.add(channel);
   }
 
@@ -69,33 +95,33 @@ export class UserModel {
   }
 
   removeChannel(channel: Channel): void {
-    if (channel.uuid !== undefined)
+    if (channel.id !== undefined)
       this.channels_.delete(channel);
   }
 
-  addBlock(user: UserModel): void {
+  addBlock(user: User): void {
     if (!this.hasBlocked(user))
       this.blockUsers_.add(user);
   }
 
-  hasBlocked(user: UserModel): boolean {
+  hasBlocked(user: User): boolean {
     return this.blockUsers_.has(user);
   }
 
-  removeBlock(user: UserModel): void {
+  removeBlock(user: User): void {
     this.blockUsers_.delete(user);
   }
 
-  addFriend(user: UserModel): void {
+  addFriend(user: User): void {
     if (!this.hasFriend(user))
       this.friendUsers_.add(user);
   }
 
-  hasFriend(user: UserModel): boolean {
+  hasFriend(user: User): boolean {
     return this.friendUsers_.has(user);
   }
 
-  removeFriend(user: UserModel): void {
+  removeFriend(user: User): void {
     this.friendUsers_.delete(user);
   }
 
@@ -135,12 +161,16 @@ export class UserModel {
     return Array.from(this.conversations_);
   }
 
-  getCommonUsers(): UserModel[] {
+  getCommonUsers(): User[] {
     return Array.from(this.getCommonUsers_());
   }
 
-  private getCommonUsers_(): Set<UserModel> {
-    const uniqueUsers = new Set<UserModel>();
+  getCommonUsersOnline(): User[] {
+    return Array.from(this.getCommonUsers_()).filter((user) => user.status !== UserStatusEnum.OFFLINE);
+  }
+
+  private getCommonUsers_(): Set<User> {
+    const uniqueUsers = new Set<User>();
 
     this.channels_.forEach(channel => {
       for (const user of channel.getUsers()) {
@@ -148,7 +178,9 @@ export class UserModel {
       }
     })
     this.conversations_.forEach(conversation => {
-      uniqueUsers.add(conversation.getUsersExcept(this)[0]);
+	    for (const user of conversation.getUsers()) {
+		    uniqueUsers.add(user);
+	    }
     })
     return uniqueUsers;
   }
@@ -169,16 +201,23 @@ export class UserModel {
     return this.intraId_;
   }
 
-  get uuid(): string {
-    return this.uuid_;
+  get id(): string {
+    return this.id_;
   }
 
-  set name(value: string) {
-    this.name_ = value;
+  get name(): string | undefined {
+    return this.name_;
   }
 
-  get name(): string {
-    return this.name_!;
+  set nickname(value: string) {
+    if (this.nickname_ !== value) {
+      this.nickname_ = value;
+      this.notify_(NotifyEventTypeEnum.UPDATE, { nickname: value });
+    }
+  }
+
+  get nickname(): string {
+    return this.nickname_!;
   }
 
   set socket(value: Socket) {
@@ -197,7 +236,10 @@ export class UserModel {
   }
 
   set status(value: UserStatusEnum) {
-    this.status_ = value;
+    if (this.status !== value) {
+      this.status_ = value;
+      this.notify_(NotifyEventTypeEnum.UPDATE, { status: value });
+    }
   }
 
   get status(): UserStatusEnum {
@@ -209,9 +251,12 @@ export class UserModel {
   }
 
   set siteRole(value: UserSiteRoleEnum ) {
-    this.siteRole_ = value;
+    if (this.siteRole !== value) {
+      this.siteRole_ = value;
+      this.notify_(NotifyEventTypeEnum.UPDATE, { siteRole: value });
+    }
   }
-  
+
   ban() {
     this.siteRole = UserSiteRoleEnum.BANNED;
   }
@@ -249,14 +294,20 @@ export class UserModel {
   }
 
   set siteDisabled(value: boolean) {
-    this.siteDisabled_ = value;
+    if (this.siteDisabled_ !== value) {
+      this.siteDisabled_ = value;
+      this.notify_(NotifyEventTypeEnum.UPDATE, { siteDisabled: value });
+    }
   }
 
   set siteBanned(value: boolean) {
-    this.siteBanned_ = value;
+    if (this.siteBanned_ !== value) {
+      this.siteBanned_ = value;
+      this.notify_(NotifyEventTypeEnum.UPDATE, { siteBanned: value });
+    }
   }
 
-  is(user: UserModel): boolean {
+  is(user: User): boolean {
     return this === user;
   }
 

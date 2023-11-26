@@ -1,5 +1,5 @@
 import {
-  UserModel as User,
+  User,
 } from '.';
 
 import {
@@ -11,6 +11,7 @@ import {
 } from '../dto';
 
 import {
+  NotifyEventTypeEnum,
   EventTypeEnum,
 } from '../enum'
 
@@ -18,58 +19,58 @@ import {
   v4 as uuidv4,
 } from 'uuid';
 
-export class EventModel {
-  private uuid_: string;
+import {
+  PropertyUndefinedError,
+} from '../error';
+
+export class Event {
+  private readonly id_: string;
   private timestamp_: Date;
   private modified_: boolean;
-  private sourceUser_: User;
-  private targetUser_: User | undefined;
-  private type_: EventTypeEnum;
+  private readonly sourceUser_: User;
+  private readonly targetUser_: User | undefined;
+  private readonly type_: EventTypeEnum;
   private value_: string | undefined;
+  private notifyCallback_: Function;
 
-  constructor(eventPayload: EventPayload) {
-    this.uuid_ = eventPayload.uuid ?? uuidv4();
-    this.timestamp_ = new Date();
-    this.modified_ = eventPayload.modified ?? false;
-    this.sourceUser_ = eventPayload.sourceUser;
+  constructor(notifyCallback: Function, eventPayload: EventPayload) {
+    this.id_ = eventPayload.uuid || uuidv4();
+    this.timestamp_ = eventPayload.timestamp || new Date();
+    this.modified_ = eventPayload.modified || false;
+	  if (!eventPayload.sourceUser)
+		  throw new PropertyUndefinedError('Source user is undefined');
+      this.sourceUser_ = eventPayload.sourceUser;
+	  if (!eventPayload.type)
+		  throw new PropertyUndefinedError('Type is undefined');
+	  if (!eventPayload.targetUser && (
+	      eventPayload.type == EventTypeEnum.KICK ||
+	      eventPayload.type == EventTypeEnum.BAN  ||
+	      eventPayload.type == EventTypeEnum.UNBAN ||
+	      eventPayload.type == EventTypeEnum.PROMOTE ||
+	      eventPayload.type == EventTypeEnum.DEMOTE ||
+	      eventPayload.type == EventTypeEnum.MUTE ||
+	      eventPayload.type == EventTypeEnum.UNMUTE
+	  )) {
+	  	throw new PropertyUndefinedError('Target user is undefined');
+	  }
     this.targetUser_ = eventPayload.targetUser;
     this.type_ = eventPayload.type;
     this.value_ = eventPayload.value;
+    this.notifyCallback_ = notifyCallback;
   }
 
-  public static message(sourceUser: User, value: string): EventModel {
-    return new EventModel({
-      sourceUser: sourceUser,
-      type: EventTypeEnum.MESSAGE,
-      value: value,
-    });
+  private notify_(type: NotifyEventTypeEnum, changes?: {}) {
+    this.notifyCallback_( [ this ], type, changes);
   }
 
-  public static kick(sourceUser: User, targetUser: User, value?: string): EventModel {
-    return new EventModel({
-      type: EventTypeEnum.KICK,
-      sourceUser: sourceUser,
-      targetUser: targetUser,
-      value: value,
-    });
-  }
-
-  public static generic(type: EventTypeEnum, sourceUser: User, targetUser?: User, value?: string): EventModel {
-    return new EventModel({
-      type: type,
-      sourceUser: sourceUser,
-      targetUser: targetUser,
-      value: value,
-    })
-  }
-
-  get uuid(): string {
-    return this.uuid_;
+  get id(): string {
+    return this.id_;
   }
 
   get type(): EventTypeEnum {
     return this.type_
   }
+
   get timestamp(): Date {
     return this.timestamp_;
   }
@@ -90,20 +91,25 @@ export class EventModel {
     return this.value_;
   }
 
-  modifyContent(user: User, value: string): boolean {
+  updateContent(user: User, value: string): boolean {
     const now = new Date();
-    const timeDifference = now.getTime() - this.timestamp_.getTime();
-    const timeThreshold = 60 * 1000; //1 minute in milliseconds
+    const differenceTime = now.getTime() - this.timestamp_.getTime();
+    const thresholTime = 60 * 1000; //1 minute in milliseconds
 
     if (
          this.sourceUser_ === user
-      && timeDifference <= timeThreshold
+      && differenceTime <= thresholTime
       && this.type_ === EventTypeEnum.MESSAGE
     ) {
-        this.value_ = value;
-        this.modified_ = true;
-        this.timestamp_ = now;
-        return true;
+      this.value_ = value;
+      this.modified_ = true;
+      this.timestamp_ = now;
+      this.notify_(NotifyEventTypeEnum.UPDATE, {
+        value : value,
+        modified : true,
+        timestamp : this.timestamp_,
+      });
+      return true;
     }
     return false;
   }

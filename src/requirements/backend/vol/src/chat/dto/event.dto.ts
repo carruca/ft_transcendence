@@ -3,25 +3,29 @@ import {
 } from '../enum';
 
 import {
-  EventModel as Event,
+  Event,
 } from '../model';
 
 export class EventDTO {
-  uuid: string;
+  id: string;
   type: EventTypeEnum;
-  sourceUUID: string;
-  targetUUID?: string;
+  sourceId: string;
+  targetId?: string;
+  sourceNickname: string;
+  targetNickname?: string;
   timestamp: Date;
   modified: boolean;
   value?: string;
 
   constructor(event: Event) {
-    this.uuid = event.uuid;
+    this.id = event.id;
     this.type = event.type;
     this.timestamp = event.timestamp;
     this.modified = event.modified;
-    this.sourceUUID = event.sourceUser.uuid;
-    this.targetUUID = event.targetUser?.uuid;
+    this.sourceId = event.sourceUser.id;
+    this.targetId = event.targetUser?.id;
+    this.sourceNickname = event.sourceUser.nickname;
+    this.targetNickname = event.targetUser?.nickname;
     this.value = event.value;
   }
 };

@@ -85,6 +85,7 @@ export class ChannelsService {
       }
     });
     if (!user) {
+      console.log(createChannelUserDto);
       throw new HttpException('User not found', HttpStatus.NOT_FOUND);
     }
 
@@ -105,7 +106,16 @@ export class ChannelsService {
   }
 
   async removeChannelUser(channelId: string, userId: string): Promise<Channel> {
-    const channel = await this.findOneById(channelId);
+    const channel = await this.channelsRepository.findOne({
+      relations: ['users'],
+      where: {
+        id: channelId,
+      }
+    });
+    if (!channel) {
+      throw new HttpException('Channel not found', HttpStatus.NOT_FOUND);
+    }
+
     const channelUser = await this.findChannelUser(channelId, userId);
 
     await this.channelUsersRepository.delete(channelUser);

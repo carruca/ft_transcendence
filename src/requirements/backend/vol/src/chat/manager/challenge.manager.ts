@@ -1,6 +1,6 @@
 import {
-  UserModel as User,
-  ChallengeModel as Challenge
+  User,
+  Challenge
 } from '../model';
 
 import {

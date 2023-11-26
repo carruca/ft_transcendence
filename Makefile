@@ -76,7 +76,7 @@ export:
 	$(DOCKER_COMPOSE) exec -u root -t $(POSTGRESQL) pg_dump $(DATABASE) --data-only
 
 data:
-	$(DOCKER_COMPOSE) exec -u root -t $(POSTGRESQL) psql $(DATABASE) -c "SELECT * FROM \"user\"; SELECT * FROM \"channel\"; SELECT * FROM \"channel_user\";"
+	$(DOCKER_COMPOSE) exec -u root -t $(POSTGRESQL) psql $(DATABASE) -c "SELECT * FROM \"user\"; SELECT * FROM \"channel\"; SELECT * FROM \"channel_user\"; SELECT * FROM \"block\";"
 
 clear:
 	$(DOCKER_COMPOSE) exec -u root -t $(POSTGRESQL) psql $(DATABASE) -c "DELETE FROM \"channel_user\"; DELETE FROM \"channel\"; DELETE FROM \"user\";"

@@ -11,6 +11,10 @@ import {
     ChannelUserPayload,
 } from '../interface';
 
+import {
+    reactive,
+} from 'vue';
+
 export class ChannelUser {
     public readonly user: User;
     public isAdmin: boolean;
@@ -19,19 +23,19 @@ export class ChannelUser {
     public isMuted: boolean;
     
     constructor(channelUserPayload: ChannelUserPayload) {
-        this.user = channelUserPayload.user;
+        this.user = reactive(channelUserPayload.user);
         this.isAdmin = channelUserPayload.admin;
         this.isOwner = channelUserPayload.owner;
         this.isBanned = channelUserPayload.banned;
         this.isMuted = channelUserPayload.muted;
     }
 
-    get uuid(): string {
-        return this.user.uuid;
+    get id(): string {
+        return this.user.id;
     }
 
-    get name(): string {
-        return this.user.name;
+    get nickname(): string {
+        return this.user.nickname;
     }
 
     get siteRole(): UserSiteRoleEnum {

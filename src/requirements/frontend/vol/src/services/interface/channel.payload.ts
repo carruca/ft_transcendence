@@ -1,16 +1,17 @@
 import {
     Event,
     ChannelUser,
-    ChannelTopic,
 } from '../model';
 
 export interface ChannelPayload {
-    uuid: string,
+    id: string,
     name: string,
-    creationDate: Date,
-    ownerUser: User,
-    topic: ChannelTopic,
-    hasPassword?: string,
+    createdDate: Date,
+    owner: User,
+    topic: string,
+    topicSetDate: Date,
+    topicUser: User,
+    password?: boolean,
     users: ChannelUser[],
     events: Event[],
 }

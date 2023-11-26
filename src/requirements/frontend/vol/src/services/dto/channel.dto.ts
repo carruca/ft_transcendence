@@ -6,12 +6,14 @@ import {
 } from '../dto';
 
 export interface ChannelDTO {
-    uuid: string;
+    id: string;
     name: string;
-    creationDate: Date;
-    ownerUserDTO: UserDTO;
-    topic: ChannelTopicDTO;
-    hasPassword: boolean;
-    users: ChannelUserDTO[];
-    events: EventDTO[];
+    createdDate: Date;
+    ownerDTO: UserDTO;
+    topic: string;
+    topicSetDate: Date;
+    topicUserDTO: UserDTO; 
+    password: boolean;
+    channelUsersDTO: ChannelUserDTO[];
+    eventsDTO: EventDTO[];
 }

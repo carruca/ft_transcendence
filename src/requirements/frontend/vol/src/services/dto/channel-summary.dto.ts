@@ -1,6 +1,6 @@
 export interface ChannelSummaryDTO {
-    uuid: string,
+    id: string,
     name: string,
-    topic: string,
-    hasPassword: boolean,
+    topic?: string,
+    password: boolean,
 }

@@ -36,4 +36,5 @@ export class ChannelUser {
 
   @Column({ default: false })
   muted: boolean;
+
 }

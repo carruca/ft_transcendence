@@ -1,9 +1,9 @@
 import {
-  UserModel as User,
+  User,
 } from '../model';
 
 export interface ConversationPayload {
-  uuid?: string;
+  id?: string;
   user1: User;
   user2: User;
 }

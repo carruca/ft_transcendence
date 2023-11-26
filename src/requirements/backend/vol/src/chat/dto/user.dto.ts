@@ -4,7 +4,7 @@ import {
 } from '../enum';
 
 import {
-  UserModel as User,
+  User,
 } from '../model';
 
 import {
@@ -12,22 +12,25 @@ import {
 } from '../dto';
 
 export class UserDTO {
-  uuid: string;
-  name: string;
+  id: string;
+  name?: string;
+  nickname: string;
   status: UserStatusEnum;
   siteRole: UserSiteRoleEnum;
-  friend: boolean;
-  blocked: boolean;
-  siteDisabled: boolean;
-  siteBanned: boolean;
-  channels: ChannelDTO[];
+  siteDisabled?: boolean;  //solo se da esta información cuando se es admin
+  siteBanned?: boolean; //solo se da esta información cuando se es admin
+  blocked?: boolean; //a rellenar dependiendo de quien pida el dato
+  friend?: boolean;  //a rellenar dependiendo de quien pida el dato
+  channelsDTO: ChannelDTO[];
 
+  //TODO: hay que hacer que ciertos campos sean completados según quien haga la solicitud de información
   constructor(user: User) {
-    this.uuid = user.uuid;
+    this.id = user.id;
     this.name = user.name;
+    this.nickname = user.nickname;
     this.status = user.status;
     this.siteRole = user.siteRole;
-    this.siteDisabled = user.siteDisabled;
-    this.siteBanned = user.siteBanned;
+  //  this.siteDisabled = user.siteDisabled;
+  //  this.siteBanned = user.siteBanned;
   }
 }

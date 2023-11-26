@@ -1,21 +1,42 @@
 import {
-  EventModel as Event,
+  Event,
 } from '../model';
 
 import {
   EventTypeEnum,
 } from '../enum';
 
-export class EventManager {
-  private readonly events_: Event[] = [];
+import {
+  EventPayload,
+} from '../interface';
 
+export class EventManager {
+  private readonly events_: Event[];
+
+  constructor(
+    private maxEvents_: number = 100,
+  ) {}
+
+  createEvent(notifyCallback: Function, eventPayload: EventPayload): Event {
+    const event = new Event(notifyCallback, eventPayload);
+  }
+
+  deleteEvent(event: Event) {
+    const position = this.events_.indexOf(event);
+
+    if (position !== -1) {
+      this.events_.splice(position, 1);
+    }
+    this.notify_(NotifyEventTypeEnum.DELETE);
+  }
+  /*
   addEvent(event: Event): Event {
     this.events_.push(event);
 
-    if (this.events_.length > 100)
+    if (this.events_.length > this.maxEvents_)
       this.events_.shift();
     return event;
-  }
+  }*/
 
   getEvents(): Event[] {
     return this.events_;

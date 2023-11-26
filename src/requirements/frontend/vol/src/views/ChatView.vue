@@ -4,16 +4,16 @@
     <h1>Chat View</h1>
     <div class="channel-list">
       <ul>
-        <li v-for="channel in channelList" :key="channel.uuid" @click="selectChannel(channel.uuid)"
-            :class="{ 'selected': channel.uuid === selectedChannelUUID }">
+        <li v-for="channel in channelList" :key="channel.id" @click="selectChannel(channel.id)"
+            :class="{ 'selected': channel.id === selectedChannelId }">
           {{ channel.name }}
         </li>
       </ul>
     </div>
     <div v-if="currentChannel">
       <h2>{{ currentChannel.name }}</h2>
-      <div v-for="channelUser in currentChannel.users.values()" :key="channelUser.uuid">
-        {{ channelUser.name }}
+      <div v-for="channelUser in currentChannel.users.values()" :key="channelUser.id">
+        {{ channelUser.nickname }}
         - Owner: {{ channelUser.isOwner ? 'Yes' : 'No'}}
         - Admin: {{ channelUser.isAdmin ? 'Yes' : 'No' }}
         - Muted: {{ channelUser.isMuted ? 'Yes' : 'No' }}
@@ -23,8 +23,8 @@
         - Status: {{ ["Offline", "Online", "In Game", "Away"][channelUser.status] }}
       </div>
       <div
-          v-for="event in currentChannel.events.values()"
-          :key="event.uuid"
+          v-for="event in currentChannel.events_.values()"
+          :key="event.id"
           :title="printTime(event.timestamp)"
           :class="{ 'message': event.type === EventTypeEnum.MESSAGE, 'other-event': event.type !== EventTypeEnum.MESSAGE }"
       >
@@ -47,7 +47,7 @@ import { Event } from '@/services/model';
 export default {
   setup() {
     //const chat = client;
-    const selectedChannelUUID = ref('');
+    const selectedChannelId = ref('');
     
     const { channelList, currentChannel, setCurrentChannel } = client;
 
@@ -58,12 +58,12 @@ export default {
     onMounted(() => {
       // client.playSim();
       if (currentChannel.value)
-        selectedChannelUUID.value = currentChannel.value.uuid;
+        selectedChannelId.value = currentChannel.value.id;
     });
 
-    const selectChannel = (channelUUID) => {
-      selectedChannelUUID.value = channelUUID;
-      setCurrentChannel(channelUUID);
+    const selectChannel = (channelId) => {
+      selectedChannelId.value = channelId;
+      setCurrentChannel(channelId);
     };
 
     const printTime = (time) => {
@@ -78,31 +78,31 @@ export default {
     const formatEventMessage = (event) => {
       switch (event.type) {
         case EventTypeEnum.MESSAGE:
-          return `<${event.sourceUser.name}> ${event.value}`;
+          return `<${event.sourceNickname}> ${event.value}`;
         case EventTypeEnum.PART:
-          return `- ${event.sourceUser.name} has left`;
+          return `- ${event.sourceNickname} has left`;
         case EventTypeEnum.KICK:
-          return `- ${event.sourceUser.name} has kicked ${event.targetUser.name}`;
+          return `- ${event.sourceNickname} has kicked ${event.targetNickname}`;
         case EventTypeEnum.BAN:
-          return `- ${event.sourceUser.name} has banned ${event.targetUser.name}`;
+          return `- ${event.sourceNickname} has banned ${event.targetNickname}`;
         case EventTypeEnum.UNBAN:
-          return `- ${event.sourceUser.name} has unbanned ${event.targetUser.name}`;
+          return `- ${event.sourceNickname} has unbanned ${event.targetNickname}`;
         case EventTypeEnum.MUTE:
-          return `- ${event.sourceUser.name} has muted ${event.targetUser.name}`;
+          return `- ${event.sourceNickname} has muted ${event.targetNickname}`;
         case EventTypeEnum.UNMUTE:
-          return `- ${event.sourceUser.name} has unmuted ${event.targetUser.name}`;
+          return `- ${event.sourceNickname} has unmuted ${event.targetNickname}`;
         case EventTypeEnum.PASSWORD:
           if (event.value === undefined)
-            return `- ${event.sourceUser.name} unset a password`;
-          return `- ${event.sourceUser.name} set a password`;
+            return `- ${event.sourceNickname} unset a password`;
+          return `- ${event.sourceNickname} set a password`;
         case EventTypeEnum.CREATE:
-          return `- ${event.sourceUser.name} created the channel`;
+          return `- ${event.sourceNickname} created the channel`;
         case EventTypeEnum.CLOSE:
-          return `- ${event.sourceUser.name} closed the channel`;
+          return `- ${event.sourceNickname} closed the channel`;
         case EventTypeEnum.JOIN:
-          return `- ${event.sourceUser.name} has joined.`
+          return `- ${event.sourceNickname} has joined.`
         case EventTypeEnum.TOPIC:
-          return `- ${event.sourceUser.name} has changed topic to '${event.value}'`;
+          return `- ${event.sourceNickname} has changed topic to '${event.value}'`;
       }
       return '';
     }
@@ -110,7 +110,7 @@ export default {
     return {
       channelList,
       currentChannel,
-      selectedChannelUUID,
+      selectedChannelId,
       EventTypeEnum,
       formatEventMessage,
       selectChannel,

@@ -1,0 +1,27 @@
+import {
+  UserDTO,
+} from '.';
+
+import {
+  ChannelUser,
+} from '../model';
+
+export class ChannelUserDTO {
+  id: string;
+  admin: boolean;
+  muted: boolean;
+  banned: boolean;
+  active: boolean;
+  userDTO: UserDTO;
+  channelId: string;
+
+  constructor(channelUser: ChannelUser) {
+    this.id = channelUser.id;
+    this.admin = channelUser.admin;
+    this.muted = channelUser.muted;
+    this.banned = channelUser.banned;
+    this.active = channelUser.active;
+    this.userDTO = channelUser.user.DTO;
+    this.channelId = channelUser.channel.id;
+  }
+}

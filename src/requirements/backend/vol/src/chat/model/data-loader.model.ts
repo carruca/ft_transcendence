@@ -1,4 +1,4 @@
-export class DataLoaderModel {
+export class DataLoader {
   private users_: any[];
   private channels_: any[];
 

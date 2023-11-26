@@ -48,12 +48,12 @@ class ChatClient {
     this.setupSocketEventHandlers_();
   }
 
-  private getChannelByUUID_(channelUUID: string): Channel {
-    return this.channels_.get(channelUUID); 
+  private getChannelById_(channelId: string): Channel {
+    return this.channels_.get(channelId); 
   }
 
-  private getUserByUUID_(userUUID: string): User {
-    return this.users_.get(userUUID);
+  private getUserById_(userId: string): User {
+    return this.users_.get(userId);
   }
 
   get me() {
@@ -62,14 +62,15 @@ class ChatClient {
   }
 
   get channels() {
-    return this.channels_.values();
+    return this.channels_;
   }
 
   get users() {
     return Array.from(this.users_.values());
   }
   private setupSocketEventHandlers_() {
-    socket.on('reterr', this.onRetErr.bind(this));
+    socket.on('reterror', this.onRetError.bind(this));
+    socket.on('retsuccess', this.onRetSuccess.bind(this));
     socket.on('registered', this.onRegistered.bind(this));
 
     socket.on('channelCreated', this.onChannelCreated.bind(this));
@@ -80,19 +81,24 @@ class ChatClient {
     socket.on('userUpdated', this.onUserUpdated.bind(this));
     socket.on('userDeleted', this.onUserDeleted.bind(this));
 
-    socket.on('eventCreated', this.onEventCreated.bind(this));
-    socket.on('eventUpdated', this.onEventUpdated.bind(this));
+    socket.on('channelEventCreated', this.onChannelEventCreated.bind(this));
+    //socket.on('channelEventUpdated', this.onChannelEventUpdated.bind(this));
 
     socket.on('userChannelCreated', this.onUserChannelCreated.bind(this));
     socket.on('userChannelUpdated', this.onUserChannelUpdated.bind(this));
     socket.on('userChannelDeleted', this.onUserChannelDeleted.bind(this));
   }
 
-
-  private onRetErr(responseJSON: string): void {
+  private onRetError(responseJSON: string): void {
     const response = JSON.parse(responseJSON);
 
     console.log(`%cError: ${response.message}`, "color: red;");
+  }
+
+  private onRetSuccess(responseJSON: string): void {
+    const response = JSON.parse(responseJSON);
+
+    console.log(`%cSuccess: ${response.event}`, "color: green;");
   }
 
   private onRegistered(responseJSON: string): void {
@@ -101,19 +107,33 @@ class ChatClient {
     //TODO: Aquí lo que llega es la información de nuestro usuario, eso contempla
     //todos los canales y de estos, los usuarios y los eventos.
     this.me_ = this.addUserFromDTO_(meUserDTO);
-    //meUserDTO.channels.map((channelDTO: ChannelDTO) => this.me_.channels.set(channelDTO.uuid, this.addChannel_(this.channelFromDTO_(channelDTO))));
+    //meUserDTO.channels.map((channelDTO: ChannelDTO) => this.me_.channels.set(channelDTO.id, this.addChannel_(this.channelFromDTO_(channelDTO))));
 
 
-    console.log(`%cSuccess: Your uuid is '${this.me_.uuid}' and '${this.me_.name}' is your nick. You are in ${this.me_.channels.size} channels`, "color: green;");
+    console.log(`%cSuccess: Your id is '${this.me_.id}' and '${this.me_.nickname}' is your nick. You are in ${this.me_.channels.size} channels`, "color: green;");
+
+    console.log(this.me_.channels.values());
+    for (const channel of this.me_.channels.values()) {
+      console.log(`${channel.name}: ${channel.id}`);
+      console.log('users', channel.users);
+    }
     //console.log(meUserDTO);
     this.channelList_.value = Array.from(this.me_.channels.values());
+    this.updateChannelList_();
+  }
+
+  updateChannelList_(): void {
     this.currentChannel_.value = this.channelList.value[0]; //this.me_.channels.values().next().value;
   }
 
-  private onChannelCreated(dataJSON: string) {
-    const data = JSON.parse(dataJSON);
 
-    console.log('onChannelCreated', data);
+
+  private onChannelCreated(dataJSON: string) {
+    const channelDTO = JSON.parse(dataJSON);
+
+    console.log('onChannelCreated', channelDTO);
+    this.addChannelFromDTO_(channelDTO)
+    this.updateChannelList_();
   }
 
   private onChannelUpdated(dataJSON: string) {
@@ -123,21 +143,28 @@ class ChatClient {
   }
 
   private onChannelDeleted(dataJSON: string) {
-    const data = JSON.parse(dataJSON);
+    const channelId = JSON.parse(dataJSON);
+    const channel = this.getChannelById_(channelId);
 
-    console.log('onChannelDeleted', data);
+    console.log('onChannelDeleted', channelId);
+    this.deleteChannel_(channel);
+    this.updateChannelList_();
   }
 
   private onUserCreated(dataJSON: string) {
     const data = JSON.parse(dataJSON);
 
-    console.log('onChannelCreated', data);
+    console.log('onUserCreated', data);
   }
 
   private onUserUpdated(dataJSON: string) {
-    const data = JSON.parse(dataJSON);
-
-    console.log('onUserUpdated', data);
+    const { sourceUserId, changes } = JSON.parse(dataJSON);
+    const sourceUser = this.getUserById_(sourceUserId);
+   
+    console.log('onUserUpdated', changes);
+    if (sourceUser) {
+      sourceUser.update(changes);
+    }
   }
 
   private onUserDeleted(dataJSON: string) {
@@ -176,8 +203,18 @@ class ChatClient {
     console.log('onUserChannelDeleted', data);
   }
 
+  private onChannelEventCreated(dataJSON: string) {
+    const { channelId, eventDTO } = JSON.parse(dataJSON);
+
+    const event = this.eventFromDTO_(eventDTO)
+    const channel = this.getChannelById_(channelId);
+
+    if (channel)
+      channel.addEvent(event); 
+  }
+
   private addUserFromDTO_(userDTO: UserDTO): User {
-    let user = this.getUserByUUID_(userDTO.uuid);
+    let user = this.getUserById_(userDTO.id);
     let channel: Channel;
     let channelUser: ChannelUser[];
 
@@ -193,26 +230,26 @@ class ChatClient {
   }
 
   private channelFromDTO_(channelDTO: ChannelDTO): Channel {
-    let ownerUser = this.getUserByUUID_(channelDTO.ownerUserDTO.uuid);
+    let ownerUser = this.getUserById_(channelDTO.ownerDTO.id);
 
     if (!ownerUser) {
-      user = this.userFromDTO_(channelDTO.ownerUserDTO);
-      this.addUser_(user);
+      ownerUser = this.userFromDTO_(channelDTO.ownerDTO);
+      this.addUser_(ownerUser);
     }
 
     return new Channel({
-      uuid: channelDTO.uuid,
+      id: channelDTO.id,
       name: channelDTO.name,
-      ownerUser: ownerUser,
-      creationDate: channelDTO.creationDate,
-      hasPassword: channelDTO.hasPassword,
+      owner: ownerUser,
+      createdDate: channelDTO.createdDate,
+      password: channelDTO.password,
     });
   }
 
   private userFromDTO_(userDTO: UserDTO): User {
     return new User({
-      uuid: userDTO.uuid,
-      name: userDTO.name,
+      id: userDTO.id,
+      nickname: userDTO.nickname,
       siteRole: userDTO.siteRole,
       status: userDTO.status,
       blocked: userDTO.blocked,
@@ -221,10 +258,10 @@ class ChatClient {
   }
 
   private channelUserFromDTO_(channelUserDTO: ChannelUserDTO): ChannelUser {
-    let user = this.getUserByUUID_(channelUserDTO.uuid);
+    let user = this.getUserById_(channelUserDTO.userDTO.id);
     
     if (!user) {
-      user = this.userFromDTO_(channelUserDTO);
+      user = this.userFromDTO_(channelUserDTO.userDTO);
       this.addUser_(user);
     }
 
@@ -233,21 +270,23 @@ class ChatClient {
       admin: channelUserDTO.admin,
       owner: channelUserDTO.owner,
       muted: channelUserDTO.muted,
-      banned: channelUserDTO.manned,
+      banned: channelUserDTO.banned,
     });
   }
 
   private eventFromDTO_(eventDTO: EventDTO): Event {
-    let sourceUser = this.getUserByUUID_(eventDTO.sourceUUID);
-    let targetUser = this.getUserByUUID_(eventDTO.targetUUID);
+    //let sourceUser = this.getUserById_(eventDTO.sourceId);
+    //let targetUser = this.getUserById_(eventDTO.targetId);
 
     return new Event({
-      uuid: eventDTO.uuid,
+      id: eventDTO.id,
       type: eventDTO.type,
       timestamp: eventDTO.timestamp,
       modified: eventDTO.modified,
-      sourceUser: sourceUser,
-      targetUser: targetUser,
+      sourceId: eventDTO.sourceId,
+      targetId: eventDTO.targetId,
+      sourceNickname: eventDTO.sourceNickname,
+      targetNickname: eventDTO.targetNickname,
       value: eventDTO.value,
     }); 
   }
@@ -255,15 +294,14 @@ class ChatClient {
   private addChannelFromDTO_(channelDTO: ChannelDTO): Channel {
     const channelUsers: ChannelUser[] = [];
     const events: Event[] = [];
-    let channel = this.getChannelByUUID_(channelDTO);
+    let channel = this.getChannelById_(channelDTO.id);
 
-    for (const channelUserDTO of channelDTO.users) {
+    for (const channelUserDTO of channelDTO.channelUsersDTO) {
       channelUsers.push(this.channelUserFromDTO_(channelUserDTO));
     }
-    for (const eventDTO of channelDTO.events) {
+    for (const eventDTO of channelDTO.eventsDTO) {
       events.push(this.eventFromDTO_(eventDTO));
     }
-
     if (!channel) {
       channel = this.channelFromDTO_(channelDTO);
       this.addChannel_(channel);
@@ -274,306 +312,98 @@ class ChatClient {
     return channel;
   }
 
-  private clear_() {
-    for (const channel of this.channels_.values()) {
-      channel.clear();
-    }
-    this.channels_.clear();
-    this.users_.clear();
-  }
-
-  public playSim() {
-    this.clear_();
-    const ownerUser = this.createUser({ name: "owner" });
-    const user1 = this.createUser({ name: "User1" });
-    const user2 = this.createUser({ name: "User2" });
-    const user3 = this.createUser({ name: "User3" });
-    const channel1 = this.createChannel("#test", user1);
-    const channel2 = this.createChannel("#wer", user2);
-    this.join(channel1, user3);
-    let channel3: Channel;
-
-    setTimeout(() => {
-      channel3 = this.createChannel("#new_chan", ownerUser);
-      this.join(channel1, user2);
-      this.chanmsg(channel1, user2, "Hola tio");
-    }, 1000);
-    setTimeout(() => {
-      this.chanmsg(channel1, user1, "Fuera de aquí!");
-    }, 2000);
-    setTimeout(() => {
-      this.ban(channel1, user1, user2);
-    }, 3000);
-    setTimeout(() => {
-      this.chanmsg(channel1, user1, "Payaso...");
-      this.part(channel1, user3);
-      this.closeChannel(channel3);
-    }, 4000);
-
-    this.currentChannel_.value = this.channels_.values().next().value;
-  }
-
-  public playAdminSim() {
-    this.clear_();
-    const ownerUser = this.createUser("owner", { siteRole: UserSiteRoleEnum.OWNER, isBanned: false, isDisabled: false });
-    const user1 = this.createUser("User1", { siteRole: UserSiteRoleEnum.NONE, isBanned: false, isDisabled: false });
-    const user2 = this.createUser("User2", { siteRole: UserSiteRoleEnum.NONE, isBanned: false, isDisabled: false });
-    const user3 = this.createUser("User3", { siteRole: UserSiteRoleEnum.NONE, isBanned: false, isDisabled: false });
-    const user4 = this.createUser("User4", { siteRole: UserSiteRoleEnum.NONE, isBanned: false, isDisabled: false });
-    const user5 = this.createUser("User5", { siteRole: UserSiteRoleEnum.NONE, isBanned: false, isDisabled: false });
-    const user6 = this.createUser("User6", { siteRole: UserSiteRoleEnum.NONE, isBanned: false, isDisabled: false });
-    const user7 = this.createUser("User7", { siteRole: UserSiteRoleEnum.NONE, isBanned: false, isDisabled: false });
-    const user8 = this.createUser("User8", { siteRole: UserSiteRoleEnum.NONE, isBanned: false, isDisabled: false });
-    const user9 = this.createUser("User9", { siteRole: UserSiteRoleEnum.NONE, isBanned: false, isDisabled: false });
-    const user10 = this.createUser("User10", { siteRole: UserSiteRoleEnum.NONE, isBanned: false, isDisabled: false });
-    const user11 = this.createUser("User11", { siteRole: UserSiteRoleEnum.NONE, isBanned: false, isDisabled: false });
-    const user12 = this.createUser("User12", { siteRole: UserSiteRoleEnum.NONE, isBanned: false, isDisabled: false });
-    const user13 = this.createUser("User13", { siteRole: UserSiteRoleEnum.NONE, isBanned: false, isDisabled: false });
-    const user14 = this.createUser("User14", { siteRole: UserSiteRoleEnum.NONE, isBanned: false, isDisabled: false });
-    const user15 = this.createUser("User15", { siteRole: UserSiteRoleEnum.NONE, isBanned: false, isDisabled: false });
-    const user16 = this.createUser("User16", { siteRole: UserSiteRoleEnum.NONE, isBanned: false, isDisabled: false });
-    const user17 = this.createUser("User17", { siteRole: UserSiteRoleEnum.NONE, isBanned: false, isDisabled: false });
-    const user18 = this.createUser("User18", { siteRole: UserSiteRoleEnum.NONE, isBanned: false, isDisabled: false });
-    const user19 = this.createUser("User19", { siteRole: UserSiteRoleEnum.NONE, isBanned: false, isDisabled: false });
-    const user20 = this.createUser("User20", { siteRole: UserSiteRoleEnum.NONE, isBanned: false, isDisabled: false });
-    const user21 = this.createUser("User21", { siteRole: UserSiteRoleEnum.NONE, isBanned: false, isDisabled: false });
-    const user22 = this.createUser("User22", { siteRole: UserSiteRoleEnum.NONE, isBanned: false, isDisabled: false });
-    const user23 = this.createUser("User23", { siteRole: UserSiteRoleEnum.NONE, isBanned: false, isDisabled: false });
-    const user24 = this.createUser("User24", { siteRole: UserSiteRoleEnum.NONE, isBanned: false, isDisabled: false });
-    const user25 = this.createUser("User25", { siteRole: UserSiteRoleEnum.NONE, isBanned: false, isDisabled: false });
-    const channel1 = this.createChannel("#paco", user1);
-    const channel2 = this.createChannel("#jones", user2, "patata");
-    let channel3: Channel;
-
-    setTimeout(() => {
-      channel3 = this.createChannel("#vermikins", ownerUser);
-      this.join(channel1, user2);
-      this.join(channel1, user3);
-      this.join(channel1, user4);
-      this.join(channel1, user5);
-      this.join(channel1, user6);
-      this.join(channel1, user7);
-      this.join(channel1, user8);
-      this.join(channel1, user9);
-      this.join(channel1, user10);
-      this.join(channel1, user11);
-      this.join(channel1, user12);
-      this.join(channel1, user13);
-      this.join(channel1, user14);
-      this.join(channel1, user15);
-      this.join(channel1, user16);
-      this.join(channel1, user17);
-      this.join(channel1, user18);
-      this.join(channel1, user19);
-      this.join(channel1, user20);
-      this.join(channel1, user21);
-      this.join(channel1, user22);
-      this.join(channel1, user23);
-      this.join(channel1, user24);
-      this.join(channel1, user25);
-      this.chanmsg(channel1, user2, "Donde caemos gente?");
-    }, 1000);
-    setTimeout(() => {
-      this.chanmsg(channel1, user1, "En el ban por tonto!");
-    }, 2000);
-    setTimeout(() => {
-      this.chanmsg(channel1, user1, "Y tu pa fuera!");
-      this.ban(channel1, user1, user2);
-    }, 3000);
-    setTimeout(() => {
-      this.kick(channel1, user1, user3);
-    }, 5000);
-    setTimeout(() => {
-      this.chanmsg(channel1, user1, "Noobs...");
-      this.closeChannel(channel3);
-    }, 7000);
-
-    this.currentChannel_.value = this.channels_.values().next().value;
-  }
-
-  private addChannel_(channel: Channel) {
-    this.channels_.set(channel.uuid, channel);
-    this.channelList_.value = Array.from(this.channels_.values());
-  }
-
-  private delChannel_(channel: Channel) {
-    channel.clear();
-    this.channels_.delete(channel.uuid);
-    this.channelList_.value = Array.from(this.channels_.values());
-  }
-
-  private addUser_(user: User): User {
-    this.users_.set(user.uuid, user);
-    return user;
-  }
-
-  private delUser_(user: User) {
-    this.users_.delete(user.uuid);
-  }
-  public createUser(userPayload: UserPayload): User {
-    userPayload.uuid = userPayload.uuid ?? uuidv4();
-    const user = new User(userPayload);
-
-    this.addUser_(user);
-    return user;
-  }
-
   public deleteUser(user: User) {
-    this.delUser_(user);
   }
 
-  public createChannel(name: string, ownerUser: User, hasPassword?: boolean): Channel {
-    const channel = new Channel({
-      uuid: uuidv4(),
-      name: name,
-      ownerUser: ownerUser,
-      hasPassword: hasPassword
-    });
-
-    channel.addEvent(new Event(
-      uuidv4(),
-      EventTypeEnum.CREATE,
-      ownerUser,
-    ));
-        
-    this.addChannel_(channel);
-    this.addUserToChannel(channel, ownerUser, { isAdmin: true, isBanned: false, isMute: false });
-    this.channelList_.value = Array.from(this.me_.channels_.values());
-    return channel;
+  public createChannel(name: string, ownerUser: User, password?: boolean): Channel {
   }
 
   public closeChannel(channel: Channel, sourceUser: User) {
-    channel.addEvent(new Event(
-      uuidv4(),
-      EventTypeEnum.CLOSE,
-      sourceUser,
-    ));
-    this.delChannel_(channel);
-    this.channelList_.value = Array.from(this.me_.channels_.values());
   }
 
   public ban(channel: Channel, sourceUser: User, targetUser: User) {
-    channel.addEvent(new Event(
-      uuidv4(),
-      EventTypeEnum.BAN,
-      sourceUser,
-      targetUser,
-    ));
-    channel.user(targetUser).isBanned = true;
   }
 
   public unban(channel: Channel, sourceUser: User, targetUser: User) {
-    channel.addEvent(new Event(
-      uuidv4(),
-      EventTypeEnum.UNBAN,
-      sourceUser,
-      targetUser,
-    ));
-    channel.user(targetUser).isBanned = false;
   }
 
   public mute(channel: Channel, sourceUser: User, targetUser: User) {
-    channel.addEvent(new Event(
-      uuidv4(),
-      EventTypeEnum.MUTE,
-      sourceUser,
-      targetUser,
-    ));
-    channel.user(targetUser).isMuted = true;
   }
 
   public unmute(channel: Channel, sourceUser: User, targetUser: User) {
-    channel.addEvent(new Event(
-    uuidv4(),
-    EventTypeEnum.UNMUTE,
-    sourceUser,
-    targetUser,
-  ));
-  channel.user(targetUser).isMuted = false;
   }
 
   public promote(channel: Channel, sourceUser: User, targetUser: User) {
-    channel.addEvent(new Event(
-      uuidv4(),
-      EventTypeEnum.PROMOTE,
-      sourceUser,
-      targetUser,
-    ));
-    channel.user(targetUser).isAdmin = true;
   }
 
   public demote(channel: Channel, sourceUser: User, targetUser: User) {
-    channel.addEvent(new Event(
-      uuidv4(),
-      EventTypeEnum.DEMOTE,
-      sourceUser,
-      targetUser,
-    ));
-    channel.user(targetUser).isAdmin = false;
   }
 
   public kick(channel: Channel, sourceUser: User, targetUser: User) {
-    channel.addEvent(new Event(
-      uuidv4(),
-      EventTypeEnum.KICK,
-      sourceUser,
-      targetUser,
-    ));
-    this.delUserFromChannel(channel, targetUser);
   }
 
   public join(channel: Channel, sourceUser: User) {
-    channel.addEvent(new Event(
-      uuidv4(),
-      EventTypeEnum.JOIN,
-      sourceUser,
-    )); 
-    this.addUserToChannel(channel, sourceUser, { isAdmin: false, isBanned: false, isMute: false });
   }
 
   public part(channel: Channel, sourceUser: User) {
-    channel.addEvent(new Event(
-      uuidv4(),
-      EventTypeEnum.PART,
-      sourceUser,
-    ));
-    this.delUserFromChannel(channel, sourceUser);
   }
 
   public chanmsg(channel: Channel, sourceUser: User, message: string) {
-    channel.addEvent(new Event(
-      uuidv4(),
-      EventTypeEnum.MESSAGE,
-      sourceUser,
-      undefined,
-      message,
-    ));
   }
 
   public privmsg(targetUser: User, sourceUser: User, message: string) {
-    targetUser.addEvent(new Event(
-      uuidv4(),
-      EventTypeEnum.MESSAGE,
-      sourceUser,
-      targetUser,
-      message,
-    ));
   }
 
-  public setCurrentChannel = (channelUUID: string): void => {
-    if (this.channels_.has(channelUUID)) {
-      this.currentChannel_.value = this.me_.channels.get(channelUUID) || undefined;
+  public setCurrentChannel = (channelId: string): void => {
+    if (this.channels_.has(channelId)) {
+      this.currentChannel_.value = this.me_.channels.get(channelId) || undefined;
     }
   }
 
-  public addUserToChannel(channel: Channel, user: User, props: ChannelUserProperties): ChannelUser {
+  //Sin uso?
+  public addUserToChannel_(channel: Channel, user: User, props: ChannelUserProperties): ChannelUser {
     const newChannelUser = new ChannelUser(user, props);
     channel.addUser(newChannelUser);
     return newChannelUser;
   }
 
-  public delUserFromChannel(channel: Channel, user: User) {
-    channel.users.delete(user.uuid);
+  //Sin uso?
+  public delUserFromChannel_(channel: Channel, user: User) {
+    channel.users.delete(user.id);
+  }
+
+  private addChannel_(channel: Channel) {
+    this.channels_.set(channel.id, channel);
+    this.channelList_.value = Array.from(this.channels_.values());
+  }
+
+  private deleteChannel_(channel: Channel) {
+    channel.clear();
+    this.channels_.delete(channel.id);
+    this.channelList_.value = Array.from(this.channels_.values());
+  }
+
+  private deleteChannelId_(channelId: string) {
+    const channel = this.getChannelById_(channelId);
+
+    if (channel)
+      this.deleteChannel_(channel);
+  }
+
+  private addUser_(user: User) {
+    this.users_.set(user.id, user);
+  }
+
+  private deleteUser_(user: User) {
+    user.clear();
+    this.users_.delete(user.id);
+  }
+
+  private deleteUserId_(userId: string) {
+    const user = this.getUserById_(userId);
+
+    if (user)
+      this.deleteUser_(user);
   }
 }
 

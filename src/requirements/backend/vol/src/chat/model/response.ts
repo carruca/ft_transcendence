@@ -1,8 +1,8 @@
 import {
-  UserModel as User,
+  User,
 } from '.';
 
-enum ErrorCode {
+enum ResponseCode {
   SUCCESS,
   DENIED,
   USER_NOT_EXISTS,
@@ -23,20 +23,24 @@ enum ErrorCode {
   BANNED_FROM_CHANNEL,
   BANNED_FROM_SITE,
   ACCOUNT_DISABLED,
+  CONVERSATION_NOT_EXISTS,
+  USER_ALREADY_BANNED,
+  USER_NOT_BANNED,
 }
 
 export class Response {
   private event: string;
-  private error: string = 'reterr';
+  private error: string = 'reterror';
+  private success: string = 'retsuccess';
   private sourceUser: User;
 
   constructor(
-    private code: ErrorCode = ErrorCode.SUCCESS,
+    private code_: ResponseCode = ResponseCode.SUCCESS,
     private message: string = 'Success',
   ) {}
 
-  setCode(code: ErrorCode): Response {
-    this.code = code;
+  setCode(code: ResponseCode): Response {
+    this.code_ = code;
     return this;
   }
 
@@ -59,51 +63,58 @@ export class Response {
     this.sourceUser = user;
     return this;
   }
+  
+  get code(): ResponseCode {
+    return this.code_;
+  }
 
   get JSON(): string {
     return JSON.stringify({
       event: this.event,
-      code: this.code,
+      code: this.code_,
       message: this.message,
     });
   }
 
   send() {
-    if (this.code !== ErrorCode.SUCCESS) {
+    if (this.code === ResponseCode.SUCCESS) {
+      this.sourceUser.socket.emit(this.success, this.JSON);
+    }
+    else {
       this.sourceUser.socket.emit(this.error, this.JSON);
     }
   }
 
   static PendingChallenge(): Response {
-    return new Response(ErrorCode.PENDING_CHALLENGE, "Pending Challenge");
+    return new Response(ResponseCode.PENDING_CHALLENGE, "Pending Challenge");
   }
 
   static Denied(): Response {
-    return new Response(ErrorCode.DENIED, "Denied");
+    return new Response(ResponseCode.DENIED, "Denied");
   }
 
   static UserAway(): Response {
-    return new Response(ErrorCode.USER_AWAY, "User away");
+    return new Response(ResponseCode.USER_AWAY, "User away");
   }
 
   static UserNotConnected(): Response {
-    return new Response(ErrorCode.USER_NOT_CONNECTED, "User not connected");
+    return new Response(ResponseCode.USER_NOT_CONNECTED, "User not connected");
   }
 
   static NotInChannel(): Response {
-    return new Response(ErrorCode.NOT_IN_CHANNEL, "You are not in that channel")
+    return new Response(ResponseCode.NOT_IN_CHANNEL, "You are not in that channel")
   }
 
   static AlreadyInChannel(): Response {
-    return new Response(ErrorCode.ALREADY_IN_CHANNEL, "Already in channel");
+    return new Response(ResponseCode.ALREADY_IN_CHANNEL, "Already in channel");
   }
 
   static BannedFromChannel(): Response {
-    return new Response(ErrorCode.BANNED_FROM_CHANNEL, "You are banned from channel");
+    return new Response(ResponseCode.BANNED_FROM_CHANNEL, "You are banned from channel");
   }
 
   static InvalidPassword(): Response {
-    return new Response(ErrorCode.INVALID_PASSWORD, "Invalid password");
+    return new Response(ResponseCode.INVALID_PASSWORD, "Invalid password");
   }
 
   static Success(): Response {
@@ -111,42 +122,54 @@ export class Response {
   }
 
   static BadChannelName(): Response {
-    return new Response(ErrorCode.BAD_CHANNEL_NAME, "Bad channel name");
+    return new Response(ResponseCode.BAD_CHANNEL_NAME, "Bad channel name");
   }
 
   static ChannelExists(): Response {
-    return new Response(ErrorCode.CHANNEL_EXISTS, "Channel exists");
+    return new Response(ResponseCode.CHANNEL_EXISTS, "Channel exists");
   }
 
   static ChannelNotExists(): Response {
-    return new Response(ErrorCode.CHANNEL_NOT_EXISTS, "Channel not exists");
+    return new Response(ResponseCode.CHANNEL_NOT_EXISTS, "Channel not exists");
   }
 
   static InsufficientPrivileges(): Response {
-    return new Response(ErrorCode.INSUFFICIENT_PRIVILEGES, "Insufficient privileges");
+    return new Response(ResponseCode.INSUFFICIENT_PRIVILEGES, "Insufficient privileges");
   }
 
   static UserNotExists(): Response {
-    return new Response(ErrorCode.USER_NOT_EXISTS, "User not exists");
+    return new Response(ResponseCode.USER_NOT_EXISTS, "User not exists");
   }
 
   static BannedFromSite(): Response {
-    return new Response(ErrorCode.BANNED_FROM_SITE, "You're banned from this site");
+    return new Response(ResponseCode.BANNED_FROM_SITE, "You're banned from this site");
   }
 
   static AccountDisabled(): Response {
-    return new Response(ErrorCode.ACCOUNT_DISABLED, "Your account are disabled");
+    return new Response(ResponseCode.ACCOUNT_DISABLED, "Your account are disabled");
   }
 
   static YoureInGame(): Response {
-    return new Response(ErrorCode.YOURE_IN_GAME, "You are in game");
+    return new Response(ResponseCode.YOURE_IN_GAME, "You are in game");
   }
 
   static UserInGame(): Response {
-    return new Response(ErrorCode.USER_IN_GAME, "user in game");
+    return new Response(ResponseCode.USER_IN_GAME, "user in game");
   }
 
   static CannotSendToChannel(): Response {
-    return new Response(ErrorCode.CANNOT_SEND_TO_CHANNEL, "Cannot send to channel");
+    return new Response(ResponseCode.CANNOT_SEND_TO_CHANNEL, "Cannot send to channel");
+  }
+
+  static ConversationNotExists(): Response {
+    return new Response(ResponseCode.CONVERSATION_NOT_EXISTS, "Conversation not exists");
+  }
+
+  static UserAlreadyBanned(): Response {
+    return new Response(ResponseCode.USER_ALREADY_BANNED, "User already banned");
+  }
+
+  static UserNotBanned(): Response {
+    return new Response(ResponseCode.USER_NOT_BANNED, "User not banned");
   }
 }

@@ -1,16 +1,17 @@
 import {
-    UserModel as User,
+    User,
 } from '../model';
 
 import {
-    ChannelTopicPayload,
 } from '.';
 
 export interface ChannelPayload {
-    uuid: string;
-    name: string;
-    ownerUser: User;
-    creationDate: Date;
-    topic?: ChannelTopicPayload;
+    id?: string;
+    name?: string;
+    owner?: User;
+    createdDate?: Date;
+    topic?: string;
+    topicSetDate?: Date;
+    topicUser?: User;
     password?: string;
 }

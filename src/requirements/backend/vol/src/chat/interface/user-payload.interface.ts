@@ -8,9 +8,10 @@ import {
 } from '../enum';
 
 export interface UserPayload {
-  uuid: string,
-  name: string,
-  intraId: number,
+  id?: string,
+  name?: string,
+  nickname: string,
+  intraId?: number,
   status?: UserStatusEnum,
   socket?: Socket,
   siteRole?: UserSiteRoleEnum,

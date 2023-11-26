@@ -16,65 +16,69 @@ import {
 
 
 export class Channel {
-    private readonly maxEvents_: number = 4;
+    private readonly maxEvents_: number = 20;
 
-    public readonly uuid: string;
+    public readonly id: string;
     public readonly name: string;
-    public readonly ownerUser: User;
-    public readonly creationDate: Date;
-    public hasPassword: boolean;
+    public readonly owner: User;
+    public readonly createdDate: Date;
+    public password: boolean;
     public readonly users = reactive(new Map<string, ChannelUser>());
-    private readonly events_ = new Map<string, Event>();
+    public readonly events_ = reactive(new Map<string, Event>());
 
     constructor(channelPayload: ChannelPayload) {
-      this.uuid = channelPayload.uuid;
+      this.id = channelPayload.id;
       this.name = channelPayload.name;
-      this.ownerUser = channelPayload.ownerUser;
-      this.creationDate = channelPayload.creationDate;
-      this.hasPassword = channelPayload.hasPassword ?? false;
+      this.owner = channelPayload.owner;
+      this.createdDate = channelPayload.createdDate;
+      this.password = channelPayload.password ?? false;
       this.addUsers(channelPayload.users);
       this.addEvents(channelPayload.events);
     }
 
     addUsers(channelUsers: ChannelUser[]) {
-      if (channelUsers)
+      if (channelUsers) {
         channelUsers.map((channelUser: User) => {
-            this.users.set(channelUser.uuid, channelUser);
-            channelUser.user.addChannel(this);
+          this.users.set(channelUser.id, channelUser);
+          channelUser.user.addChannel(this);
         });
+      }
     }
 
     addEvents(events: Event[]) {
       if (events)
-        events.map((event: Event) => this.events_.set(event.uuid, event));
+        events.map((event: Event) => this.events_.set(event.id, event));
     }
 
-    clear() {
+    clear() { 
+      for (const channelUser of this.users.values()) {
+          channelUser.user.delChannel(this);
+      }
       this.users.clear();
       this.events_.clear();
     }
 
     addUser(channelUser: ChannelUser) {
-      this.users.set(channelUser.uuid, channelUser);
+      this.users.set(channelUser.id, channelUser);
     }
 
     delUser(user: User) {
-      this.users.delete(channelUser.uuid);
+      this.users.delete(channelUser.id);
     }
 
-    delUserByUUID(userUUID: string) {
-      this.users.delete(userUUID);
+    delUserByUUID(userId: string) {
+      this.users.delete(userId);
     }
 
     user(user: User): ChannelUser {
-      return this.users.get(user.uuid);
+      return this.users.get(user.id);
     }
 
     addEvent(event: Event) {
       if (this.events_.size >= this.maxEvents_) {
         this.events_.delete(this.events_.keys().next().value);
       }
-      this.events_.set(event.uuid, event);
+      this.events_.set(event.id, event);
     }
 
     get events(): Map<string, Event> {
