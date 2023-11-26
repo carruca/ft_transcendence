@@ -1,8 +1,10 @@
 'use strict';
 import { Injectable } from '@nestjs/common';
+import { RateLimitedFetchService } from '../../rate-limited/rate-limited-fetch.service';
 
 @Injectable()
 export class MockService {
+  constructor(private readonly rateLimitedFetchService: RateLimitedFetchService) {}
 
   async login(code: string): Promise<any> {
     try {
@@ -16,7 +18,7 @@ export class MockService {
   }
 
   async intraBearer(): Promise<any> {
-    const response = await fetch(`${process.env.NEST_INTRA_API_URL}/oauth/token`, {
+    const response = await this.rateLimitedFetchService.fetch(`${process.env.NEST_INTRA_API_URL}/oauth/token`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -37,7 +39,7 @@ export class MockService {
   async getUser(token: string, _refresh_token: string): Promise<any> {
     try {
       const { access_token } = await this.intraBearer();
-      const response = await fetch(`${process.env.NEST_INTRA_API_URL}/v2/users/${token}`, {
+      const response = await this.rateLimitedFetchService.fetch(`${process.env.NEST_INTRA_API_URL}/v2/users/${token}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',

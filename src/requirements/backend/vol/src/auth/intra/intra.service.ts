@@ -1,13 +1,15 @@
 'use strict'
 import { Injectable } from '@nestjs/common';
 import { IntraToken } from './intra.interceptor';
+import { RateLimitedFetchService } from '../../rate-limited/rate-limited-fetch.service';
 
 @Injectable()
 export class IntraService {
+  constructor(private readonly rateLimitedFetchService: RateLimitedFetchService) {}
 
   async login(code: string): Promise<any> {
     try {
-      const response = await fetch(`${process.env.NEST_INTRA_API_URL}/oauth/token`, {
+      const response = await this.rateLimitedFetchService.fetch(`${process.env.NEST_INTRA_API_URL}/oauth/token`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
@@ -31,9 +33,9 @@ export class IntraService {
   }
 
   @IntraToken()
-  async getUser(token: string, refresh_token: string): Promise<any> {
+  async getUser(token: string, _refresh_token: string): Promise<any> {
     try {
-      const response = await fetch(`${process.env.NEST_INTRA_API_URL}/v2/me`, {
+      const response = await this.rateLimitedFetchService.fetch(`${process.env.NEST_INTRA_API_URL}/v2/me`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -52,7 +54,7 @@ export class IntraService {
 
   async refreshToken(refresh_token: string): Promise<any> {
     try {
-      const response = await fetch(`${process.env.NEST_INTRA_API_URL}/oauth/token`, {
+      const response = await this.rateLimitedFetchService.fetch(`${process.env.NEST_INTRA_API_URL}/oauth/token`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',

@@ -4,6 +4,7 @@ import { Request, Response, NextFunction } from 'express'
 import { AuthService } from './auth.service';
 import { UsersService } from '../users/users.service';
 import { JwtService } from '@nestjs/jwt';
+import { RateLimitedFetchService } from '../rate-limited/rate-limited-fetch.service';
 
 class NoNicknameError extends UnauthorizedException {
     constructor() {
@@ -20,7 +21,8 @@ class No2FAError extends UnauthorizedException {
 @Injectable()
 export class AuthMiddleware implements NestMiddleware {
     constructor (private usersService: UsersService,
-                 private readonly jwtService: JwtService) { }
+                 private readonly jwtService: JwtService,
+                 private readonly rateLimitedFetchService: RateLimitedFetchService) { }
 
     checkUserNickname(req: Request, _res: Response, _next: NextFunction) {
         // if req.path is PUT /users/me, then we don't need to check the nickname
@@ -64,7 +66,7 @@ export class AuthMiddleware implements NestMiddleware {
                 return next();
             }
             const { auth_method: authMethod, token, refresh_token } = req.signedCookies;
-            const data = await new AuthService().getUser(authMethod, token, refresh_token);
+            const data = await new AuthService(this.rateLimitedFetchService).getUser(authMethod, token, refresh_token);
             if (data) {
                 req.intraUser = data;
                 let user = await this.usersService.findOneByIntraId(data.id);
