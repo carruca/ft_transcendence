@@ -409,9 +409,9 @@ export class ChatManager {
     let channel = this.getChannelByid(channelId);
 
     if (!channel) return Response.ChannelNotExists();
+    if (channel.hasUser(sourceUser)) return Response.AlreadyInChannel();
     if (channel.password !== password) return Response.InvalidPassword();
     if (channel.isBanned(sourceUser)) return Response.BannedFromChannel();
-    if (channel.hasUser(sourceUser)) return Response.AlreadyInChannel();
 
     //this.raise_<void>('onUserJoined', { channel, sourceUser });
     await this.addUserToChannel_(sourceUser, channel);
