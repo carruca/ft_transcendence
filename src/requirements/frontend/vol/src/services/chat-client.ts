@@ -1,6 +1,7 @@
 import {
   ref,
   readonly,
+  reactive,
 } from 'vue';
 
 import {
@@ -36,8 +37,8 @@ import './client';
 
 class ChatClient {
   private me_: User;
-  private channels_: Map<string, Channel> = new Map();
-  private users_: Map<string, User> = new Map();
+  private channels_: Map<string, Channel> = reactive(new Map());
+  private users_: Map<string, User> = reactive(new Map());
 
   private channelsSummary_ = ref<ChannelSummaryDTO[]>([]);
   public channelsSummary = readonly(this.channelsSummary_);
