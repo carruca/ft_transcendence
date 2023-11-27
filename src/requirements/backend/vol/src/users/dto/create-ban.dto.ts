@@ -1,9 +1,9 @@
 import { IsString } from 'class-validator';
 
-export class CreateBlockDto {
+export class CreateBanDto {
   @IsString()
   userId: string;
 
   @IsString()
-  blockId: string;
+  channelId: string;
 }

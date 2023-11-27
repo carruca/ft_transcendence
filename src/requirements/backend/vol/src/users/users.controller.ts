@@ -100,7 +100,7 @@ export class UsersController {
 
   @Get(':id/blocks')
   getBlocks(@Param('id') id: string) {
-    return this.usersService.getBlockIds(id);
+    return this.usersService.getBlocks(id);
   }
 
   @Get('leaderboard')

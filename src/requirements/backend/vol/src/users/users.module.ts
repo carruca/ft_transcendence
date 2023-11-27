@@ -4,6 +4,7 @@ import { UsersController } from './users.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { User } from './entities/user.entity';
 import { Block } from './entities/block.entity';
+import { Ban } from './entities/ban.entity';
 import { AchievementUser } from '../achievements/entities/achievement-user.entity';
 import { Channel } from '../channels/entities/channel.entity';
 import { Friend } from '../friends/entities/friend.entity';
@@ -18,6 +19,7 @@ import { ChatModule } from '../chat/chat.module';
       Channel,
       Friend,
       Block,
+      Ban,
     ]),
     JwtModule.register({
       secret: process.env.NEST_COOKIE_SECRET,

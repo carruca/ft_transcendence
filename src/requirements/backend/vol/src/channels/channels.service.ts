@@ -42,6 +42,7 @@ export class ChannelsService {
         admin: false
       })
     ];
+    newChannel.bans = [];
     return newChannel;
   }
 
@@ -65,6 +66,20 @@ export class ChannelsService {
 
   async remove(id: string) {
     await this.channelsRepository.delete(id);
+  }
+
+  async getBansByChannel(channelId: string) {
+    const channel = await this.channelsRepository.findOne({
+      relations: ['bans'],
+      where: {
+        id: channelId,
+      },
+    });
+    if (!channel) {
+      throw new HttpException('Channel not found', HttpStatus.NOT_FOUND);
+    }
+
+    return channel.bans;
   }
 
   async createChannelUser(createChannelUserDto: CreateChannelUserDto): Promise<ChannelUser> {

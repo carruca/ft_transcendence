@@ -19,9 +19,13 @@ export class Ban {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @ManyToOne(() => Channel, (channel) => channel.bans)
+  @ManyToOne(() => Channel, (channel) => channel.bans, {
+    onDelete: 'CASCADE'
+  })
   channel: Channel;
 
-  @ManyToOne(() => User, (user) => user.bans)
+  @ManyToOne(() => User, (user) => user.bans, {
+    onDelete: 'CASCADE'
+  })
   user: User;
 }
