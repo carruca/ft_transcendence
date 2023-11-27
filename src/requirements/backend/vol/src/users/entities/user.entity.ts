@@ -12,6 +12,7 @@ import { AchievementUser } from '../../achievements/entities/achievement-user.en
 import { ChannelUser } from '../../channels/entities/channel-user.entity';
 import { Friend } from '../../friends/entities/friend.entity';
 import { Block } from './block.entity';
+import { Ban } from './ban.entity';
 
 export enum UserMode {
   user,
@@ -82,6 +83,9 @@ export class User {
 
   @OneToMany(() => Block, (block) => block.user)
   blocks: Block[];
+
+  @OneToMany(() => Ban, (ban) => ban.user)
+  bans: Ban[];
 
   @Column({ default: '', nullable: true })
   two_fa_token: string;

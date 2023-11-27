@@ -9,6 +9,7 @@ import {
 import { ChannelUser } from './channel-user.entity';
 import { User } from '../../users/entities/user.entity';
 import { CreateChannelDto } from '../dto/create-channel.dto';
+import { Ban } from '../../users/entities/ban.entity';
 
 @Entity()
 export class Channel {
@@ -53,4 +54,7 @@ export class Channel {
 
   @OneToMany(() => ChannelUser, (channelUser) => channelUser.channel) 
   users: ChannelUser[];
+
+  @OneToMany(() => Ban, (ban) => ban.channel) 
+  bans: Ban[];
 }
