@@ -1,9 +1,9 @@
 import {
   Inject,
-	Injectable,
-	HttpException,
-	HttpStatus,
-	forwardRef,
+  Injectable,
+  HttpException,
+  HttpStatus,
+  forwardRef,
 } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -42,6 +42,7 @@ export class UsersService {
     newUser.channels = [];
     newUser.friends = [];
     newUser.matches = [];
+    newUser.blocks = [];
     return this.usersRepository.save(newUser);
   }
 
@@ -93,7 +94,7 @@ export class UsersService {
     return this.usersRepository.save(user);
   }
 
-	async setMode(id: string, mode: UserMode) {
+  async setMode(id: string, mode: UserMode) {
     const user = await this.findOne(id);
     if (!user) {
       throw new HttpException('User not found', HttpStatus.NOT_FOUND);
@@ -101,7 +102,7 @@ export class UsersService {
 
     user.mode = mode;
     return this.usersRepository.save(user);
-	}
+  }
 
   async setDisabled(id: string, value: boolean) {
     const user = await this.findOne(id);
@@ -124,31 +125,66 @@ export class UsersService {
   }
 
   async createBlock(createBlockDto: CreateBlockDto) : Promise<Block> {
-    const newBlock = new Block(
-      createBlockDto.userId,
-      createBlockDto.blockId
-    );
-    return this.blocksRepository.save(newBlock);
-  }
-
-  async getBlockIds(userId: string) : Promise<string[]> {
-    const blocks = await this.blocksRepository.find({
+    const user = await this.usersRepository.findOne({
+      relations: ['blocks'],
       where: {
-        userId: userId
+        id: createBlockDto.userId,
       },
-      select: ['blockId']
     });
-    if (!blocks) {
-      throw new HttpException('Block not found', HttpStatus.NOT_FOUND);
+    if (!user) {
+      throw new HttpException('User not found', HttpStatus.NOT_FOUND);
     }
 
-    return blocks.map((block) => block.blockId);
+    const newBlock = new Block(
+      user,
+      createBlockDto.blockId
+    );
+    await this.blocksRepository.save(newBlock);
+    user.blocks.push(newBlock);
+    await this.usersRepository.save(user);
+    return newBlock;
+  }
+
+  async getBlockIds(userId: string) : Promise<Block[]> {
+    const user = await this.usersRepository.findOne({
+      relations: ['blocks'],
+      where: {
+        id: userId
+      },
+    });
+    if (!user) {
+      throw new HttpException('User not found', HttpStatus.NOT_FOUND);
+    }
+
+    return user.blocks;
   }
 
   async removeBlock(userId: string, blockId: string) : Promise<void> {
-    await this.blocksRepository.delete({ userId, blockId });
+    const user = await this.usersRepository.findOne({
+      relations: ['blocks'],
+      where: {
+        id: userId,
+      },
+    });
+    if (!user) {
+      throw new HttpException('User not found', HttpStatus.NOT_FOUND);
+    }
+
+    const block = await this.blocksRepository.findOne({
+      where: {
+        user: user,
+	blockId: blockId
+      },
+    });
+    if (!block) {
+      throw new HttpException('Block not found', HttpStatus.NOT_FOUND);
+    }
+
+    user.blocks.filter((userBlock) => userBlock.id != block.id);
+    await this.usersRepository.save(user);
+    await this.blocksRepository.delete(block);
   }
-  
+
   async update(id: string, updateUserDto?: UpdateUserDto, avatar?: Express.Multer.File): Promise<User> {
     const user = await this.usersRepository.findOneBy({ id });
     if (!user) {

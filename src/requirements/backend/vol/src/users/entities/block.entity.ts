@@ -2,23 +2,26 @@ import {
   Entity,
   PrimaryGeneratedColumn,
   Column,
+  ManyToOne,
 } from 'typeorm';
+
+import { User } from './user.entity';
 
 @Entity()
 export class Block {
   constructor(
-    userId: string,
+    user: User,
     blockId: string
   ){
-    this.userId = userId;
+    this.user = user;
     this.blockId = blockId;
   }
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
   @Column()
-  userId: string;
-
-  @Column()
   blockId: string;
+
+  @ManyToOne(() => User, (user) => user.blocks)
+  user: User;
 }
