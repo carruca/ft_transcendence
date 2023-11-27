@@ -1,12 +1,17 @@
 import {
     User,
     ChannelUser,
+    EventUser,
     Event as BaseEvent,
 } from '.';
 
 import {
     EventTypeEnum,
 } from '../enum';
+
+import {
+  EventPayload,
+} from '../interface';
 
 import {
     readonly,
@@ -18,7 +23,7 @@ export class ChatEvent extends BaseEvent {
   message: string;
 
   constructor(event: BaseEvent, message: string) {
-    super(event.id, event.type, event.sourceId, event.targetId, event.sourceNickname, event.targetNickname, event.value, event.timestamp, event.edited);
+    super(event);
     this.message = this.formatEventMessage(event);
   }
 

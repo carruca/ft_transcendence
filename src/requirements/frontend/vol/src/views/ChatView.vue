@@ -42,23 +42,23 @@
                 :key="event.id"
                 :title="printTime(event.timestamp)"
                 :class="[ 'event', { 'other-event': !isMessageEvent(event) }, { 'selected': event.id === contextEventUUID } ]"
-                :style="isMessageEvent(event) ? { color: stringToColor(event.sourceNickname) } : {}">
+                :style="isMessageEvent(event) ? { color: stringToColor(event.source.name) } : {}">
               <span v-if="isMessageEvent(event)">&lt;</span>
               <span v-if="!isMessageEvent(event)"> - </span>
               <span
                   class="event-user"
-                  @click="onClick(event, event.sourceUser)" 
-                  @contextmenu="onRightClick(event, event.sourceNickname, $event)">
-                {{ event.sourceNickname }}
+                  @click="onClick(event, event.source)" 
+                  @contextmenu="onRightClick(event, event.source, $event)">
+                {{ event.source.name }}
               </span>
               <span v-if="isMessageEvent(event)">&gt;</span>
               {{ event.message }}
               <span
                   v-if="isTargetEvent(event)"
                   class="event-user"
-                  @click="onClick(event, event.targetUser)" 
-                  @contextmenu="onRightClick(event, event.targetUser, $event)">
-                {{ event.targetNickname }}
+                  @click="onClick(event, event.target)" 
+                  @contextmenu="onRightClick(event, event.target, $event)">
+                {{ event.target.name }}
               </span>
             </div>
           </div>
@@ -83,10 +83,10 @@
             <ul class="list">
               <li
                   v-for="channelUser in userCurrentChannel.users.values()"
-                  :key="channelUser.id"
-                  :class="{ selected: channelUser.id === contextUserUUID }"
-                  @click="onClick(channelUser, channelUser)"
-                  @contextmenu="onRightClick(channelUser, channelUser, $event)"
+                  :key="channelUser.user.id"
+                  :class="{ selected: channelUser.user.id === contextUserUUID }"
+                  @click="onClick(channelUser, channelUser.user)"
+                  @contextmenu="onRightClick(channelUser, channelUser.user, $event)"
               >
                   <span :class="userStatus(channelUser.user.status)">
                     <!--
@@ -96,13 +96,13 @@
                   </span>
                   &nbsp;
                   <span :class="userClass(channelUser)">
-                    {{ channelUser.nickname }}
-                    {{ channelUser.isOwner ? '(owner)' : '' }}
-                    {{ channelUser.isAdmin && !channelUser.isOwner ? '(admin)' : '' }}
-                    {{ channelUser.isMuted ? '(muted)' : '' }}
-                    {{ channelUser.isBanned ? '(banned)' : '' }}
-                    {{ channelUser.isFriend ? '(friend)' : '' }}
+                    {{ channelUser.user.name }}
                   </span>
+                  {{ channelUser.isOwner ? '(owner)' : '' }}
+                  {{ channelUser.isAdmin && !channelUser.isOwner ? '(admin)' : '' }}
+                  {{ channelUser.isMuted ? '(muted)' : '' }}
+                  {{ channelUser.isBanned ? '(banned)' : '' }}
+                  {{ channelUser.isFriend ? '(friend)' : '' }}
               </li>
             </ul>
           </div>
@@ -150,7 +150,7 @@ import createChannelModal from '@/components/CreateChannelModal.vue';
 import editChannelModal from '@/components/EditChannelModal.vue';
 import confirmModal from '@/components/ConfirmModal.vue';
 // FIXME real client
-import { Channel, ChannelUser, User, Event, ChatEvent } from '@/services/model';
+import { Channel, ChannelUser, User, Event, EventUser, ChatEvent } from '@/services/model';
 import { client } from '@/services/chat-client';
 import { EventTypeEnum, UserSiteRoleEnum, UserStatusEnum } from '@/services/enum';
 const { channelsSummary, userChannelList, userCurrentChannel, setUserCurrentChannel } = client;
@@ -190,19 +190,16 @@ const confirmModalTitle = ref('');
 const confirmModalText = ref('');
 
 onMounted(() => {
-  // Update the CSS variable initially
-  updateResizerWidth();
-
-  // FIXME temporarily simulation
-  //client.playAdminSim();
-
-  if (userCurrentChannel.value !== null);
-    selectedChannelUUID.value = userCurrentChannel.value.id;
   window.addEventListener('click', closeContextMenu);
+  window.addEventListener('resize', e => handleResize(leftSection.value, middleSection.value, rightSection.value, contentSection.value));
   leftResizer.value.addEventListener('mousedown', e => initDrag(e, leftSection.value, middleSection.value, rightSection.value, contentSection.value, true));
   rightResizer.value.addEventListener('mousedown', e => initDrag(e, leftSection.value, middleSection.value, rightSection.value, contentSection.value, false));
-  window.addEventListener('resize', e => handleResize(leftSection.value, middleSection.value, rightSection.value, contentSection.value));
+  updateResizerWidth();
   scrollToBottom();
+
+  // FIXME Things that can fail below! to make sure all the code above is executed
+  if (userCurrentChannel.value !== null);
+    selectedChannelUUID.value = userCurrentChannel.value.id;
 });
 
 onBeforeUnmount(() => {
@@ -215,6 +212,26 @@ onBeforeUnmount(() => {
   }
   window.removeEventListener('resize', e => handleResize(leftSection.value, middleSection.value, rightSection.value, contentSection.value));
 });
+
+// Watch the channel list for changes
+watch(userChannelList, (newChannelList) => {
+  if (selectedChannelUUID.value && !newChannelList.some(channel => channel.id === selectedChannelUUID.value)) {
+    selectedChannelUUID.value = null;
+    setUserCurrentChannel(null);
+  }
+});
+// Watch the selectedChannelUUID for changes to its user list
+/*watch(
+  () => selectedChannelUUID.value ? Array.from(userCurrentChannel.users.values()) : [],
+  (newUsersArray) => {
+    // Check if selectedUser still exists in the updated users of selectedChannel
+    if (selectedUser.value && !newUsersArray.some(user => user.id === selectedUser.value.id)) {
+      selectedUser.value = null;
+      selectedUserUUID.value = null;
+    }
+  },
+  { deep: true }
+);*/
 
 // Define a ref for the resizer width
 const resizerWidth = ref(5); // The initial value in px
@@ -295,9 +312,9 @@ const sendMessage = () => {
 // Click handlers
 const onClick = (selected, item) => {
   if (selected instanceof ChatEvent) {
-    console.log(`Clicked on event '${item.sourceNickname}'`);
+    console.log(`Clicked on event '${item.name}'`);
   } else if (selected instanceof ChannelUser) {
-    console.log(`Clicked on user '${item.nickname}'`);
+    console.log(`Clicked on user '${item.name}'`);
   } else {
     console.log(`ERROR: Clicked on item '${item}' not handled`);
   }
@@ -313,9 +330,9 @@ const onRightClick = (selected, item, event) => {
   // TODO create the array of options based on our permissions and user permissions
   if (selected instanceof ChatEvent || selected instanceof ChannelUser) {
     if (selected instanceof ChatEvent)
-      contextEventUUID.value = selected.uuid;
+      contextEventUUID.value = selected.id;
     else
-      contextUserUUID.value = selected.uuid;
+      contextUserUUID.value = selected.id;
     contextMenuOptions.value = [
       'Profile',
       'Mute',
@@ -324,7 +341,7 @@ const onRightClick = (selected, item, event) => {
       'Kick',
     ]
   } else if (selected instanceof Channel) {
-    contextChannelUUID.value = selected.uuid;
+    contextChannelUUID.value = selected.id;
     contextMenuOptions.value = [
       'Edit',
       'Destroy',
@@ -373,21 +390,21 @@ const executeContextAction = ( option, item ) => {
       console.log(`Leaving channel '${item.name}'`);
       client.part(item.id);
     }
-  } else if (item instanceof ChannelUser || item instanceof User) {
+  } else if (item instanceof User || item instanceof EventUser) {
     let userUUID = item.id;
     if (option === 'Profile') {
-      console.log(`Showing profile for user '${item.nickname}'`);
+      console.log(`Showing profile for user '${item.name}'`);
     } else if (option === 'Mute') {
-      console.log(`Muting user '${item.nickname}'`)
+      console.log(`Muting user '${item.name}'`)
       client.mute(selectedChannelUUID.value, item.id);
     } else if (option === 'Block') {
-      console.log(`Blocking user '${item.nickname}'`)
+      console.log(`Blocking user '${item.name}'`)
       client.block(item.id);
     } else if (option === 'Ban') {
-      console.log(`Banning user '${item.nickname}'`)
+      console.log(`Banning user '${item.name}'`)
       client.ban(selectedChannelUUID.value, item.id);
     } else if (option === 'Kick') {
-      console.log(` icking user '${item.nickname}'`)
+      console.log(`Kicking user '${item.name}'`)
       client.kick(selectedChannelUUID.value, item.id);
     }
   } else {
@@ -516,8 +533,8 @@ function channelClass(channel) {
 function userClass(user) {
   if (user.isBanned)
     return 'user-banned';
-  /*if (user.isOwner) TODO
-    return 'user-owner';*/
+  if (user.isOwner)
+    return 'user-owner';
   if (user.isAdmin)
     return 'user-admin';
   if (user.isFriend)
@@ -560,6 +577,7 @@ const colors = [
   '#ffd1d5',
 ];
 const stringToColor = (str) => {
+  console.log(`stringToColor(${str})`);
   let hash = randomSeed;
   for (let i = 0; i < str.length; i++) {
     hash = str.charCodeAt(i) + ((hash << 5) - hash);

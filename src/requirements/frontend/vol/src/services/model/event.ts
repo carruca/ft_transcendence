@@ -10,9 +10,14 @@ import {
   User,
 } from '.';
 
-interface EventUser {
-  id: string,
-  nick: string,
+export class EventUser {
+  public readonly id?: string;
+  public readonly name?: string;
+
+  constructor (id?: string, name?: string) {
+    this.id = id;
+    this.name = name;
+  }
 }
 
 export class Event {
@@ -24,15 +29,30 @@ export class Event {
   public readonly timestamp: Date;
   public edited: boolean;
 
-  constructor (eventPayload: EventPayload) {
-    this.id = eventPayload.id;
-    this.type = eventPayload.type;
-    this.source.id = eventPayload.sourceId;
-    this.target.id = eventPayload.targetId;
-    this.source.name = eventPayload.sourceNickname;
-    this.target.name = eventPayload.targetNickname;
-    this.value = eventPayload.value || '';
-    this.timestamp = eventPayload.timestamp ? new Date(eventPayload.timestamp) : new Date();
-    this.edited = eventPayload.edited;
+  // Original constructor
+  constructor(eventPayload: EventPayload);
+  // Copy constructor
+  constructor(event: Event);
+  // Combined constructor
+  constructor(eventPayloadOrEvent: EventPayload | Event) {
+    if (eventPayloadOrEvent instanceof Event) {
+      // Copy constructor implementation
+      this.id = eventPayloadOrEvent.id;
+      this.type = eventPayloadOrEvent.type;
+      this.source = new EventUser(eventPayloadOrEvent.source.id, eventPayloadOrEvent.source.name);
+      this.target = eventPayloadOrEvent.target ? new EventUser(eventPayloadOrEvent.target.id, eventPayloadOrEvent.target.name) : undefined;
+      this.value = eventPayloadOrEvent.value;
+      this.timestamp = new Date(eventPayloadOrEvent.timestamp);
+      this.edited = eventPayloadOrEvent.edited;
+    } else {
+      // Original constructor implementation
+      this.id = eventPayloadOrEvent.id;
+      this.type = eventPayloadOrEvent.type;
+      this.source = new EventUser(eventPayloadOrEvent.sourceId, eventPayloadOrEvent.sourceNickname);
+      this.target = eventPayloadOrEvent.targetId ? new EventUser(eventPayloadOrEvent.targetId, eventPayloadOrEvent.targetNickname) : undefined;
+      this.value = eventPayloadOrEvent.value || '';
+      this.timestamp = eventPayloadOrEvent.timestamp ? new Date(eventPayloadOrEvent.timestamp) : new Date();
+      this.edited = eventPayloadOrEvent.edited;
+    }
   }
 }
