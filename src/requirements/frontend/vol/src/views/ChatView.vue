@@ -153,7 +153,7 @@ import confirmModal from '@/components/ConfirmModal.vue';
 import { Channel, ChannelUser, User, Event, ChatEvent } from '@/services/model';
 import { client } from '@/services/chat-client';
 import { EventTypeEnum, UserSiteRoleEnum, UserStatusEnum } from '@/services/enum';
-const { channelsSummary, userChannelList, userCurrentChannel, setCurrentChannel } = client;
+const { channelsSummary, userChannelList, userCurrentChannel, setUserCurrentChannel } = client;
 
 const selectedChannelUUID = ref(null);
 
@@ -224,7 +224,7 @@ const updateResizerWidth = () => {
 
 const selectChannel = (channelUUID) => {
   selectedChannelUUID.value = channelUUID;
-  setCurrentChannel(channelUUID);
+  setUserCurrentChannel(channelUUID);
 };
 
 const printTime = (time) => {
