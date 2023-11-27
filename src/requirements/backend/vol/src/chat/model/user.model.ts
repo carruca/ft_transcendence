@@ -202,12 +202,8 @@ export class User {
     return this.id_;
   }
 
-  set name(value: string): {
-    this.nickname = value;
-  }
-
   get name(): string | undefined {
-    return this.nickname_;
+    return this.name_;
   }
 
   set nickname(value: string) {

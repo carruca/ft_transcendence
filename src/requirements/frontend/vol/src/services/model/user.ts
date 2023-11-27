@@ -15,7 +15,7 @@ import {
 
 export class User {
   public readonly id: string;
-  public name: string;
+  //public name: string;
   public siteRole_: UserSiteRoleEnum;
   public status: UserStatusEnum;
   public friend: boolean;
@@ -43,6 +43,9 @@ export class User {
     this.channels.delete(channel.id);
   }
 
+  get name(): string {
+    return this.nickname;
+  }
 
   get siteRole(): UserSiteRoleEnum {
     return this.siteRole_;
