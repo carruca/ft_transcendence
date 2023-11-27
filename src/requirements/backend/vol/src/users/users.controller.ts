@@ -113,6 +113,32 @@ export class UsersController {
     return this.usersService.findOneByNickname(nickname);
   }
 
+  @Get('nickname/:nickname')
+  async findNickname(@Param('nickname') nickname: string) {
+    const nickRegex = /^[\w](?!.*?\.{2})[\w.]{1,28}[\w]$/;
+    if (nickname.length < 3 || nickname.length > 20) {
+      throw new HttpException('Nickname too short', HttpStatus.BAD_REQUEST);
+    }
+    try {
+      const user = await this.usersService.findOneByNickname(nickname);
+      if (user) {
+        throw new HttpException('Nickname already taken', HttpStatus.BAD_REQUEST);
+      }
+    } catch (error) {
+      if (error.status === HttpStatus.NOT_FOUND) {
+        if (!nickRegex.test(nickname)) {
+          throw new HttpException('Invalid nickname', HttpStatus.BAD_REQUEST);
+        }
+        return 'Nickname available';
+      }
+      throw error;
+    }
+    if (!nickRegex.test(nickname)) {
+      throw new HttpException('Invalid nickname', HttpStatus.BAD_REQUEST);
+    }
+    return 'Nickname available';
+  }
+
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.usersService.remove(id);

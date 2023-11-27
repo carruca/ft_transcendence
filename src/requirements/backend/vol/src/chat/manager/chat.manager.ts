@@ -851,7 +851,7 @@ export class ChatManager {
   private userFromDB_(userDB: UserDB): User {
     //console.log("userFromDB_: ", userDB) ;
     if (!userDB.nickname)
-      throw new PropertyUndefinedError("userFromDB: nickname is not set"); 
+      throw new PropertyUndefinedError("userFromDB: nickname is not set");  // TODO: Handle this error
 
     return new User({
       intraId: userDB.intraId,

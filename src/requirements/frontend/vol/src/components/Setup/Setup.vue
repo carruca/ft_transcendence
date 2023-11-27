@@ -40,12 +40,19 @@ onMounted(async () => {
   });
 
   const nicknameInput = document.querySelector('input[type="text"]') as HTMLInputElement;
-  nicknameInput.addEventListener('input', (event) => {
+  nicknameInput.addEventListener('input', async (event) => {
     const target = event.target as HTMLInputElement;
     const value = target.value;
     const submitButton = document.querySelector('input[type="submit"]') as HTMLInputElement;
     if (value.length >= 3 && value.length <= 20) {
-      submitButton.disabled = false;
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/users/nickname/${value}`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: 'include'
+      });
+      submitButton.disabled = !response.ok;
       // TODO: check if nickname is already taken
     } else {
       submitButton.disabled = true;

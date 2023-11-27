@@ -29,6 +29,9 @@ export class AuthMiddleware implements NestMiddleware {
         if (req.originalUrl === '/users/me' && req.method === 'PUT') {
             return;
         }
+        if (req.originalUrl.startsWith('/users/nickname/') && req.method === 'GET') {
+            return;
+        }
         if (req.originalUrl === '/users/me/2fa' && req.method === 'POST') {
             return;
         }

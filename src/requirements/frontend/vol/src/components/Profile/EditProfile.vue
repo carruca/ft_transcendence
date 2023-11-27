@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { defineEmits, ref } from 'vue';
+import { on } from 'events';
+import { defineEmits, onMounted, ref } from 'vue';
 
 //TODO: create interface
 
@@ -28,7 +29,6 @@ function sendChanges() {
     }
     if (formData.get('nickname') === "") {
       formData.delete('nickname');
-      formData.append('nickname', username.value);
     }
     
     try {
@@ -48,6 +48,31 @@ function sendChanges() {
     emit('close');
   })();
 }
+
+onMounted(() => {
+  const nicknameInput = document.querySelector('input[name=nickname]') as HTMLInputElement;
+  const submitButton = document.querySelector('.submit') as HTMLInputElement;
+  nicknameInput.addEventListener('input', async (event) => {
+    const target = event.target as HTMLInputElement;
+    const value = target.value;
+    if (value.length >= 3 && value.length <= 20) {
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/users/nickname/${value}`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: 'include'
+      });
+      submitButton.disabled = !response.ok;
+    } else {
+      submitButton.disabled = true;
+    }
+  });
+  const imageInput = document.querySelector('input[name=avatar]') as HTMLInputElement;
+  imageInput.addEventListener('change', () => {
+    submitButton.disabled = false;
+  });
+})
 
 function handleImageUpload(event : Event) {
   const file = (event.target as HTMLInputElement).files[0];
@@ -79,9 +104,9 @@ const hidePopup = () => {
           </label>
           <label for="nicknameInput">New Nickname:</label>
           <input type="file" id="imageInput" name="avatar" accept="image/png" @change="handleImageUpload">
-          <input type="text" id="nicknameInput" name="nickname" required>
+          <input type="text" id="nicknameInput" name="nickname" minlength="3" maxlength="20">
         </form>
-        <button class="fancy-button-green" @click="sendChanges">Confirm changes</button>
+        <button class="fancy-button-green submit" @click="sendChanges" disabled>Confirm changes</button>
         <button class="fancy-button-red" @click="$emit('close')">Cancel</button>
       </div>
     </div>
@@ -107,10 +132,6 @@ const hidePopup = () => {
   cursor: pointer;
 }
 
-.custom-file-upload:hover {
-  background-color: #e0e0e0;
-}
-
 .custom-file-upload i {
   margin-right: 5px;
 }
@@ -123,22 +144,8 @@ const hidePopup = () => {
   margin-bottom: 10px;
 }
 
-.custom-file-upload {
-  display: inline-block;
-  padding: 10px 20px;
-  background-color: #f2f2f2;
-  color: #555;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  cursor: pointer;
-}
-
 .custom-file-upload:hover {
   background-color: #e0e0e0;
-}
-
-.custom-file-upload i {
-  margin-right: 5px;
 }
 
 input[type="file"] {
@@ -204,6 +211,10 @@ input[type="text"]:focus {
   justify-content: center;
 }
 
+button {
+  cursor: pointer;
+}
+
 .popup-bad-box {
   background: #670b0b;
   padding: 32px;
@@ -249,6 +260,14 @@ input[type="text"]:focus {
 .fancy-button-red:active {
   transform: translateY(1px);
   background-color: #893e3e;
+}
+
+.submit:disabled {
+  background-color: #4e4e4e;
+  color: #fff;
+  box-shadow: none;
+  cursor: not-allowed;
+  transform: none;
 }
 
 </style>

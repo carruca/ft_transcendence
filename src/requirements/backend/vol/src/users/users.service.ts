@@ -154,11 +154,15 @@ export class UsersService {
       throw new HttpException('User not found', HttpStatus.NOT_FOUND);
     }
     if (updateUserDto?.nickname) {
-      user.nickname = updateUserDto.nickname;
-      const avatarPath = `public/avatars/${user.nickname}.png`;
+      const nickRegex = /^[\w](?!.*?\.{2})[\w.]{1,28}[\w]$/;
+      if (!nickRegex.test(updateUserDto.nickname)) {
+        throw new HttpException('Invalid nickname', HttpStatus.BAD_REQUEST);
+      }
+      const avatarPath = `public/avatars/${updateUserDto.nickname}.png`;
       if (fs.existsSync(`public/avatars/${user.nickname}.png`)) {
         fs.renameSync(`public/avatars/${user.nickname}.png`, avatarPath);
       }
+      user.nickname = updateUserDto.nickname;
     }
     if (avatar) {
       const avatarPath = `public/avatars/${user.nickname}.png`;
@@ -225,7 +229,7 @@ export class UsersService {
   }
 
   async getLeaderboard() : Promise<RatingUserDto[]> {
-    const users = await this.usersRepository.find({
+    let users = await this.usersRepository.find({
       select: [
         'nickname',
         'rating',
@@ -238,12 +242,15 @@ export class UsersService {
       take: 10,
     });
 
+    users = users.filter(user => user.nickname !== null);
+
     return users.map(user => ({
       nickname: user.nickname!,
       rating: user.rating,
       wins: user.wins,
       losses: user.losses,
     }));
+
   }
 
   async get2FASecret(userId: string) : Promise<string> {
