@@ -198,7 +198,7 @@ onMounted(() => {
   scrollToBottom();
 
   // FIXME Things that can fail below! to make sure all the code above is executed
-  if (userCurrentChannel.value !== null);
+  if (userCurrentChannel.value);
     selectedChannelUUID.value = userCurrentChannel.value.id;
 });
 
