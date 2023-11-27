@@ -15,7 +15,7 @@
           <div class="channel-list">
             <ul class="list">
               <li
-                  v-for="channel in channelList"
+                  v-for="channel in userChannelList"
                   :key="channel.id"
                   @click="selectChannel(channel.id)"
                   @contextmenu="onRightClick(channel, channel, $event)"
@@ -35,8 +35,8 @@
           <h2>Chat</h2>
         </div>
         <div class="scrollable-content" ref="eventsDisplay">
-          <div class="list" v-if="currentChannel">
-            <h2>{{ currentChannel.name }}</h2>
+          <div class="list" v-if="userCurrentChannel">
+            <h2>{{ userCurrentChannel.name }}</h2>
             <div
                 v-for="event in formattedEvents"
                 :key="event.id"
@@ -74,7 +74,7 @@
       <!-- Resizer between columns -->
       <div class="resizer" ref="rightResizer"></div>
       <!-- Column for User List -->
-      <div class="section users-section" ref="rightSection" v-if="currentChannel">
+      <div class="section users-section" ref="rightSection" v-if="userCurrentChannel">
         <div class="section-header">
           <h2>Users</h2>
         </div>
@@ -82,7 +82,7 @@
           <div class="user-list">
             <ul class="list">
               <li
-                  v-for="channelUser in currentChannel.users.values()"
+                  v-for="channelUser in userCurrentChannel.users.values()"
                   :key="channelUser.id"
                   :class="{ selected: channelUser.id === contextUserUUID }"
                   @click="onClick(channelUser, channelUser)"
@@ -153,7 +153,7 @@ import confirmModal from '@/components/ConfirmModal.vue';
 import { Channel, ChannelUser, User, Event, ChatEvent } from '@/services/model';
 import { client } from '@/services/chat-client';
 import { EventTypeEnum, UserSiteRoleEnum, UserStatusEnum } from '@/services/enum';
-const { channelsSummary, channelList, currentChannel, setCurrentChannel } = client;
+const { channelsSummary, userChannelList, userCurrentChannel, setCurrentChannel } = client;
 
 const selectedChannelUUID = ref(null);
 
@@ -196,8 +196,8 @@ onMounted(() => {
   // FIXME temporarily simulation
   //client.playAdminSim();
 
-  if (currentChannel.value !== null);
-    selectedChannelUUID.value = currentChannel.value.id;
+  if (userCurrentChannel.value !== null);
+    selectedChannelUUID.value = userCurrentChannel.value.id;
   window.addEventListener('click', closeContextMenu);
   leftResizer.value.addEventListener('mousedown', e => initDrag(e, leftSection.value, middleSection.value, rightSection.value, contentSection.value, true));
   rightResizer.value.addEventListener('mousedown', e => initDrag(e, leftSection.value, middleSection.value, rightSection.value, contentSection.value, false));
@@ -232,7 +232,7 @@ const printTime = (time) => {
 };
 
 // Uncomment and adapt the watch statement if needed
-// watch(channelList, (newChannels, oldChannels) => {
+// watch(userChannelList, (newChannels, oldChannels) => {
 //   // Handle changes
 // });
 
@@ -251,8 +251,8 @@ const scrollToBottom = () => {
 
 // Functions to format events
 const formattedEvents = computed(() => {
-  if (currentChannel.value && currentChannel.value.events) {
-    return [...currentChannel.value.events.values()].map(event => {
+  if (userCurrentChannel.value && userCurrentChannel.value.events) {
+    return [...userCurrentChannel.value.events.values()].map(event => {
       return new ChatEvent(event);
     });
   }

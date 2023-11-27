@@ -63,10 +63,10 @@ export class Channel {
     }
 
     delUser(user: User) {
-      this.users.delete(channelUser.id);
+      this.users.delete(user.id);
     }
 
-    delUserByUUID(userId: string) {
+    delUserById(userId: string) {
       this.users.delete(userId);
     }
 

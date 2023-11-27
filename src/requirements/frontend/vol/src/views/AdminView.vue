@@ -11,10 +11,10 @@
         <div class="scrollable-content">
           <ul class="list">
             <li
-              v-for="channel in channelList"
-              :key="channel.uuid"
+              v-for="channel in adminChannelList"
+              :key="channel.id"
               @click="selectChannel(channel)"
-              :class="[ channelClass(channel), { selected: selectedChannelUUID === channel.uuid }]">
+              :class="[ channelClass(channel), { selected: selectedChannelUUID === channel.id }]">
               {{ channel.name }}
             </li>
           </ul>
@@ -26,20 +26,20 @@
           <ul class="list" v-if="selectedChannel">
             <li 
               v-for="user in selectedChannel.users.values()"
-              :key="user.uuid"
+              :key="user.id"
               @click="selectUser(user)"
-              :class="{ selected: selectedUserUUID === user.uuid }">
+              :class="{ selected: selectedUserUUID === user.id }">
               <span :class="userStatus(user.user.status)">
                 &#x2B24;
               </span>
               &nbsp;
               <span :class="userClass(user)">
-                {{ user.name }}
+                {{ user.nickname }}
                 {{ user.isOwner ? '(owner)' : '' }}
                 {{ user.isAdmin && !user.isOwner ? '(admin)' : '' }}
                 {{ user.isMuted ? '(muted)' : '' }}
                 {{ user.isBanned ? '(banned)' : '' }}
-                {{ user.isFriend ? '(friend)' : '' }}
+                {{ user.friend ? '(friend)' : '' }}
               </span>
             </li>
           </ul>
@@ -54,18 +54,18 @@
           <ul class="list">
             <li
               v-for="user in allUsers"
-              :key="user.uuid"
+              :key="user.id"
               @click="selectWebUser(user)"
-              :class="{ selected: selectedUserUUID === user.uuid }">
+              :class="{ selected: selectedUserUUID === user.id }">
               <span :class="userStatus(user.status)">
                 &#x2B24;
               </span>
               &nbsp;
               <span :class="webuserClass(user)">
-                {{ user.name }}
+                {{ user.nickname }}
                 {{ user.siteRole === UserSiteRoleEnum.OWNER ? '(owner)' : '' }}
                 {{ user.siteRole === UserSiteRoleEnum.MODERATOR ? '(mod)' : '' }}
-                {{ user.siteRole === UserSiteRoleEnum.BANNED ? '(banned)' : '' }}
+                {{ user.siteBanned ? '(banned)' : '' }}
               </span>
             </li>
           </ul>
@@ -77,18 +77,18 @@
           <ul class="list">
             <li
               v-for="user in bannedUsers"
-              :key="user.uuid"
+              :key="user.id"
               @click="selectWebUser(user)"
-              :class="{ selected: selectedUserUUID === user.uuid }">
+              :class="{ selected: selectedUserUUID === user.id }">
               <span :class="userStatus(user.status)">
                 &#x2B24;
               </span>
               &nbsp;
               <span :class="webuserClass(user)">
-                {{ user.name }}
+                {{ user.nickname }}
                 {{ user.siteRole === UserSiteRoleEnum.OWNER ? '(owner)' : '' }}
                 {{ user.siteRole === UserSiteRoleEnum.MODERATOR ? '(mod)' : '' }}
-                {{ user.siteRole === UserSiteRoleEnum.BANNED ? '(banned)' : '' }}
+                {{ user.siteBanned ? '(banned)' : '' }}
               </span>
             </li>
           </ul>
@@ -134,7 +134,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch, computed } from 'vue';
+import { ref, onMounted, onUnmounted, watch, computed } from 'vue';
 import { client } from '@/services/chat-client';
 
 const selectedChannel = ref(null);
@@ -147,7 +147,7 @@ const currentPanel = ref('Chat');
 const showEditModal = ref(false);
 
 // Destructure the properties and methods from the client you want to use
-const { channelList } = client;
+const { adminChannelList } = client;
 import {
     UserSiteRoleEnum,
     UserStatusEnum,
@@ -170,14 +170,19 @@ onMounted(() => {
   selectedChannelUUID.value = null;
   selectedUser.value = null;
   selectedUserUUID.value = null;
+  client.adminWatch();
 });
 
-// Watch the channelList for changes
-watch(channelList, (newChannelList) => {
-  // Check if selectedChannel still exists in the updated channelList
+onUnmounted(() => {
+    client.adminUnwatch();
+})
+
+// Watch the adminChannelList for changes
+watch(adminChannelList, (newChannelList) => {
+  // Check if selectedChannel still exists in the updated adminChannelList
   if (currentPanel.value != 'Chat')
     return;
-  if (selectedChannel.value && !newChannelList.some(channel => channel.uuid === selectedChannel.value.uuid)) {
+  if (selectedChannel.value && !newChannelList.some(channel => channel.id === selectedChannel.value.id)) {
     selectedChannel.value = null;
     selectedChannelUUID.value = null;
     selectedUser.value = null;
@@ -191,7 +196,7 @@ watch(
     // Check if selectedUser still exists in the updated users of selectedChannel
     if (currentPanel.value != 'Chat')
       return;
-    if (selectedUser.value && !newUsersArray.some(user => user.uuid === selectedUser.value.uuid)) {
+    if (selectedUser.value && !newUsersArray.some(user => user.id === selectedUser.value.id)) {
       selectedUser.value = null;
       selectedUserUUID.value = null;
     }
@@ -203,7 +208,7 @@ watch(users, (newUsers) => {
   // Check if selectedUser still exists in the updated users array
   if (currentPanel.value != 'Web')
     return;
-  if (selectedUser.value && !newUsers.some(user => user.uuid === selectedUser.value.uuid)) {
+  if (selectedUser.value && !newUsers.some(user => user.id === selectedUser.value.id)) {
     selectedUser.value = null;
     selectedUserUUID.value = null;
   }
@@ -235,19 +240,19 @@ const webpromoteButtonText = computed(() => {
 // Functions to select channel and user
 const selectChannel = (channel) => {
   selectedChannel.value = channel;
-  selectedChannelUUID.value = channel.uuid;
+  selectedChannelUUID.value = channel.id;
   selectedUser.value = null;
   selectedUserUUID.value = null;
 };
 const selectUser = (user) => {
   selectedUser.value = user;
-  selectedUserUUID.value = user.uuid;
+  selectedUserUUID.value = user.id;
 }
 
 // Function to select web user
 const selectWebUser = (user) => {
   selectedUser.value = user;
-  selectedUserUUID.value = user.uuid;
+  selectedUserUUID.value = user.id;
 }
 
 // Computed property for toggle button text

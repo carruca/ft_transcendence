@@ -126,8 +126,8 @@ export class ChatManager {
   **  properties
   */
 
-  public getUserByID(userIntraID: number): User | undefined {
-    let user = this.usersByintraId_.get(userIntraID);
+  public getUserByIntraId(userIntraId: number): User | undefined {
+    let user = this.usersByintraId_.get(userIntraId);
 
 //    if (!user)
   //    this.raise_<void>('onChatUserGetInfo', { userIntraID, user });
@@ -179,6 +179,14 @@ export class ChatManager {
 
   public getUsers(): User[] {
     return Array.from(this.usersById_.values());
+  }
+
+  public getUsersDTO(): UserDTO[] {
+    return this.getUsers().map((user) => user.DTO);
+  }
+
+  public getChannelsDTO(): ChannelDTO[] {
+    return this.getChannels().map((channel) => channel.DTO);
   }
 
   public getConversations(): Conversation[] {
@@ -311,6 +319,7 @@ export class ChatManager {
 
     channel.addUser(user);
     user.addChannel(channel);
+    this.raise_<void>('onChannelCreated', { channel, targetUsers: [ user ] });
     await this.channelsService_.createChannelUser(createChannelUserDto);
   }
 
@@ -325,16 +334,36 @@ export class ChatManager {
 
     channel.removeUser(user);
     user.removeChannel(channel);
+    this.raise_<void>('onChannelDeleted', { channel, targetUsers: [ user ] });
 
     if (channel.isEmpty) {
        this.deleteChannel_(channel);
     }
   }
 
+  public async watchUserId(sourceUser: User, targetUserId: string): Promise<Response> {
+    const targetUser = this.getUserById(targetUserId);
+
+    if (!targetUser) return Response.UserNotExists();
+    
+    this.raise_<void>('onUserWatchUser', { sourceUser, targetUser });
+    return Response.Success();
+  }
+
+
+  public async unwatchUserId(sourceUser: User, targetUserId: string): Promise<Response> {
+    const targetUser = this.getUserById(targetUserId);
+
+    if (!targetUser) return Response.UserNotExists();
+
+    return Response.Success();
+  }
+
   public async adminWatch(sourceUser: User): Promise<Response> {
     if (!sourceUser.hasPrivileges()) return Response.InsufficientPrivileges();
 
     this.adminWatchers_.add(sourceUser);
+    this.raise_<void>('onUserAdminData', { channelsDTO: this.getChannelsDTO(), usersDTO: this.getUsersDTO() });
     return Response.Success();
   }
 
@@ -386,7 +415,7 @@ export class ChatManager {
 
     //this.raise_<void>('onUserJoined', { channel, sourceUser });
     await this.addUserToChannel_(sourceUser, channel);
-    this.raise_<void>('onChannelCreated', { channel, targetUsers: [ sourceUser ] });
+    //this.raise_<void>('onChannelCreated', { channel, targetUsers: [ sourceUser ] });
     channel.createEventGeneric(EventTypeEnum.JOIN, sourceUser);
     return Response.Success();
   }
@@ -397,7 +426,7 @@ export class ChatManager {
     if (!channel) return Response.ChannelNotExists();
     if (!channel.hasUser(sourceUser)) return Response.NotInChannel();
 
-    this.raise_<void>('onChannelDeleted', { channel, targetUsers: [ sourceUser ] });
+    //this.raise_<void>('onChannelDeleted', { channel, targetUsers: [ sourceUser ] });
     channel.createEventGeneric(EventTypeEnum.PART, sourceUser);
     await this.removeUserFromChannel_(sourceUser, channel);
     return Response.Success();
@@ -420,6 +449,11 @@ export class ChatManager {
 
     this.raise_<void>('onUserChannelsSummarized', { sourceUser, channelsSummaryDTO })
     return Response.Success();
+  }
+
+  adminListChannels(sourceUser: User): void {
+    let channelsDTO: ChannelDTO[] = [];
+
   }
 
   public async observeUserId(sourceUser: User, targetUserid: string): Promise<Response> {
@@ -461,7 +495,7 @@ export class ChatManager {
 
     //if (this.raise_<boolean>("onChannelPasswordChanging", { channel, sourceUser, newPassword }).includes(true))
     //  return Response.Denied();
-    this.raise_<void>("onChannelPasswordChanged", { channel, sourceUser, newPassword });
+    //this.raise_<void>("onChannelPasswordChanged", { channel, sourceUser, newPassword });
     channel.password = newPassword;
     channel.createEventGeneric(EventTypeEnum.PASSWORD, sourceUser);
     return Response.Success();
@@ -482,7 +516,7 @@ export class ChatManager {
     if (channel.owner === targetUser) return Response.InsufficientPrivileges();
 
     channel.createEventAction(EventTypeEnum.KICK, sourceUser, targetUser, message);
-    this.raise_<void>("onChannelClosed", { channel, targetUser });
+    //this.raise_<void>("onChannelClosed", { channel, targetUser });
     await this.removeUserFromChannel_(targetUser, channel);
     return Response.Success();
   }
@@ -1042,7 +1076,9 @@ export class ChatManager {
   private async cleanChannel_(channel: Channel): Promise<void> {
     for (const user of channel.getUsers()) {
       channel.removeUser(user);
+      this.raise_<void>('onChannelUserDeleted', { channel, targetUsers: [ channel.getUsers() ]});
       user.removeChannel(channel);
+      this.raise_<void>('onChannelDeleted', { channel, targetUsers: [ user ] });
       await this.channelsService_.removeChannelUser(channel.id, user.id);
     }
   }

@@ -42,6 +42,10 @@ export class ChannelUser {
         return this.user.siteRole;
     }
 
+    set siteRole(value: UserSiteRoleEnum) {
+        this.user.siteRole = value;
+    }
+
     get status(): UserStatusEnum {
         return this.user.status;
     }

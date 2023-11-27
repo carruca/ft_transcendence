@@ -44,6 +44,7 @@ export class User {
   private readonly conversations_ = new Set<Conversation>;
   private readonly blockUsers_ = new Set<User>;
   private readonly friendUsers_ = new Set<User>;
+  private readonly watchUsers_ = new Set<User>;
   //private watchers_ = new Set<User>;
   //
   private readonly notifyCallback_: Function;
@@ -136,22 +137,20 @@ export class User {
   removeConversation(conversation: Conversation): void {
     this.conversations_.delete(conversation);
   }
-  /*
-  @Deprecated()
+
   addWatcher(user: User): void {
-    this.watchers_.add(user);
+    this.watchUsers_.add(user);
   }
 
-  @Deprecated()
   hasWatcher(user: User): boolean {
-    return this.watchers_.has(user);
+    return this.watchUsers_.has(user);
   }
 
-  @Deprecated()
   removeWatcher(user: User): void {
-    this.watchers_.delete(user);
+    this.watchUsers_.delete(user);
   }
-  */
+
+  
 
   getChannels(): Channel[] {
     return Array.from(this.channels_);
@@ -176,26 +175,24 @@ export class User {
       for (const user of channel.getUsers()) {
         uniqueUsers.add(user);
       }
-    })
+    });
     this.conversations_.forEach(conversation => {
 	    for (const user of conversation.getUsers()) {
 		    uniqueUsers.add(user);
 	    }
-    })
+    });
     return uniqueUsers;
   }
 
-  /*
-  @Deprecated()
   getWatchers(): User[] {
-    const usersToNotify: Set<User> = this.getCommonUsers_();
+    const uniqueUsers = new Set<User>([
+      ...Array.from(this.getCommonUsers_()).filter((user) => user.status !== UserStatusEnum.OFFLINE),
+      ...Array.from(this.watchUsers_).filter((user) => user.status !== UserStatusEnum.OFFLINE),
+    ]);
 
-    this.watchers_.forEach(user => {
-      usersToNotify.add(user);
-    })
-    return Array.from(usersToNotify);
+    console.log("User: getWatchers", uniqueUsers);
+    return Array.from(uniqueUsers);
   }
-  */
 
   get intraId(): number {
     return this.intraId_;

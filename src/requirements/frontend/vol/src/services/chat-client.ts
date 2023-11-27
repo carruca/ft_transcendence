@@ -42,11 +42,23 @@ class ChatClient {
   private channelsSummary_ = ref<ChannelSummaryDTO[]>([]);
   public channelsSummary = readonly(this.channelsSummary_);
 
-  private channelList_ = ref<Channel[]>([]);
-  public channelList = readonly(this.channelList_);
+  private userChannelList_ = ref<Channel[]>([]);
+  public userChannelList = readonly(this.userChannelList_);
 
-  private currentChannel_ = ref<Channel | null>(null);
-  public currentChannel = readonly(this.currentChannel_);
+  private userCurrentChannel_ = ref<Channel | null>(null);
+  public userCurrentChannel = readonly(this.userCurrentChannel_);
+
+  private adminChannelList_ = ref<Channel[]>([]);
+  public adminChannelList = readonly(this.adminChannelList_);
+
+  private adminUserList_ = ref<User[]>([]);
+  public adminUserList = readonly(this.adminUserList_);
+
+  private adminCurrentChannel_ = ref<Channel | null>(null);
+  public adminCurrentChannel = readonly(this.adminCurrentChannel_);
+
+  private adminCurrentUser_ = ref<User | null>(null);
+  public adminCurrentUser = readonly(this.adminCurrentUser_); 
 
   constructor() {
     this.setupSocketEventHandlers_();
@@ -58,6 +70,13 @@ class ChatClient {
 
   private getUserById_(userId: string): User {
     return this.users_.get(userId);
+  }
+
+  private getChannelUserById(channelId: string, userId: string): ChannelUser {
+    const channel = getChannelById_(channelId);
+    const user = getUserBiId_(userId);
+
+    return channel.user(user);
   }
 
   get me() {
@@ -77,6 +96,8 @@ class ChatClient {
     socket.on('retsuccess', this.onRetSuccess.bind(this));
     socket.on('registered', this.onRegistered.bind(this));
     socket.on('list', this.onList.bind(this));
+    socket.on('adminData', this.onAdminData.bind(this));
+    socket.on('watch'), this.onWatch.bind(this);
 
     socket.on('channelCreated', this.onChannelCreated.bind(this));
     socket.on('channelUpdated', this.onChannelUpdated.bind(this));
@@ -98,7 +119,22 @@ class ChatClient {
     const channelsDTO = JSON.parse(responseJSON);
 
     this.channelsSummary_.value = channelsDTO; //.map(item => item.name);
-    console.log("channelsDTO", this.channelsSummary_.value);
+    console.log("userChannelsDTO", this.channelsSummary_.value);
+  }
+
+  private onAdminData(responseJSON: string): void {
+    const [ channelsDTO, usersDTO ] = JSON.parse(responseJSON);
+
+    this.adminChannelList_.value = channelsDTO;
+    this.adminUserList_.value = usersDTO;
+    console.log("onAdminData channels", this.adminChannelList_.value);
+    console.log("onAdminData users", this.adminUserList_.value);
+  }
+
+  private onWatch(responseJSON: string): void {
+    const [ targetUser ] = JSON.parse(responseJSON);
+
+    this.addUserFromDTO_(targetUser);
   }
 
   private onRetError(responseJSON: string): void {
@@ -130,12 +166,12 @@ class ChatClient {
       console.log('users', channel.users);
     }
     //console.log(meUserDTO);
-    this.channelList_.value = Array.from(this.me_.channels.values());
-    this.updateChannelList_();
+    this.userChannelList_.value = Array.from(this.me_.channels.values());
+    this.updateUserChannelList_();
   }
 
-  updateChannelList_(): void {
-    this.currentChannel_.value = this.channelList.value[0]; //this.me_.channels.values().next().value;
+  updateUserChannelList_(): void {
+    this.userCurrentChannel_.value = this.userChannelList.value[0]; //this.me_.channels.values().next().value;
   }
 
   private onChannelCreated(dataJSON: string) {
@@ -143,7 +179,7 @@ class ChatClient {
 
     console.log('onChannelCreated', channelDTO);
     this.addChannelFromDTO_(channelDTO)
-    this.updateChannelList_();
+    this.updateUserChannelList_();
   }
 
   private onChannelUpdated(dataJSON: string) {
@@ -158,7 +194,7 @@ class ChatClient {
 
     console.log('onChannelDeleted', channelId);
     this.deleteChannel_(channel);
-    this.updateChannelList_();
+    this.updateUserChannelList_();
   }
 
   private onUserCreated(dataJSON: string) {
@@ -175,6 +211,7 @@ class ChatClient {
     if (sourceUser) {
       sourceUser.update(changes);
     }
+    console.log(sourceUser);
   }
 
   private onUserDeleted(dataJSON: string) {
@@ -390,9 +427,27 @@ class ChatClient {
     socket.emit('list');
   }
 
-  public setCurrentChannel = (channelId: string): void => {
+  public adminWatch() {
+    socket.emit('adminwatch');
+  }
+
+  public adminUnwatch() {
+    socket.emit('adminunwatch');
+    this.adminChannelList_.value = [];
+    this.adminUserList_value = [];
+  }
+
+  public setUserCurrentChannel = (channelId: string): void => {
     if (this.channels_.has(channelId)) {
-      this.currentChannel_.value = this.me_.channels.get(channelId) || undefined;
+      this.userCurrentChannel_.value = this.me_.channels.get(channelId) || undefined;
+    }
+  }
+
+  public setAdminCurrentChannel = (channelId: string): void => {
+    const channel = this.adminChannelList_.find(channel => channel.id === channelId);
+
+    if (channel) {
+      this.adminCurrentChannel_.value = channel;
     }
   }
 
@@ -410,13 +465,13 @@ class ChatClient {
 
   private addChannel_(channel: Channel) {
     this.channels_.set(channel.id, channel);
-    this.channelList_.value = Array.from(this.channels_.values());
+    this.userChannelList_.value = Array.from(this.channels_.values());
   }
 
   private deleteChannel_(channel: Channel) {
     channel.clear();
     this.channels_.delete(channel.id);
-    this.channelList_.value = Array.from(this.channels_.values());
+    this.userChannelList_.value = Array.from(this.channels_.values());
   }
 
   private deleteChannelId_(channelId: string) {

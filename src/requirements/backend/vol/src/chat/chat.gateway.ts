@@ -113,7 +113,7 @@ export class ChatGateway {
         }, 100);
         return;
       }
-      let sourceUser = this.chat_.getUserByID(userIntra.id);
+      let sourceUser = this.chat_.getUserByIntraId(userIntra.id);
       if (!sourceUser) {
         const userDB = await this.usersService_.findOneByIntraId(userIntra.id);
         if (!userDB?.nickname) {
@@ -157,7 +157,7 @@ export class ChatGateway {
 
   @SubscribeMessage('create')
   async handleClientCreate(client: Socket, dataJSON: string): Promise<void> {
-    if (!client.data.user) return
+    if (!client.data.user) return;
 
     const [ channelName, password ] = JSON.parse(dataJSON);
     const sourceUser = client.data.user;
@@ -170,7 +170,7 @@ export class ChatGateway {
 
   @SubscribeMessage('join')
   async handleClientJoin(client: Socket, dataJSON: string): Promise<void> {
-    if (!client.data.user) return
+    if (!client.data.user) return;
 
     const [ channelId, password ] = JSON.parse(dataJSON);
     const sourceUser = client.data.user;
@@ -183,7 +183,7 @@ export class ChatGateway {
 
   @SubscribeMessage('close')
   async handleClientClose(client: Socket, dataJSON: string): Promise<void> {
-    if (!client.data.user) return
+    if (!client.data.user) return;
 
     const [ channelId, message ] = JSON.parse(dataJSON);
     const sourceUser = client.data.user;
@@ -196,7 +196,7 @@ export class ChatGateway {
 
   @SubscribeMessage('part')
   async handleClientPart(client: Socket, dataJSON: string): Promise<void> {
-    if (!client.data.user) return
+    if (!client.data.user) return;
 
     const [ channelId ] = JSON.parse(dataJSON);
     const sourceUser = client.data.user;
@@ -209,7 +209,7 @@ export class ChatGateway {
 
   @SubscribeMessage('list')
   async handleClientList(client: Socket): Promise<void> {
-    if (!client.data.user) return
+    if (!client.data.user) return;
 
     const sourceUser = client.data.user;
     const response = await this.chat_.summarizeChannels(sourceUser);
@@ -219,9 +219,35 @@ export class ChatGateway {
             .send();
   }
 
+  @SubscribeMessage('watch')
+  async handleWatch(client: Socket, dataJSON: string): Promise<void> {
+    if (!client.data.user) return;
+
+    const [ targetUserId ] = JSON.parse(dataJSON);
+    const sourceUser = client.data.user;
+    const response = await this.chat_.watchUserId(sourceUser, targetUserId);
+
+    response.setSourceUser(sourceUser)
+            .setEvent('watch')
+            .send();
+  }
+
+  @SubscribeMessage('unwatch')
+  async handleUnwatch(client: Socket, dataJSON: string): Promise<void> {
+    if (!client.data.user) return;
+
+    const [ targetUserId ] = JSON.parse(dataJSON);
+    const sourceUser = client.data.user;
+    const response = await this.chat_.unwatchUserId(sourceUser, targetUserId);
+
+    response.setSourceUser(sourceUser)
+            .setEvent('unwatch')
+            .send();
+  }
+
   @SubscribeMessage('kick')
   async handleClientKick(client: Socket, dataJSON: string): Promise<void> {
-    if (!client.data.user) return
+    if (!client.data.user) return;
 
     const [ channelId, targetUserId, message ] = JSON.parse(dataJSON);
     const sourceUser = client.data.user;
@@ -234,7 +260,7 @@ export class ChatGateway {
 
   @SubscribeMessage('ban')
   async handleClientBan(client: Socket, dataJSON: string): Promise<void> {
-    if (!client.data.user) return
+    if (!client.data.user) return;
 
     const [ channelId, targetUserId ] = JSON.parse(dataJSON);
     const sourceUser = client.data.user;
@@ -247,7 +273,7 @@ export class ChatGateway {
 
   @SubscribeMessage('unban')
   async handleClientUnban(client: Socket, dataJSON: string): Promise<void> {
-    if (!client.data.user) return
+    if (!client.data.user) return;
 
     const [ channelId, targetUserId ] = JSON.parse(dataJSON);
     const sourceUser = client.data.user;
@@ -259,10 +285,10 @@ export class ChatGateway {
   }
 
   @SubscribeMessage('promote')
-  async handleClientPromote(client: Socket, data: string): Promise<void> {
-    if (!client.data.user) return
+  async handleClientPromote(client: Socket, dataJSON: string): Promise<void> {
+    if (!client.data.user) return;
 
-    const [ channelId, targetUserId ] = data;
+    const [ channelId, targetUserId ] = JSON.parse(dataJSON);
     const sourceUser = client.data.user;
     const response = await this.chat_.promoteUserInChannelId(sourceUser, channelId, targetUserId);
 
@@ -272,10 +298,10 @@ export class ChatGateway {
   }
 
   @SubscribeMessage('demote')
-  async handleClientDemote(client: Socket, data: string): Promise<void> {
-    if (!client.data.user) return
+  async handleClientDemote(client: Socket, dataJSON: string): Promise<void> {
+    if (!client.data.user) return;
 
-    const [ channelId, targetUserId ] = data;
+    const [ channelId, targetUserId ] = JSON.parse(dataJSON);
     const sourceUser = client.data.user;
     const response = await this.chat_.demoteUserInChannelId(sourceUser, channelId, targetUserId);
 
@@ -287,7 +313,7 @@ export class ChatGateway {
 
   @SubscribeMessage('topic')
   async handleClientTopic(client: Socket, dataJSON: string): Promise<void> {
-    if (!client.data.user) return
+    if (!client.data.user) return;
 
     const [ channelId, topic ] = JSON.parse(dataJSON);
     const sourceUser = client.data.user;
@@ -300,7 +326,7 @@ export class ChatGateway {
 
   @SubscribeMessage('password')
   async handleClientPassword(client: Socket, dataJSON: string): Promise<void> {
-    if (!client.data.user) return
+    if (!client.data.user) return;
 
     const [ channelId, password ] = JSON.parse(dataJSON);
     const sourceUser = client.data.user;
@@ -326,7 +352,7 @@ export class ChatGateway {
 
   @SubscribeMessage('unblock')
   async handleClientUnblock(client: Socket, dataJSON: string): Promise<void>  {
-    if (!client.data.user) return
+    if (!client.data.user) return;
 
     const [ targetUserId ] = JSON.parse(dataJSON);
     const sourceUser = client.data.user;
@@ -339,7 +365,7 @@ export class ChatGateway {
 
   @SubscribeMessage('challengerequest')
   async handleClientRequestChallenge(client: Socket, dataJSON: string): Promise<void> {
-    if (!client.data.user) return
+    if (!client.data.user) return;
 
     const [ targetUserId, gameMode ] = JSON.parse(dataJSON);
     const sourceUser = client.data.user;
@@ -352,7 +378,7 @@ export class ChatGateway {
 
   @SubscribeMessage('challengeaccept')
   async handleClientAcceptChallenge(client: Socket, dataJSON: string): Promise<void> {
-    if (!client.data.user) return
+    if (!client.data.user) return;
 
     const [ targetUserId ] = JSON.parse(dataJSON);
     const sourceUser = client.data.user;
@@ -365,7 +391,7 @@ export class ChatGateway {
 
   @SubscribeMessage('challengereject')
   async handleRejectChallenge(client: Socket, dataJSON: string): Promise<void> {
-    if (!client.data.user) return
+    if (!client.data.user) return;
 
     const [ targetUserId ] = JSON.parse(dataJSON);
     const sourceUser = client.data.user;
@@ -378,7 +404,7 @@ export class ChatGateway {
 
   @SubscribeMessage('userobserve')
   async handleObserveUser(client: Socket, dataJSON: string): Promise<void> {
-    if (!client.data.user) return
+    if (!client.data.user) return;
 
     const [ targetUserId ] = JSON.parse(dataJSON);
     const sourceUser = client.data.user;
@@ -491,7 +517,23 @@ export class ChatGateway {
   onUserChannelsSummarized(event: any): void {
     const { sourceUser, channelsSummaryDTO } = event;
 
-    sourceUser.socket.emit("list", JSON.stringify(channelsSummaryDTO)); 
+    sourceUser.socket.emit('list', JSON.stringify(channelsSummaryDTO)); 
+  }
+
+  @ChatManagerSubscribe('onUserAdminData')
+  onUserAdminChannels(event: any): void {
+    const { sourceUser, channelsDTO, usersDTO } = event;
+
+
+    sourceUser.socket.emit('adminData', JSON.stringify([ sourceUser, channelsDTO, usersDTO ]));
+  }
+
+
+  @ChatManagerSubscribe('onUserWatchUser')
+  onUserWatchUser(event: any): void {
+    const { sourceUser, targetUser } = event;
+
+    sourceUser.socket.emit('watch', JSON.stringify(targetUser.DTO));
   }
 
   @ChatManagerSubscribe('onUserConnected')
@@ -525,7 +567,7 @@ export class ChatGateway {
       sourceUserId: sourceUser.id,
       changes,
     });
-console.log("onUserUpdated", changesJSON);
+    console.log("ChatGateway: onUserUpdated", changesJSON);
     for (const targetUser of targetUsers) {
       targetUser.socket.emit('userUpdated', changesJSON);
     }
