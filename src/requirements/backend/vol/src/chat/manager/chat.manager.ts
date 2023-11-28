@@ -459,16 +459,17 @@ export class ChatManager {
 
   }
 
-  public async observeUserId(sourceUser: User, targetUserid: string): Promise<Response> {
+  public async spectateUserId(sourceUser: User, targetUserid: string): Promise<Response> {
     const targetUser = this.getUserById(targetUserid);
 
     if (!targetUser) return Response.UserNotExists();
+    if (targetUser.hasBlocked(sourceUser)) return Response.Success();
     if (sourceUser.status === UserStatusEnum.IN_GAME) return Response.YoureInGame();
     if (targetUser.status !== UserStatusEnum.IN_GAME) return Response.UserInGame();
 
     //TODO advertir al resto de usuarios el cambio de estado.
     sourceUser.status = UserStatusEnum.IN_GAME;
-    this.raise_<void>('onUserUserObserved', { sourceUser, targetUser })
+    this.raise_<void>('onUserSpectated', { sourceUser, targetUser })
     return Response.Success();
   }
 
@@ -661,35 +662,35 @@ export class ChatManager {
     return Response.Success();
   }
 
-  public async requestChallengeUserId(sourceUser: User, targetUserid: string, gameMode: GameMode): Promise<Response> {
+  public async requestChallengeUserId(sourceUser: User, targetUserid: string, gameMode?: GameMode): Promise<Response> {
     const targetUser = this.getUserById(targetUserid);
 
     if (!targetUser) return Response.UserNotExists();
     if (sourceUser === targetUser) return Response.Success();
-    if (this.getChallengeByUsers(sourceUser, targetUser)) return Response.PendingChallenge();
+    //if (this.getChallengeByUsers(sourceUser, targetUser)) return Response.PendingChallenge();
     if (sourceUser.hasBlocked(targetUser)) return Response.Success();
     if (targetUser.hasBlocked(sourceUser)) return Response.Success();
     if (sourceUser.status === UserStatusEnum.OFFLINE) return Response.UserNotConnected();
     if (sourceUser.status === UserStatusEnum.IN_GAME) return Response.UserInGame();
     if (sourceUser.status === UserStatusEnum.AWAY) return Response.UserAway();
 
-    if (this.raise_<boolean>('onUserChallengeRequested', { sourceUser, targetUser }).includes(true))
-      return Response.Denied();
-    this.createChallenge(sourceUser, targetUser);
-    this.raise_<void>('onUserChallengeRequest', { sourceUser, targetUser });
+    //if (this.raise_<boolean>('onUserChallengeRequested', { sourceUser, targetUser }).includes(true))
+    //  return Response.Denied();
+    //this.createChallenge(sourceUser, targetUser);
+    this.raise_<void>('onUserChallengeRequested', { sourceUser, targetUser, gameMode });
     return Response.Success();
   }
 
-  public async acceptChallengeUserId(sourceUser: User, targetUserid: string): Promise<Response> {
+  public async acceptChallengeUserId(sourceUser: User, targetUserid: string, gameMode?: GameMode): Promise<Response> {
     const targetUser = this.getUserById(targetUserid);
 
     if (!targetUser) return Response.UserNotExists();
     if (sourceUser === targetUser) return Response.Success();
 
-    const challenge = this.getChallengeByUsers(sourceUser, targetUser);
+    //const challenge = this.getChallengeByUsers(sourceUser, targetUser);
 
-    if (!challenge) return Response.Success();
-    if (challenge.targetUser !== targetUser) return Response.Success();
+    //if (!challenge) return Response.Success();
+    //if (challenge.targetUser !== targetUser) return Response.Success();
     if (sourceUser.status === UserStatusEnum.OFFLINE) return Response.UserNotConnected();
     if (sourceUser.status === UserStatusEnum.IN_GAME) return Response.UserInGame();
     if (sourceUser.status === UserStatusEnum.AWAY) return Response.UserAway();
@@ -698,7 +699,8 @@ export class ChatManager {
       return Response.Denied();
     this.deleteChallenge(sourceUser, targetUser);
     targetUser.status = UserStatusEnum.IN_GAME;
-    this.raise_<void>('onUserChallengeAccepted', { sourceUser, targetUser });
+    sourceUser.status = UserStatusEnum.IN_GAME;
+    this.raise_<void>('onUserChallengeAccepted', { sourceUser, targetUser, gameMode });
     return Response.Success();
   }
 
@@ -708,10 +710,10 @@ export class ChatManager {
     if (!targetUser) return Response.UserNotExists();
     if (sourceUser === targetUser) return Response.Success();
 
-    const challenge = this.getChallengeByUsers(sourceUser, targetUser);
+    //const challenge = this.getChallengeByUsers(sourceUser, targetUser);
 
-    if (!challenge) return Response.Success();
-    if (challenge.targetUser !== targetUser) return Response.Success();
+    //if (!challenge) return Response.Success();
+    //if (challenge.targetUser !== targetUser) return Response.Success();
 
     if (this.raise_<boolean>('onUserChallengeRejecting', { sourceUser, targetUser }).includes(true))
       return Response.Denied();

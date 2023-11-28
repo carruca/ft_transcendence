@@ -402,16 +402,16 @@ export class ChatGateway {
             .send();
   }
 
-  @SubscribeMessage('userobserve')
-  async handleObserveUser(client: Socket, dataJSON: string): Promise<void> {
+  @SubscribeMessage('spectate')
+  async handleSpectate(client: Socket, dataJSON: string): Promise<void> {
     if (!client.data.user) return;
 
     const [ targetUserId ] = JSON.parse(dataJSON);
     const sourceUser = client.data.user;
-    const response = await this.chat_.observeUserId(sourceUser, targetUserId)
+    const response = await this.chat_.spectateUserId(sourceUser, targetUserId)
 
     response.setSourceUser(sourceUser)
-            .setEvent('userobserve')
+            .setEvent('spectate')
             .send();
   }
 
@@ -498,19 +498,26 @@ export class ChatGateway {
     return true;
   }
 
-  @ChatManagerSubscribe('onUserChallengeRequest')
-  onUserChallengeRequest(event: any): void {
-    event.targetUser.socket?.emit('challengerequest', event.sourceUser.id, event.gameMode);
+  @ChatManagerSubscribe('onUserChallengeRequested')
+  onUserChallengeRequested(event: any): void {
+    const { sourceUser, targetUser, gameMode } = event;
+
+    targetUser.socket?.emit('challengeRequested', JSON.stringify({ sourceUserId: sourceUser.id, gameMode }));
   }
 
   @ChatManagerSubscribe('onUserChallengeAccepted')
   onUserChallengeAccepted(event: any): void {
-    event.sourceUser.socket?.emit('challengeaccepted', event.targetUser.id, event.gameMode);
+    const { sourceUser, targetUser, gameMode } = event;
+
+    targetUser.socket?.emit('challengeAccepted', JSON.stringify({ sourceUserId: sourceUser.id, gameMode }));
+    sourceUser.socket?.emit('challengeAccepted', JSON.stringify({ sourceUserId: targetUser.id, gameMode }));
   }
 
   @ChatManagerSubscribe('onUserChallengeRejected')
   onUserChallengeRejected(event: any): void {
-    event.sourceUser.socket?.emit('challengerejected', event.targetUser.id, event.gameMode);
+    const { sourceUser, targetUser, gameMode } = event;
+
+    targetUser.socket?.emit('challengeRejected', JSON.stringify({ sourceUserId: sourceUser.id, gameMode }));
   }
 
   @ChatManagerSubscribe('onUserChannelsSummarized')
@@ -622,9 +629,10 @@ export class ChatGateway {
   @ChatManagerSubscribe('onChannelUpdated')
   onChannelUpdated(data: any): void {
     const { channel, targetUsers, changes } = data;
-
-    changes.id = channel.id;
-    const changesJSON = JSON.stringify(changes);
+    const changesJSON = JSON.stringify({
+      channelId: channel.id,
+      ...changes,
+    });
 
     console.log("Channel UPDATE:", changes);
     for (const targetUser of targetUsers) {

@@ -33,7 +33,11 @@ import {
 
 import socket from './ws';
 
+import router from '@/router';
+
 import './client';
+
+
 
 class ChatClient {
   private me_: User;
@@ -102,6 +106,9 @@ class ChatClient {
     socket.on('adminData', this.onAdminData.bind(this));
     socket.on('watch', this.onWatch.bind(this));
 
+    socket.on('challengeRequested', this.onChallengeRequested.bind(this));
+    socket.on('challengeRejected', this.onChallengeRejected.bind(this));
+    socket.on('challengeAccepted', this.onChallengeAccepted.bind(this));
 
     socket.on('channelCreated', this.onChannelCreated.bind(this));
     socket.on('channelUpdated', this.onChannelUpdated.bind(this));
@@ -136,6 +143,29 @@ class ChatClient {
     this.adminUserList_.value = usersDTO;
     console.log("onAdminData channels", this.adminChannelList_.value);
     console.log("onAdminData users", this.adminUserList_.value);
+  }
+
+  private onChallengeAccepted(responseJSON: string): void {
+    const { sourceUserId, gameMode } = JSON.parse(responseJSON);
+    const sourceUser = this.getUserById_(sourceUserId);
+  
+    //TODO: modal notify?? ... change browser route to game
+    router.push('/game');
+  }
+
+  private onChallengeRejected(responseJSON: string): void {
+    const { sourceUserId, gameMode } = JSON.parse(responseJSON);
+    const sourceUser = this.getUserById_(sourceUserId);
+
+    //TODO: modal notify game reject 
+  }
+
+  private onChallengeRequested(responseJSON: string): void {
+    const { sourceUserId, gameMode } = JSON.parse(responseJSON);
+    const sourceUser = this.getUserById_(sourceUserId);
+
+    //TODO: modal notify with user and game mode.
+    console.log("onChallengeRequested", sourceUser.nickname, sourceUser.id);
   }
 
   private onWatch(responseJSON: string): void {
@@ -214,10 +244,13 @@ class ChatClient {
   }
 
   private onChannelUpdated(dataJSON: string) {
-    const data = JSON.parse(dataJSON);
+    const { channelId, userId, ...changes} = JSON.parse(dataJSON);
+    const channel = this.getChannelById_(channelId);
+    const user = this.getUserById_(userId);
 
-    console.log('onChannelUpdated', data);
 
+    console.log('onChannelUpdated', data); 
+    channel.update(changes, user);
   }
 
   private onChannelDeleted(dataJSON: string) {
@@ -457,6 +490,22 @@ class ChatClient {
 
   public unblock(userId: string) {
     socket.emit('unblock', JSON.stringify([ userId ]));
+  }
+
+  public challengeRequest(userId: string, gameMode?: GameMode) {
+    socket.emit('challengerequest', JSON.stringify([ userId, gameMode ]));
+  }
+
+  public challengeAccept(userId: string, gameMode?: GameMode) {
+    socket.emit('challengeaccept', JSON.stringify([ userId, gameMode ]));
+  }
+
+  public challengeReject(userId: string) {
+    socket.emit('challengereject', JSON.stringify([ userId ]));
+  }
+
+  public spectate(userId: string) {
+    socket.emit('spectate'. JSON.stringify([ userId ]));
   }
 
   public list() {
