@@ -25,7 +25,7 @@ export class ExceptionInterceptor implements ExceptionFilter {
         const message =
             exception instanceof HttpException
                 ? exception.message
-                : 'I am a teapot'
+                : 'I am a teapot';
 
         response.status(status).json({
             statusCode: status,

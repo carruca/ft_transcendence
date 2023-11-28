@@ -359,7 +359,7 @@ const onRightClick = (selected, item, event) => {
   contextEventUUID.value = null;
   contextUserUUID.value = null;
 
-  const myUser = client.me;
+  const myUser = client.me.value;
   const myChannelUser = client.getChannelUserById(selectedChannelUUID.value, myUser.id);
 
   // TODO create the array of options based on our permissions and user permissions
