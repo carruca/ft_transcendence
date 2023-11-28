@@ -8,7 +8,9 @@ import {
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { CreateBlockDto } from './dto/create-block.dto';
+import { ReturnBlockDto } from './dto/return-block.dto';
 import { CreateBanDto } from './dto/create-ban.dto';
+import { ReturnBanDto } from './dto/return-ban.dto';
 
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -56,6 +58,12 @@ export class UsersService {
 
   findAll(): Promise<User[]> {
     return this.usersRepository.find();
+  }
+
+  async	findAllWithFriendsAndBlocks(): Promise<User[]> {
+    return this.usersRepository.find({
+      relations: ['friends', 'blocks'],
+    })
   }
 
   findAllWithChannels(): Promise<User[]> {
@@ -132,7 +140,7 @@ export class UsersService {
     return this.usersRepository.save(user);
   }
 
-  async createBan(createBanDto: CreateBanDto) : Promise<Ban> {
+  async createBan(createBanDto: CreateBanDto) : Promise<ReturnBanDto> {
     const user = await this.usersRepository.findOne({
       relations: ['bans'],
       where: {
@@ -162,12 +170,16 @@ export class UsersService {
     await this.usersRepository.save(user);
     channel.bans.push(newBan);
     await this.channelsRepository.save(channel);
-    return newBan;
+    return {
+      id: newBan.id,
+      userId: createBanDto.userId,
+      channelId: createBanDto.channelId
+    };
   }
-
+/*
   async getBansByUser(userId: string) {
     const user = await this.usersRepository.findOne({
-      relations: ['bans'],
+      relations: ['bans', 'bans.channel'],
       where: {
         id: userId,
       },
@@ -176,34 +188,32 @@ export class UsersService {
       throw new HttpException('User not found', HttpStatus.NOT_FOUND);
     }
 
-    return user.bans;
+//    console.log(user.bans);
+    const result = user.bans.map((ban) => ({
+      channelId: ban.channel.id,
+    }));
+    console.log(result);
   }
-
+*/
   async removeBan(userId: string, channelId: string) {
-    const user = await this.usersRepository.findOne({
-      relations: ['bans'],
+    const ban = await this.bansRepository.findOne({
       where: {
-        id: userId,
-      },
+        user: {
+          id: userId
+        },
+        channel: {
+          id: channelId
+        },
+      }
     });
-    if (!user) {
-      throw new HttpException('User not found', HttpStatus.NOT_FOUND);
+    if (!ban) {
+      throw new HttpException('Ban not found', HttpStatus.NOT_FOUND);
     }
 
-    const channel = await this.channelsRepository.findOne({
-      relations: ['bans'],
-      where: {
-        id: channelId,
-      },
-    });
-    if (!channel) {
-      throw new HttpException('Channel not found', HttpStatus.NOT_FOUND);
-    }
-
-    await this.bansRepository.delete({ user, channel });
+    await this.bansRepository.remove(ban);
   }
 
-  async createBlock(createBlockDto: CreateBlockDto) : Promise<Block> {
+  async createBlock(createBlockDto: CreateBlockDto) : Promise<ReturnBlockDto> {
     const user = await this.usersRepository.findOne({
       relations: ['blocks'],
       where: {
@@ -218,10 +228,15 @@ export class UsersService {
       user,
       createBlockDto.blockId
     );
+
     await this.blocksRepository.save(newBlock);
     user.blocks.push(newBlock);
     await this.usersRepository.save(user);
-    return newBlock;
+    return {
+      id: newBlock.id,
+      userId: createBlockDto.userId,
+      blockId: createBlockDto.blockId
+    };
   }
 
   async getBlocks(userId: string) : Promise<Block[]> {
