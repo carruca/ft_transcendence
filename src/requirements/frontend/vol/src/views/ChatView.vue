@@ -64,6 +64,7 @@
                   :title="getUserTitle(event.targetChannelUser)"
                   @click="onClick(event, event.targetChannelUser)"
                   @contextmenu="onRightClick(event, event.targetChannelUser, $event)">
+                &nbsp;
                 {{ event.target.name }}
               </span>
             </div>
