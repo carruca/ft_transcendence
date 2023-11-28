@@ -611,6 +611,8 @@ function userStatus(status) {
     return 'status-dnd';
   if (status === UserStatusEnum.AWAY)
     return 'status-away';
+  if (status == UserStatusEnum.IN_GAME)
+    return 'status-dnd';
   return 'status-offline';
 }
 
