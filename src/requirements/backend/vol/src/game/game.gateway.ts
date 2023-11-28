@@ -142,8 +142,8 @@ export class GameGateway implements OnGatewayDisconnect {
   onUserChallengeAccepted(event: any): void {
     console.log(`onUserChallengeAccepted: source ${event.sourceId} | target ${event.targetId} | mode ${event.mode}`);
   }
-  @ChatManagerSubscribe('onUserSpectate')
-  onUserSpectate(event: any): void {
-    console.log(`onUserSpectate: source ${event.sourceId} | target ${event.targetId} | mode ${event.mode}`);
+  @ChatManagerSubscribe('onUserChallengeSpectated')
+  onUserChallengeSpectated(event: any): void {
+    console.log(`onUserSpectated: source ${event.sourceId} | target ${event.targetId} | mode ${event.mode}`);
   }
 }

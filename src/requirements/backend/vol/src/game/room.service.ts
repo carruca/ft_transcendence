@@ -255,7 +255,6 @@ export class RoomService {
 
     // change users status
     for (const user of room.players) {
-      console.log("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
       user.socket!.data.user.status = UserStatusEnum.IN_GAME;
     }
     for (const user of room.spectators) {

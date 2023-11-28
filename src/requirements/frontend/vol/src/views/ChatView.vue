@@ -454,7 +454,7 @@ const executeContextAction = ( option, item ) => {
       client.challengeRequest(item.user.id);
     } else if (option === 'Spectate') {
       console.log(`Spectating user '${item.user.name}'`);
-      client.spectate(item.user.id);
+      client.challengeSpectate(item.user.id);
     } else if (option === 'Mute') {
       console.log(`Muting user '${item.user.name}'`)
       client.mute(selectedChannelUUID.value, item.user.id);
