@@ -147,26 +147,20 @@ const currentPanel = ref('Chat');
 const showEditModal = ref(false);
 
 // Destructure the properties and methods from the client you want to use
-const { adminChannelList } = client;
+const { adminChannelList, adminUserList } = client;
 import {
     UserSiteRoleEnum,
     UserStatusEnum,
 } from '@/services/enum';
 import { User } from '@/services/model';
 import editChannelModal from '@/components/EditChannelModal.vue';
-const users = ref([
-  new User('uuid1', 'Alice', UserSiteRoleEnum.ADMIN, UserStatusEnum.ONLINE, true, false, false),
-  new User('uuid2', 'Bob', UserSiteRoleEnum.USER, UserStatusEnum.ONLINE, false, true, false),
-  new User('uuid3', 'Charlie', UserSiteRoleEnum.USER, UserStatusEnum.OFFLINE, false, false, true),
-]);
 
 // Computed users and banned users array
-const allUsers = computed(() => users.value.filter(u => !u.isBanned));
-const bannedUsers = computed(() => users.value.filter(u => u.isBanned));
+const allUsers = computed(() => adminUserList.value.filter(u => !u.isBanned));
+const bannedUsers = computed(() => adminUserList.value.filter(u => u.isBanned));
 
 onMounted(() => {
-  //client.playAdminSim(); // FIXME only for testing
-  selectChannel.value = null;
+  selectedChannel.value = null;
   selectedChannelUUID.value = null;
   selectedUser.value = null;
   selectedUserUUID.value = null;
@@ -174,7 +168,7 @@ onMounted(() => {
 });
 
 onUnmounted(() => {
-    client.adminUnwatch();
+  client.adminUnwatch();
 })
 
 // Watch the adminChannelList for changes
@@ -204,7 +198,7 @@ watch(
   { deep: true }
 );
 // Watch the selectedUser for changes to the global user list
-watch(users, (newUsers) => {
+watch(adminUserList, (newUsers) => {
   // Check if selectedUser still exists in the updated users array
   if (currentPanel.value != 'Web')
     return;

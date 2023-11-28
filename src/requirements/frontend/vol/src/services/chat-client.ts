@@ -470,7 +470,7 @@ class ChatClient {
   public adminUnwatch() {
     socket.emit('adminunwatch');
     this.adminChannelList_.value = [];
-    this.adminUserList_value = [];
+    this.adminUserList_.value = [];
   }
 
   public setUserCurrentChannel = (channelId: string): void => {
