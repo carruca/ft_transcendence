@@ -8,7 +8,7 @@ import {
 import { Socket } from 'socket.io';
 import { Server } from 'net';
 
-import { Axis, Axis2, Player, Room } from './game.interface';
+import { Axis, Axis2, Player, Room, Mode } from './game.interface';
 import { RoomService } from './room.service';
 import { ChatManagerHandler, ChatManagerSubscribe, ChatManagerInstance } from '../chat/decorator';
 import { ChatManager } from '../chat/manager';
@@ -150,7 +150,7 @@ export class GameGateway implements OnGatewayDisconnect {
       switch (queuedEvent.eventType) {
         case EventType.Challenge:
           console.log("Processed challenge event for: " + client.data.user?.nickname);
-          // TODO Handle challenge event
+          this.room_service.join_room(queuedEvent.data.room, client);
           break;
         case EventType.Spectate:
           console.log("Processed spectate event for: " + client.data.user?.nickname);
@@ -181,6 +181,11 @@ export class GameGateway implements OnGatewayDisconnect {
   @ChatManagerSubscribe('onUserChallengeAccepted')
   onUserChallengeAccepted(event: any): void {
     console.log("onUserChallengeAccepted");
+    const room: Room | undefined = this.room_service.new_room("normal");
+    if (room === undefined) return;
+
+    this.queueEvent(event.sourceUser.id, EventType.Challenge, { room });
+    this.queueEvent(event.targetUser.id, EventType.Challenge, { room });
   }
   @ChatManagerSubscribe('onUserChallengeSpectated')
   onUserChallengeSpectated(event: any): void {

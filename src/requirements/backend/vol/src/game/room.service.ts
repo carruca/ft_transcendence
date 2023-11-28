@@ -107,6 +107,10 @@ export class RoomService {
       // find disconnected player
       const disconnected_player = room.players.find(player => socket.data.user.id === player.socket!.data.user.id);
       if (disconnected_player) {
+        if (room.state === State.WAITING || room.state === State.STARTING) {
+          this.fatal(room);
+          break;
+        }
         const disconnected_player_id = disconnected_player.id;
         const is_odd = disconnected_player_id % 2 === 1;
         // separate winners and losers based on the disconnected player's team (odd or even)
@@ -173,11 +177,11 @@ export class RoomService {
     return ret;
   }
   join_room(room: Room, socket: Socket | undefined) {
-    // change user status
-    socket!.data.user.status = UserStatusEnum.IN_GAME;
+    // check if room exists (can be deleted on "END" if one users disconnects while waiting)
+    if (room === undefined || room.state === State.END) return;
 
     // check if room is full to join as player or spectator
-    if (room.state == State.WAITING) {
+    if (room.state === State.WAITING) {
       const player: Player = {
         id: room.players.length + 1,
         socket: socket,
@@ -201,7 +205,7 @@ export class RoomService {
       socket!.emit('ready', room.code, room.players.length % 2 === 1 ? true : false);
 
       //console.log("sending player ready: " + room.code);
-    } else {
+    } else if (room.state === State.STARTING || room.state === State.INGAME) {
       room.spectators.push(socket);
       socket!.emit('ready', room.code, true, true);
 
@@ -212,7 +216,13 @@ export class RoomService {
       socket!.emit('score', room.players[0].stats.score, room.players[1].stats.score);
 
       //console.log("sending spectator ready: " + room.code);
+    } else {
+      console.log("Error: room state is invalid");
     }
+
+    // change user status
+    socket!.data.user.status = UserStatusEnum.IN_GAME;
+
   }
   leave(client: Socket) {
     this.disconnect(client);
@@ -283,18 +293,22 @@ export class RoomService {
     startCountdown();
   }
 
+  change_user_status(room: Room, status: UserStatusEnum): void {
+    for (const player of room.players) {
+      player.socket!.data.user.status = status;
+    }
+    for (const spectator of room.spectators) {
+      spectator!.data.user.status = status;
+    }
+  }
+
   stop(room: Room, winners: Player[], losers: Player[]): void {
     if (room.state === State.END)
       return;
     room.state = State.END;
 
     // change users status
-    for (const user of room.players) {
-      user.socket!.data.user.status = UserStatusEnum.ONLINE;
-    }
-    for (const user of room.spectators) {
-      user!.data.user.status = UserStatusEnum.ONLINE;
-    }
+    this.change_user_status(room, UserStatusEnum.ONLINE);
 
     // send score, winners and losers to API
     function createUserStats(players: Player[]): UserStats[] {
@@ -343,6 +357,17 @@ export class RoomService {
     }
 
     //console.log(winText);
+    RoomService.update(room, 'stop', winText);
+    this.rooms.delete(room.code);
+  }
+
+  fatal(room: Room) : void {
+    room.state = State.END;
+
+    // change users status
+    this.change_user_status(room, UserStatusEnum.ONLINE);
+
+    let winText: string = "Rival disconnected!";
     RoomService.update(room, 'stop', winText);
     this.rooms.delete(room.code);
   }
