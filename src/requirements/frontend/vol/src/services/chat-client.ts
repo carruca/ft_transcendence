@@ -177,13 +177,6 @@ class ChatClient {
     console.log("onChallengeRequested", sourceUser.nickname, sourceUser.id);
   }
 
-  private onChallengeSpectated(responseJSON: string): void {
-    const { sourceUserId, gameMode } = JSON.parse(responseJSON);
-    const sourceUser = this.getUserById_(sourceUserId);
-
-    router.push('/game');
-  }
-
   private onWatch(responseJSON: string): void {
     const [ targetUser ] = JSON.parse(responseJSON);
 
