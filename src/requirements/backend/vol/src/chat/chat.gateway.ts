@@ -408,7 +408,7 @@ export class ChatGateway {
 
     const [ targetUserId ] = JSON.parse(dataJSON);
     const sourceUser = client.data.user;
-    const response = await this.chat_.spectateUserId(sourceUser, targetUserId)
+    const response = await this.chat_.spectateChallengeUserId(sourceUser, targetUserId)
 
     response.setSourceUser(sourceUser)
             .setEvent('challengespectate')
@@ -499,7 +499,7 @@ export class ChatGateway {
   }
 
   @ChatManagerSubscribe('onUserChallengeSpectated')
-  onUserChallengeRequested(event: any): void {
+  onUserChallengeSpectated(event: any): void {
     const { sourceUser, targetUser, gameMode } = event;
 
     targetUser.socket?.emit('challengeSpectated', JSON.stringify({ sourceUserId: sourceUser.id, gameMode }));
