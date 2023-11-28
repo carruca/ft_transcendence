@@ -505,7 +505,7 @@ class ChatClient {
   }
 
   public spectate(userId: string) {
-    socket.emit('spectate'. JSON.stringify([ userId ]));
+    socket.emit('spectate', JSON.stringify([ userId ]));
   }
 
   public list() {

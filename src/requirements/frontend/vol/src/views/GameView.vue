@@ -393,6 +393,7 @@ socket.on('error_queue', () => {
     button2Text.value = button2DefText;
     button2Pressed.value = !button2Pressed.value;
   }
+  console.log("Error: already in queue");
 });
 
 socket.on('score', (p1: number, p2: number) => {

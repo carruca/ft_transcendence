@@ -64,15 +64,15 @@ export class GameGateway implements OnGatewayDisconnect {
   onReady(client: Socket): void {
     if (!client.data.user)
       return;
-    const player: Player | null = this.room_service.get_player(client.data.user.uuid);
+    const player: Player | null = this.room_service.get_player(client.data.user.id);
     if (!player)
       return;
     this.room_service.ready(player);
   }
 
   @SubscribeMessage('get-room')
-  get_room(client: Socket, uuid: string): void {
-    const room: Room | null = this.room_service.get_user_roomcode(uuid);
+  get_room(client: Socket, id: string): void {
+    const room: Room | null = this.room_service.get_user_roomcode(id);
     if (room !== null) {
       client.emit('room', room.code);
     }
@@ -99,7 +99,7 @@ export class GameGateway implements OnGatewayDisconnect {
 
   @SubscribeMessage('down')
   keyPress(client: Socket, key: string): void {
-    const player: Player | null = this.room_service.get_player(client.data.user.uuid);
+    const player: Player | null = this.room_service.get_player(client.data.user.id);
     if (player === null) return;
     let axis: Axis2 = player.axis;
 
@@ -116,7 +116,7 @@ export class GameGateway implements OnGatewayDisconnect {
 
   @SubscribeMessage('up')
   keyRelease(client: Socket, key: string): void {
-    const player: Player | null = this.room_service.get_player(client.data.user.uuid);
+    const player: Player | null = this.room_service.get_player(client.data.user.id);
     if (player === null) return;
     let axis: Axis2 = player.axis;
     if (key === "w" || key === "," || key === "arrowup") {
@@ -140,6 +140,10 @@ export class GameGateway implements OnGatewayDisconnect {
 
   @ChatManagerSubscribe('onUserChallengeAccepted')
   onUserChallengeAccepted(event: any): void {
-    console.log(`onUserChallengeAccepted: source ${event.sourceUser.uuid} | target ${event.targetUser.uuid} | mode ${event.mode}`);
+    console.log(`onUserChallengeAccepted: source ${event.sourceId} | target ${event.targetId} | mode ${event.mode}`);
+  }
+  @ChatManagerSubscribe('onUserSpectate')
+  onUserSpectate(event: any): void {
+    console.log(`onUserSpectate: source ${event.sourceId} | target ${event.targetId} | mode ${event.mode}`);
   }
 }
