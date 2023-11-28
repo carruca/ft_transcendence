@@ -80,12 +80,12 @@
       <!-- Resizer between columns -->
       <div class="resizer" ref="rightResizer"></div>
       <!-- Column for User List -->
-      <div class="section users-section" ref="rightSection" v-if="userCurrentChannel">
+      <div class="section users-section" ref="rightSection">
         <div class="section-header">
           <h2>Users</h2>
         </div>
         <div class="scrollable-content">
-          <div class="user-list">
+          <div class="user-list" v-if="userCurrentChannel">
             <ul class="list">
               <li
                   v-for="channelUser in userCurrentChannel.users.values()"
@@ -108,6 +108,9 @@
                   {{ getUserInfo(channelUser) }}
               </li>
             </ul>
+          </div>
+          <div v-else>
+            <p>No channel selected.</p>
           </div>
         </div>
       </div>
