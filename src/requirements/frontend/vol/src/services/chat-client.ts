@@ -73,7 +73,7 @@ class ChatClient {
     return this.channels_.get(channelId); 
   }
 
-  private getUserById_(userId: string): User {
+  public getUserById(userId: string): User {
     return this.users_.get(userId);
   }
 
@@ -81,7 +81,7 @@ class ChatClient {
     const channel = this.getChannelById_(channelId);
     if (!channel) return undefined;
   
-    const user = this.getUserById_(userId);
+    const user = this.getUserById(userId);
     if (!user) return undefined;
   
     return channel?.user(user);
@@ -149,7 +149,7 @@ class ChatClient {
 
   private onChallengeSpectated(responseJSON: string): void {
     const { sourceUserId, gameMode } = JSON.parse(responseJSON);
-    const sourceUser = this.getUserById_(sourceUserId);
+    const sourceUser = this.getUserById(sourceUserId);
   
     //TODO: modal notify?? 
     router.push('/game');
@@ -157,7 +157,7 @@ class ChatClient {
 
   private onChallengeAccepted(responseJSON: string): void {
     const { sourceUserId, gameMode } = JSON.parse(responseJSON);
-    const sourceUser = this.getUserById_(sourceUserId);
+    const sourceUser = this.getUserById(sourceUserId);
   
     //TODO: modal notify?? 
     router.push('/game');
@@ -165,14 +165,14 @@ class ChatClient {
 
   private onChallengeRejected(responseJSON: string): void {
     const { sourceUserId, gameMode } = JSON.parse(responseJSON);
-    const sourceUser = this.getUserById_(sourceUserId);
+    const sourceUser = this.getUserById(sourceUserId);
 
     //TODO: modal notify game reject 
   }
 
   private onChallengeRequested(responseJSON: string): void {
     const { sourceUserId, gameMode } = JSON.parse(responseJSON);
-    const sourceUser = this.getUserById_(sourceUserId);
+    const sourceUser = this.getUserById(sourceUserId);
 
     //TODO: modal notify with user and game mode.
     console.log("onChallengeRequested", sourceUser.nickname, sourceUser.id);
@@ -201,7 +201,7 @@ class ChatClient {
   private onUserParted(responseJSON: string): void {
     const { channelId, sourceUserId } = JSON.parse(responseJSON);
     const channel = this.getChannelById_(channelId);
-    const sourceUser = this.getUserById_(sourceUserId);
+    const sourceUser = this.getUserById(sourceUserId);
 
     this.delUserFromChannel_(channel, sourceUser);
   }
@@ -262,7 +262,7 @@ class ChatClient {
   private onChannelUpdated(dataJSON: string) {
     const { channelId, userId, ...changes} = JSON.parse(dataJSON);
     const channel = this.getChannelById_(channelId);
-    const user = this.getUserById_(userId);
+    const user = this.getUserById(userId);
     const channelUser = this.getChannelUserById(channelId, userId);
 
 
@@ -288,7 +288,7 @@ class ChatClient {
 
   private onUserUpdated(dataJSON: string) {
     const { sourceUserId, changes } = JSON.parse(dataJSON);
-    const sourceUser = this.getUserById_(sourceUserId);
+    const sourceUser = this.getUserById(sourceUserId);
    
     console.log('onUserUpdated', sourceUserId, changes, sourceUser);
     if (sourceUser) {
@@ -344,7 +344,7 @@ class ChatClient {
   }
 
   private addUserFromDTO_(userDTO: UserDTO): User {
-    let user = this.getUserById_(userDTO.id);
+    let user = this.getUserById(userDTO.id);
     let channel: Channel;
     let channelUser: ChannelUser[];
 
@@ -362,7 +362,7 @@ class ChatClient {
   }
 
   private channelFromDTO_(channelDTO: ChannelDTO): Channel {
-    let ownerUser = this.getUserById_(channelDTO.ownerDTO.id);
+    let ownerUser = this.getUserById(channelDTO.ownerDTO.id);
 
     if (!ownerUser) {
       ownerUser = this.userFromDTO_(channelDTO.ownerDTO);
@@ -390,7 +390,7 @@ class ChatClient {
   }
 
   private channelUserFromDTO_(channelUserDTO: ChannelUserDTO): ChannelUser {
-    let user = this.getUserById_(channelUserDTO.userDTO.id);
+    let user = this.getUserById(channelUserDTO.userDTO.id);
     
     if (!user) {
       user = this.userFromDTO_(channelUserDTO.userDTO);
@@ -543,12 +543,12 @@ class ChatClient {
     this.adminUserList_.value = [];
   }
 
-  public userWatch() {
-    socket.emit('userwatch');
+  public userWatch(userId: string) {
+    socket.emit('userwatch', JSON.stringify([ userId ]));
   }
 
-  public userUnwatch() {
-    socket.emit('userunwatch');
+  public userUnwatch(userId: string) {
+    socket.emit('userunwatch', JSON.stringify([ userId ]));
   }
 
 
@@ -604,7 +604,7 @@ class ChatClient {
   }
 
   private deleteUserId_(userId: string) {
-    const user = this.getUserById_(userId);
+    const user = this.getUserById(userId);
 
     if (user)
       this.deleteUser_(user);
