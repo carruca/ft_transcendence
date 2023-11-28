@@ -388,8 +388,16 @@ const onRightClick = (selected, item, event) => {
 
     if (myChannelUser.isOwner || myChannelUser.isAdmin) {
       // TODO what if target is admin or owner?
-      contextMenuOptions.value.push('Promote');
-      contextMenuOptions.value.push('Ban');
+      if (myChannelUser.isOwner && item.isAdmin && !item.isOwner) {
+        contextMenuOptions.value.push('Demote');
+      } else if (myChannelUser.isOwner && !item.isOwner) {
+        contextMenuOptions.value.push('Promote');
+      }
+      if (item.isBanned)
+        contextMenuOptions.value.push('Unban');
+      else
+        contextMenuOptions.value.push('Ban');
+
       contextMenuOptions.value.push('Kick');
     }
   } else if (selected instanceof Channel) {
