@@ -430,22 +430,22 @@ const executeContextAction = ( option, item ) => {
       console.log(`Leaving channel '${item.name}'`);
       client.part(item.id);
     }
-  } else if (item instanceof User || item instanceof EventUser) {
-    let userUUID = item.id;
+  } else if (item instanceof ChannelUser) {
+    let userUUID = item.user.id;
     if (option === 'Profile') {
-      console.log(`Showing profile for user '${item.name}'`);
+      console.log(`Showing profile for user '${item.user.name}'`);
     } else if (option === 'Mute') {
-      console.log(`Muting user '${item.name}'`)
-      client.mute(selectedChannelUUID.value, item.id);
+      console.log(`Muting user '${item.user.name}'`)
+      client.mute(selectedChannelUUID.value, item.user.id);
     } else if (option === 'Block') {
-      console.log(`Blocking user '${item.name}'`)
-      client.block(item.id);
+      console.log(`Blocking user '${item.user.name}'`)
+      client.block(item.user.id);
     } else if (option === 'Ban') {
-      console.log(`Banning user '${item.name}'`)
-      client.ban(selectedChannelUUID.value, item.id);
+      console.log(`Banning user '${item.user.name}'`)
+      client.ban(selectedChannelUUID.value, item.user.id);
     } else if (option === 'Kick') {
-      console.log(`Kicking user '${item.name}'`)
-      client.kick(selectedChannelUUID.value, item.id);
+      console.log(`Kicking user '${item.user.name}'`)
+      client.kick(selectedChannelUUID.value, item.user.id);
     }
   } else {
     console.log(`ERROR: Option '${option}' selected for item '${item}' not handled`);
