@@ -15,10 +15,8 @@ $(CONFIG_FILE):
 	echo "export INTRA42_UID=$$INTRA42_UID" > $@; \
 	echo "export INTRA42_SECRET=$$INTRA42_SECRET" >> $@; \
 	echo "export INTRA42_REDIRECT_URI=$$INTRA42_REDIRECT_URI" >> $@; \
-	echo -n "export TRANSC_HOST=" >> $@; \
-	[ -z "$$TRANSC_HOST" ] && echo "localhost" >> $@ || echo "$$TRANSC_HOST" >> $@; \
-	echo -n "export INTRA42_MOCK=" >> $@; \
-	[ -z "$$TRANSC_HOST" ] && echo "false" >> $@ || echo "$$INTRA42_MOCK" >> $@; \
+	echo "export TRANSC_HOST=$$TRANSC_HOST" >> $@; \
+	echo "export INTRA42_MOCK=$$INTRA42_MOCK" >> $@; \
 	echo "Configuration file generated."
 
 include $(CONFIG_FILE)

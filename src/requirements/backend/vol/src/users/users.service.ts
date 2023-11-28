@@ -249,19 +249,7 @@ export class UsersService {
       throw new HttpException('User not found', HttpStatus.NOT_FOUND);
     }
 
-    const block = await this.blocksRepository.findOne({
-      where: {
-        user: user,
-	      blockId: blockId
-      },
-    });
-    if (!block) {
-      throw new HttpException('Block not found', HttpStatus.NOT_FOUND);
-    }
-
-    user.blocks.filter((userBlock) => userBlock.id != block.id);
-    await this.usersRepository.save(user);
-    await this.blocksRepository.delete(block);
+    await this.blocksRepository.delete({ user, blockId });
   }
 
   async update(id: string, updateUserDto?: UpdateUserDto, avatar?: Express.Multer.File): Promise<User> {

@@ -219,29 +219,29 @@ export class ChatGateway {
             .send();
   }
 
-  @SubscribeMessage('watch')
+  @SubscribeMessage('userwatch')
   async handleWatch(client: Socket, dataJSON: string): Promise<void> {
     if (!client.data.user) return;
 
     const [ targetUserId ] = JSON.parse(dataJSON);
     const sourceUser = client.data.user;
-    const response = await this.chat_.watchUserId(sourceUser, targetUserId);
+    const response = await this.chat_.userWatchUserId(sourceUser, targetUserId);
 
     response.setSourceUser(sourceUser)
-            .setEvent('watch')
+            .setEvent('userwatch')
             .send();
   }
 
-  @SubscribeMessage('unwatch')
+  @SubscribeMessage('userunwatch')
   async handleUnwatch(client: Socket, dataJSON: string): Promise<void> {
     if (!client.data.user) return;
 
     const [ targetUserId ] = JSON.parse(dataJSON);
     const sourceUser = client.data.user;
-    const response = await this.chat_.unwatchUserId(sourceUser, targetUserId);
+    const response = await this.chat_.userUnwatchUserId(sourceUser, targetUserId);
 
     response.setSourceUser(sourceUser)
-            .setEvent('unwatch')
+            .setEvent('userunwatch')
             .send();
   }
 
@@ -360,6 +360,32 @@ export class ChatGateway {
 
     response.setSourceUser(sourceUser)
             .setEvent('unblock')
+            .send();
+  }
+
+  @SubscribeMessage('mute')
+  async handleClientMute(client: Socket, dataJSON: string): Promise<void> {
+    if (!client.data.user) return;
+
+    const [ channelId, targetUserId ] = JSON.parse(dataJSON);
+    const sourceUser = client.data.user;
+    const response = await this.chat_.muteUserFromChannelId(sourceUser, channelId, targetUserId);
+
+    response.setSourceUser(sourceUser)
+            .setEvent('mute')
+            .send();
+  }
+
+  @SubscribeMessage('unmute')
+  async handleClientUnute(client: Socket, dataJSON: string): Promise<void> {
+    if (!client.data.user) return;
+
+    const [ channelId, targetUserId ] = JSON.parse(dataJSON);
+    const sourceUser = client.data.user;
+    const response = await this.chat_.unmuteUserFromChannelId(sourceUser, channelId, targetUserId);
+
+    response.setSourceUser(sourceUser)
+            .setEvent('unmute')
             .send();
   }
 
@@ -498,11 +524,22 @@ export class ChatGateway {
     return true;
   }
 
+  @ChatManagerSubscribe('onUserMessageSended')
+  onUserMessageSended(event: any): void {
+    const { sourceUser, targetUser, message } = event;
+
+    targetUser.socket?.emit('privMessage', JSON.stringify({
+      sourceUserId: sourceUser.id,
+      sourceUserNickname: sourceUser.nickname,
+      message,
+    }));
+  }
+ 
   @ChatManagerSubscribe('onUserChallengeSpectated')
   onUserChallengeSpectated(event: any): void {
     const { sourceUser, targetUser, gameMode } = event;
 
-    targetUser.socket?.emit('challengeSpectated', JSON.stringify({ sourceUserId: sourceUser.id, gameMode }));
+    sourceUser.socket?.emit('challengeSpectated', JSON.stringify({ sourceUserId: sourceUser.id, gameMode }));
   }
 
   @ChatManagerSubscribe('onUserChallengeRequested')

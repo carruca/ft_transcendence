@@ -155,7 +155,7 @@ export class ChatManager {
     return this.channelsByName_.get(channelName);
   }
 
-  public getChannelByid(channelId: string): Channel | undefined {
+  public getChannelById(channelId: string): Channel | undefined {
     return this.channelsById_.get(channelId);
   }
 
@@ -237,7 +237,7 @@ export class ChatManager {
   */
 
   public async topicChannelId(sourceUser: User, channelId: string, topic: string): Promise<Response> {
-    const channel = this.getChannelByid(channelId);
+    const channel = this.getChannelById(channelId);
 
     if (!channel) return Response.ChannelNotExists();
     if (!channel.hasUser(sourceUser)) return Response.NotInChannel();
@@ -318,7 +318,7 @@ export class ChatManager {
       admin: false,
     };
 
-    this.raise_<void>('onUserJoined', { channel, sourceUser: user, targetUsers: channel.getUsers() });
+    this.raise_<void>('onUserJoined', { channel, sourceUser: user, targetUsers: channel.getUsersOnline() });
     channel.addUser(user);
     user.addChannel(channel);
     this.raise_<void>('onChannelCreated', { channel, targetUsers: [ user ] });
@@ -336,7 +336,7 @@ export class ChatManager {
 
     channel.removeUser(user);
     user.removeChannel(channel);
-    this.raise_<void>('onUserParted', { channel, sourceUser: user, targetUsers: channel.getUsers() });
+    this.raise_<void>('onUserParted', { channel, sourceUser: user, targetUsers: channel.getUsersOnline() });
     this.raise_<void>('onChannelDeleted', { channel, targetUsers: [ user ] });
 
     if (channel.isEmpty) {
@@ -344,20 +344,24 @@ export class ChatManager {
     }
   }
 
-  public async watchUserId(sourceUser: User, targetUserId: string): Promise<Response> {
+  public async userWatchUserId(sourceUser: User, targetUserId: string): Promise<Response> {
     const targetUser = this.getUserById(targetUserId);
 
     if (!targetUser) return Response.UserNotExists();
+    if (targetUser.hasWatcher(sourceUser)) return Response.Success();
+    targetUser.addWatcher(sourceUser);
     
     this.raise_<void>('onUserWatchUser', { sourceUser, targetUser });
     return Response.Success();
   }
 
 
-  public async unwatchUserId(sourceUser: User, targetUserId: string): Promise<Response> {
+  public async userUnwatchUserId(sourceUser: User, targetUserId: string): Promise<Response> {
     const targetUser = this.getUserById(targetUserId);
 
     if (!targetUser) return Response.UserNotExists();
+    if (!targetUser.hasWatcher(sourceUser)) return Response.Success();
+    targetUser.removeWatcher(sourceUser);
 
     return Response.Success();
   }
@@ -396,7 +400,7 @@ export class ChatManager {
   }
 
   public async deleteChannelId(user: User, channelId: string): Promise<Response> {
-    const channel = this.getChannelByid(channelId);
+    const channel = this.getChannelById(channelId);
 
     if (!channel) return Response.ChannelNotExists();
     if (!channel.isOwner(user)) return Response.InsufficientPrivileges();
@@ -409,7 +413,7 @@ export class ChatManager {
   }
 
   public async joinChannelId(sourceUser: User, channelId: string, password?: string): Promise<Response> {
-    let channel = this.getChannelByid(channelId);
+    let channel = this.getChannelById(channelId);
 
     if (!channel) return Response.ChannelNotExists();
     if (channel.hasUser(sourceUser)) return Response.AlreadyInChannel();
@@ -424,7 +428,7 @@ export class ChatManager {
   }
 
   public async partChannelId(sourceUser: User, channelId: string): Promise<Response> {
-    let channel = this.getChannelByid(channelId);
+    let channel = this.getChannelById(channelId);
 
     if (!channel) return Response.ChannelNotExists();
     if (!channel.hasUser(sourceUser)) return Response.NotInChannel();
@@ -473,7 +477,7 @@ export class ChatManager {
   }
 
   public async closeChannelId(sourceUser: User, channelId: string, message: string): Promise<Response> {
-    const channel = this.getChannelByid(channelId);
+    const channel = this.getChannelById(channelId);
 
     if (!channel) return Response.ChannelNotExists();
     if (!sourceUser.hasPrivileges() && !channel.isOwner(sourceUser)) return Response.InsufficientPrivileges();
@@ -485,7 +489,7 @@ export class ChatManager {
   }
 
   public async passwordChannelId(sourceUser: User, channelId: string, newPassword: string): Promise<Response> {
-    const channel = this.getChannelByid(channelId);
+    const channel = this.getChannelById(channelId);
 
     //TODO: newPassword se debería verificar los caracteres?
     if (!channel)
@@ -503,7 +507,7 @@ export class ChatManager {
   }
 
   public async kickUserFromChannelId(sourceUser: User, channelId: string, targetUserid: string, message?: string): Promise<Response> {
-    const channel = this.getChannelByid(channelId);
+    const channel = this.getChannelById(channelId);
     const targetUser = this.getUserById(targetUserid);
 
     if (!channel) return Response.ChannelNotExists();
@@ -521,7 +525,7 @@ export class ChatManager {
   }
 
   public async muteUserFromChannelId(sourceUser: User, channelId: string, targetUserid: string): Promise<Response> {
-    const channel = this.getChannelByid(channelId);
+    const channel = this.getChannelById(channelId);
     const targetUser = this.getUserById(targetUserid);
 
     if (!channel) return Response.ChannelNotExists();
@@ -535,12 +539,17 @@ export class ChatManager {
 
     channel.muteUser(targetUser);
     channel.createEventAction(EventTypeEnum.MUTE, sourceUser, targetUser);
+    this.channelsService_.setMutedToChannelUser({
+      channelId: channel.id,
+      userId: targetUser.id,
+      mode: true,
+    });
     return Response.Success();
 
   }
 
   public async unmuteUserFromChannelId(sourceUser: User, channelId: string, targetUserid: string): Promise<Response> {
-    const channel = this.getChannelByid(channelId);
+    const channel = this.getChannelById(channelId);
     const targetUser = this.getUserById(targetUserid);
 
     if (!channel) return Response.ChannelNotExists();
@@ -554,11 +563,16 @@ export class ChatManager {
 
     channel.unmuteUser(targetUser);
     channel.createEventAction(EventTypeEnum.UNMUTE, sourceUser, targetUser);
+    this.channelsService_.setMutedToChannelUser({
+      channelId: channel.id,
+      userId: targetUser.id,
+      mode: false,
+    });
     return Response.Success();
   }
 
   public async banUserFromChannelId(sourceUser: User, channelId: string, targetUserid: string): Promise<Response> {
-    const channel = this.getChannelByid(channelId);
+    const channel = this.getChannelById(channelId);
     const targetUser = this.getUserById(targetUserid);
 
     //TODO: En un id no se verifica los nombres
@@ -584,7 +598,7 @@ export class ChatManager {
   }
 
   public async unbanUserFromChannelId(sourceUser: User, channelId: string, targetUserid: string): Promise<Response> {
-    const channel = this.getChannelByid(channelId);
+    const channel = this.getChannelById(channelId);
     const targetUser = this.getUserById(targetUserid);
 
     //TODO: En un id no se verifica los nombres
@@ -609,7 +623,7 @@ export class ChatManager {
   }
 
   public async promoteUserInChannelId(sourceUser: User, channelId: string, targetUserid: string): Promise<Response> {
-    const channel = this.getChannelByid(channelId);
+    const channel = this.getChannelById(channelId);
     const targetUser = this.getUserById(targetUserid);
 
     if (!channel) return Response.ChannelNotExists();
@@ -635,7 +649,7 @@ export class ChatManager {
   }
 
   public async demoteUserInChannelId(sourceUser: User, channelId: string, targetUserid: string): Promise<Response> {
-    const channel = this.getChannelByid(channelId);
+    const channel = this.getChannelById(channelId);
     const targetUser = this.getUserById(targetUserid);
 
     if (!channel) return Response.ChannelNotExists();
@@ -731,6 +745,15 @@ export class ChatManager {
 
   //  this.raise_<void>('onUserBlocked', { sourceUser, targetUser });
     sourceUser.addBlock(targetUser);
+
+    console.log("blockUserId");
+    this.raise_<void>('onUserUpdated', {
+      sourceUser: targetUser,
+      targetUsers: [ sourceUser ],
+      changes: {
+        blocked: true,
+    }});
+
     await this.usersService_.createBlock({
       userId: sourceUser.id,
       blockId: targetUser.id,
@@ -750,6 +773,14 @@ export class ChatManager {
 
     //this.raise_<void>('onUserUnblocked', { sourceUser, targetUser });
     sourceUser.removeBlock(targetUser);
+
+    this.raise_<void>('onUserUpdated', {
+      sourceUser: targetUser,
+      targetUsers: [ sourceUser ],
+      changes: {
+        blocked: false,
+    }});
+
     await this.usersService_.removeBlock(sourceUser.id, targetUser.id);
     return Response.Success();
   }
@@ -818,7 +849,7 @@ export class ChatManager {
   }
 
   public async messageChannelId(sourceUser: User, channelId: string, message: string): Promise<Response> {
-    const channel = this.getChannelByid(channelId);
+    const channel = this.getChannelById(channelId);
 
     if (!channel) return Response.ChannelNotExists();
     if (channel.isBanned(sourceUser)) return Response.BannedFromChannel();
@@ -830,6 +861,17 @@ export class ChatManager {
 
     channel.createEventGeneric(EventTypeEnum.MESSAGE, sourceUser, message);
     //this.raise_<void>("onChannelMessageSended", { sourceUser, channel, event });
+    return Response.Success();
+  }
+
+
+  public async sendMessageUserId(sourceUser: User, targetUserId: string, message: string): Promise<Response> {
+    const targetUser = this.getUserById(targetUserId);
+
+    if (!targetUser) return Response.UserNotExists();
+    if (targetUser.hasBlocked(targetUser)) return Response.Success();
+    
+    this.raise_<void>("onUserMessageSended", { sourceUser, targetUser, message });
     return Response.Success();
   }
 
@@ -1021,7 +1063,7 @@ export class ChatManager {
 
 	private notifyEvent_(objects: any[], type: NotifyEventTypeEnum, changes: {}) {
 	  const [ event, object ] = objects;
-	  const targetUsers = object.getUsers();
+	  const targetUsers = object.getUsersOnline();
 	 // console.log(`notifyEvent ${type}: ${object.id} ${event.id} ${changes}`);
     if (type === NotifyEventTypeEnum.UPDATE) {
       if (object instanceof Channel)
@@ -1114,7 +1156,7 @@ export class ChatManager {
   private async cleanChannel_(channel: Channel): Promise<void> {
     for (const user of channel.getUsers()) {
       channel.removeUser(user);
-      this.raise_<void>('onChannelUserDeleted', { channel, targetUsers: [ channel.getUsers() ]});
+      this.raise_<void>('onChannelUserDeleted', { channel, targetUsers: [ channel.getUsersOnline() ]});
       user.removeChannel(channel);
       this.raise_<void>('onChannelDeleted', { channel, targetUsers: [ user ] });
       await this.channelsService_.removeChannelUser(channel.id, user.id);

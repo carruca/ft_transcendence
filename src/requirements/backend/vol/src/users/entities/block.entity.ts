@@ -22,6 +22,8 @@ export class Block {
   @Column()
   blockId: string;
 
-  @ManyToOne(() => User, (user) => user.blocks)
+  @ManyToOne(() => User, (user) => user.blocks, {
+    onDelete: 'CASCADE'
+  })
   user: User;
 }

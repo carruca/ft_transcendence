@@ -81,6 +81,24 @@ export class Channel {
       this.events_.set(event.id, event);
     }
 
+    update(channelUser: ChannelUser, changes: any) {
+        if (changes.password !== undefined)
+            this.password = changes.password;
+        if (changes.topicUser !== undefined)
+            this.topicUser = changes.topicUser;
+        if (changes.topicSetDate !== undefined)
+            this.topicSetDate = changes.topicSetDate;
+        if (changes.topic !== undefined)
+            this.topic = changes.topic;
+        if (changes.admin !== undefined)
+            channelUser.isAdmin = changes.admin;
+        if (changes.muted !== undefined)
+            channelUser.isMuted = changes.muted;
+        if (changes.banned !== undefined)
+            channelUser.isBanned = changes.banned;
+        console.log("channel.update", channelUser);
+    }
+
     get events(): Map<string, Event> {
       return readonly(this.events_);
     }
