@@ -2,6 +2,7 @@ import {
   ref,
   readonly,
   reactive,
+  watch,
 } from 'vue';
 
 import {
@@ -37,7 +38,7 @@ import router from '@/router';
 
 import './client';
 
-
+/*
 watch(userCurrentChannel, (newChannel) => {
   if (!newChannel) {
     selectedChannelUUID.value = undefined;
@@ -48,6 +49,7 @@ watch(userCurrentChannel, (newChannel) => {
     });
   }
 });
+*/
 
 class ChatClient {
   private me_: User;
