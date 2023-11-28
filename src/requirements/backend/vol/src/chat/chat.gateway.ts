@@ -583,7 +583,7 @@ export class ChatGateway {
   onUserWatchUser(event: any): void {
     const { sourceUser, targetUser } = event;
 
-    sourceUser.socket.emit('watch', JSON.stringify(targetUser.DTO));
+    sourceUser.socket.emit('watch', JSON.stringify([ targetUser.DTO ]));
   }
 
   @ChatManagerSubscribe('onUserConnected')

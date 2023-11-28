@@ -435,6 +435,8 @@ socket.on('stop', (winText: string) => {
     Engine.drawMenu();
     displayMenu();
     game.changeStatus(Status.MENU);
+    // notify backed that we are on the menu
+    socket.emit("menu");
   };
 
   game.changeStatus(Status.NONE);
