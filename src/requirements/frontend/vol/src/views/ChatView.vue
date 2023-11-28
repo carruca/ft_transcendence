@@ -647,7 +647,8 @@ const getUserRoles = (channelUser) => {
   if (channelUser.isAdmin && !channelUser.isOwner) roles.push('admin');
   if (channelUser.isMuted) roles.push('muted');
   if (channelUser.isBanned) roles.push('banned');
-  if (channelUser.isFriend) roles.push('friend');
+  if (channelUser.user.friend) roles.push('friend');
+  if (channelUser.user.blocked) roles.push('blocked');
   return roles;
 }
 const getUserTitle = (channelUser) => {
