@@ -65,10 +65,16 @@ export class ChannelsService {
     })
   }
 
+  async	findAllWithUsersAndBans(): Promise<Channel[]> {
+    return await this.channelsRepository.find({
+      relations: ['users', 'users.channel', 'users.user', 'bans'],
+    })
+  }
+
   async remove(id: string) {
     await this.channelsRepository.delete(id);
   }
-
+/*
   async getBansByChannel(channelId: string) {
     const channel = await this.channelsRepository.findOne({
       relations: ['bans'],
@@ -82,7 +88,7 @@ export class ChannelsService {
 
     return channel.bans;
   }
-
+*/
   async createChannelUser(createChannelUserDto: CreateChannelUserDto): Promise<ChannelUser> {
     const channel = await this.channelsRepository.findOne({
       relations: ['users'],

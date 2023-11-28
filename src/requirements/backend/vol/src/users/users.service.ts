@@ -60,6 +60,12 @@ export class UsersService {
     return this.usersRepository.find();
   }
 
+  async	findAllWithFriendsAndBlocks(): Promise<User[]> {
+    return this.usersRepository.find({
+      relations: ['friends', 'blocks'],
+    })
+  }
+
   findAllWithChannels(): Promise<User[]> {
     return this.usersRepository.find({
       relations: ['channels'],
