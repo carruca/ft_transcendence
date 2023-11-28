@@ -13,16 +13,22 @@ import { RoomService } from './room.service';
 import { ChatManagerHandler, ChatManagerSubscribe, ChatManagerInstance } from '../chat/decorator';
 import { ChatManager } from '../chat/manager';
 
+import { EventType } from './enum';
+
+@ChatManagerHandler()
 @WebSocketGateway({
   cors: {
     origin: process.env.NEST_FRONT_URL
   },
 })
-@ChatManagerHandler()
 export class GameGateway implements OnGatewayDisconnect {
+
   @ChatManagerInstance()
   private chat_manager: ChatManager;
   //nicknames: Map<string, string> = new Map();
+
+  private eventQueue: Map<string, { eventType: EventType, data: any, timeout: ReturnType<typeof setTimeout> }> = new Map();
+
   constructor(
     private room_service: RoomService,
     chat_manager: ChatManager,
@@ -34,14 +40,21 @@ export class GameGateway implements OnGatewayDisconnect {
   server: Server;
 
   handleConnection(client: Socket) {
-    console.log("CONNECTION: " + client.id);
+    //console.log("CONNECTION: " + client.id);
   }
 
   handleDisconnect(client: Socket) {
     if (client.data.user) {
       this.room_service.disconnect(client);
     }
-    console.log("DISCONNECTION: " + client.id);
+    //console.log("DISCONNECTION: " + client.id);
+  }
+
+  @SubscribeMessage('leave_game')
+  leave_game(client: Socket): void {
+    if (!client.data.user)
+      return;
+    this.room_service.disconnect(client);
   }
 
   @SubscribeMessage('join_queue')
@@ -68,33 +81,6 @@ export class GameGateway implements OnGatewayDisconnect {
     if (!player)
       return;
     this.room_service.ready(player);
-  }
-
-  @SubscribeMessage('get-room')
-  get_room(client: Socket, id: string): void {
-    const room: Room | null = this.room_service.get_user_roomcode(id);
-    if (room !== null) {
-      client.emit('room', room.code);
-    }
-  }
-
-  @SubscribeMessage('new-room')
-  new_room(client: Socket, mode: string) {
-    if (!client.data.user)
-      return;
-    let room: Room | undefined = this.room_service.new_room(mode);
-    if (room === undefined) return;
-    this.room_service.join_room(room, client);
-    // TODO emit room code back to the player so it can invite new players, or let the other one use the get-room endpoint
-  }
-
-  @SubscribeMessage('join-room')
-  join_room(client: Socket, code: string) {
-    if (!client.data.user)
-      return;
-    let room: Room | undefined = this.room_service.get_room(code);
-    if (room === undefined) return;
-    this.room_service.join_room(room, client);
   }
 
   @SubscribeMessage('down')
@@ -138,12 +124,75 @@ export class GameGateway implements OnGatewayDisconnect {
     }
   }
 
+  // EVENTS
+
+  queueEvent(userId: string, eventType: EventType, data: any) {
+    const existingEvent = this.eventQueue.get(userId);
+    if (existingEvent) {
+      clearTimeout(existingEvent.timeout);
+    }
+  
+    const timeout = setTimeout(() => {
+      this.eventQueue.delete(userId);
+    }, 60000); // 60 seconds expiry
+  
+    this.eventQueue.set(userId, { eventType, data, timeout });
+    console.log("Event queued: " + eventType);
+  }
+  processPendingEvent(client: Socket) {
+    const userId = client.data.user?.id;
+    if (!userId) {
+      return;
+    }
+  
+    const queuedEvent = this.eventQueue.get(userId);
+    if (queuedEvent) {
+      switch (queuedEvent.eventType) {
+        case EventType.Challenge:
+          console.log("Processed challenge event for: " + client.data.user?.nickname);
+          // TODO Handle challenge event
+          break;
+        case EventType.Spectate:
+          console.log("Processed spectate event for: " + client.data.user?.nickname);
+          this.room_service.join_room(queuedEvent.data.room, client);
+          break;
+      }
+      clearTimeout(queuedEvent.timeout);
+      this.eventQueue.delete(userId);
+    }
+  }
+
+  // FIXME THIS IS JUST REFERENCE FOR CHALLENGE EVENT
+  /*new_room(client: Socket, mode: string) {
+    if (!client.data.user)
+      return;
+    let room: Room | undefined = this.room_service.new_room(mode);
+    if (room === undefined) return;
+    this.room_service.join_room(room, client);
+  }*/
+
+  @SubscribeMessage('events')
+  handleEvents(client: Socket): void {
+    if (!client.data.user)
+      return;
+    this.processPendingEvent(client);
+  }
+
   @ChatManagerSubscribe('onUserChallengeAccepted')
   onUserChallengeAccepted(event: any): void {
-    console.log(`onUserChallengeAccepted: source ${event.sourceId} | target ${event.targetId} | mode ${event.mode}`);
+    console.log("onUserChallengeAccepted");
   }
-  @ChatManagerSubscribe('onUserSpectate')
-  onUserSpectate(event: any): void {
-    console.log(`onUserSpectate: source ${event.sourceId} | target ${event.targetId} | mode ${event.mode}`);
+  @ChatManagerSubscribe('onUserChallengeSpectated')
+  onUserChallengeSpectated(event: any): void {
+    const roomcode: string | null = this.room_service.get_user_roomcode(event.targetUser.id);
+    if (roomcode === null) return;
+    const room: Room | undefined = this.room_service.get_room(roomcode);
+    if (room === undefined) return;
+
+    this.queueEvent(event.sourceUser.id, EventType.Spectate, { room });
+  }
+  @ChatManagerSubscribe('onUserConnected')
+  onUserConnected(event: any): void {
+    this.processPendingEvent(event.sourceUser.socket);
   }
 }

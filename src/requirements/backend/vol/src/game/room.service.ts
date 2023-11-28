@@ -95,10 +95,14 @@ export class RoomService {
   }
 
   disconnect(socket: Socket) {
+    // change user status
+    socket!.data.user.status = UserStatusEnum.ONLINE;
     // remove from queue
     this.leave_queue(socket);
+    // remove from room
     for (const room of this.rooms.values()) {
       if (room.spectators.indexOf(socket) != -1) {
+        console.log("leave spectator: " + socket.data.user!.nickname);
         room.spectators.splice(room.spectators.indexOf(socket), 1);
       }
       // find disconnected player
@@ -170,6 +174,10 @@ export class RoomService {
     return ret;
   }
   join_room(room: Room, socket: Socket | undefined) {
+    // change user status
+    socket!.data.user.status = UserStatusEnum.IN_GAME;
+
+    // check if room is full to join as player or spectator
     if (room.state == State.WAITING) {
       const player: Player = {
         id: room.players.length + 1,
@@ -207,6 +215,9 @@ export class RoomService {
       //console.log("sending spectator ready: " + room.code);
     }
   }
+  leave(client: Socket) {
+    this.disconnect(client);
+  }
 
   get_player(id: string): Player | null {
     for (const room of this.rooms.values()) {
@@ -222,20 +233,14 @@ export class RoomService {
     return this.rooms.get(code);
   }
 
-  get_user_roomcode(id: string): Room | null {
-    // Convert the rooms map values to an array
-    const roomsArray = Array.from(this.rooms.values());
-
-    // Find the room containing the user with the given userId
-    const roomWithUser = roomsArray.find(room => {
+  get_user_roomcode(id: string): string | null {
+    for (let [code, room] of this.rooms) {
       const userInRoom = room.players.some(player => player.socket!.data.user.id === id);
-      return userInRoom;
-    });
-
-    if (!roomWithUser) {
-      return null;
+      if (userInRoom) {
+        return code; // Return the code of the room containing the user
+      }
     }
-    return roomWithUser;
+    return null; // Return null if no room is found with the user
   }
 
   ready(player: Player | null): void {
@@ -252,16 +257,6 @@ export class RoomService {
     for (const player of room.players) {
       if (player.ready === false) return;
     }
-
-    // change users status
-    for (const user of room.players) {
-      console.log("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
-      user.socket!.data.user.status = UserStatusEnum.IN_GAME;
-    }
-    for (const user of room.spectators) {
-      user!.data.user.status = UserStatusEnum.IN_GAME;
-    }
-
 
     const countdown: number = 3;
     for (const player of room.players) {

@@ -539,7 +539,7 @@ export class ChatGateway {
   onUserChallengeSpectated(event: any): void {
     const { sourceUser, targetUser, gameMode } = event;
 
-    targetUser.socket?.emit('challengeSpectated', JSON.stringify({ sourceUserId: sourceUser.id, gameMode }));
+    sourceUser.socket?.emit('challengeSpectated', JSON.stringify({ sourceUserId: sourceUser.id, gameMode }));
   }
 
   @ChatManagerSubscribe('onUserChallengeRequested')
