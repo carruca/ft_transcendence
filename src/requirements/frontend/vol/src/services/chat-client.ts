@@ -520,8 +520,8 @@ class ChatClient {
     socket.emit('challengereject', JSON.stringify([ userId ]));
   }
 
-  public spectate(userId: string) {
-    socket.emit('spectate', JSON.stringify([ userId ]));
+  public challengeSpectate(userId: string) {
+    socket.emit('challengespectate', JSON.stringify([ userId ]));
   }
 
   public list() {
