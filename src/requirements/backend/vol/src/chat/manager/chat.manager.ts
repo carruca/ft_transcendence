@@ -468,7 +468,6 @@ export class ChatManager {
     if (targetUser.status !== UserStatusEnum.IN_GAME) return Response.UserInGame();
 
     //TODO advertir al resto de usuarios el cambio de estado.
-    sourceUser.status = UserStatusEnum.IN_GAME;
     this.raise_<void>('onUserChallengeSpectated', { sourceUser, targetUser })
     return Response.Success();
   }
@@ -698,8 +697,6 @@ export class ChatManager {
     if (this.raise_<boolean>('onUserChallengeAccepting', { sourceUser, targetUser }).includes(true))
       return Response.Denied();
     this.deleteChallenge(sourceUser, targetUser);
-    targetUser.status = UserStatusEnum.IN_GAME;
-    sourceUser.status = UserStatusEnum.IN_GAME;
     this.raise_<void>('onUserChallengeAccepted', { sourceUser, targetUser, gameMode });
     return Response.Success();
   }
