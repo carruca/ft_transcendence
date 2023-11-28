@@ -37,11 +37,6 @@
         </div>
       </div>
       <div class="overlay-text" :class="{ 'active': button1Pressed || button2Pressed }">{{ overlayText }}</div>
-      <!-- FIXME remove -->
-      <input v-model="inputText" type="text" placeholder="Enter id here" />
-      <br/>
-      <button @click="spectate(inputText)">Spectate</button>
-      <!-- .FIXME remove -->
     </div>
     <div v-if="showBottomButton" class="bottom-button-wrapper" :style="bottomButtonWrapperStyle">
       <button
@@ -63,9 +58,6 @@ import {
 } from 'vue';
 
 import socket from "../services/ws.ts";
-
-// FIXME remove
-const inputText = ref("");
 
 /** VAR  --------------------------------------- */
 

@@ -10,6 +10,8 @@ import { MatchesService } from '../matches/matches.service';
 
 import { AchievementsService } from '../achievements/achievements.service';
 
+import { UserStatusEnum } from '../chat/enum';
+
 const WIDTH = 858;
 const HEIGHT = 525;
 
@@ -64,7 +66,7 @@ export class RoomService {
       return;
     }
 
-    // add do queue
+    // add to queue
     modeQueue.push(socket);
 
     console.log("join queue " + mode + ": " + socket.id);
@@ -93,6 +95,7 @@ export class RoomService {
   }
 
   disconnect(socket: Socket) {
+    // remove from queue
     this.leave_queue(socket);
     for (const room of this.rooms.values()) {
       if (room.spectators.indexOf(socket) != -1) {
@@ -144,8 +147,7 @@ export class RoomService {
       ball_pos: { x: (WIDTH / 2) - 5, y: (HEIGHT / 2) - 5 }, // minus half the scale :)
       ball_scale: { x: 10, y: 10 },
       ball_speed: { x: 5, y: 5 },
-      // TODO set to 5 for final version
-      score: 1,
+      score: 5,
     };
     // special modes changes
     if (mode === "special") {
@@ -251,6 +253,16 @@ export class RoomService {
       if (player.ready === false) return;
     }
 
+    // change users status
+    for (const user of room.players) {
+      console.log("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
+      user.socket!.data.user.status = UserStatusEnum.IN_GAME;
+    }
+    for (const user of room.spectators) {
+      user!.data.user.status = UserStatusEnum.IN_GAME;
+    }
+
+
     const countdown: number = 3;
     for (const player of room.players) {
       // send all players name
@@ -281,6 +293,14 @@ export class RoomService {
     if (room.state === State.END)
       return;
     room.state = State.END;
+
+    // change users status
+    for (const user of room.players) {
+      user.socket!.data.user.status = UserStatusEnum.ONLINE;
+    }
+    for (const user of room.spectators) {
+      user!.data.user.status = UserStatusEnum.ONLINE;
+    }
 
     // send score, winners and losers to API
     function createUserStats(players: Player[]): UserStats[] {
