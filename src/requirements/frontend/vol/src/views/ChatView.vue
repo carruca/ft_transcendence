@@ -203,6 +203,15 @@ onMounted(() => {
   scrollToBottom();
 
   updateResizerWidth();
+
+  nextTick(() => {
+    if (userCurrentChannel.value && userCurrentChannel.value.id != selectedChannelUUID.value) {
+      selectedChannelUUID.value = userCurrentChannel.value.id;
+      nextTick(() => {
+        scrollToBottom();
+      });
+    }
+  });
 });
 
 onBeforeUnmount(() => {
@@ -361,6 +370,12 @@ const onRightClick = (selected, item, event) => {
       contextUserUUID.value = selected.id;
 
     contextMenuOptions.value.push('Profile');
+
+    if (item.user.status === UserStatusEnum.ONLINE)
+      contextMenuOptions.value.push('Challenge');
+    else if (item.user.status === UserStatusEnum.INGAME)
+      contextMenuOptions.value.push('Spectate');
+
     if (item.isMuted)
       contextMenuOptions.value.push('Unmute');
     else
@@ -434,6 +449,10 @@ const executeContextAction = ( option, item ) => {
     let userUUID = item.user.id;
     if (option === 'Profile') {
       console.log(`Showing profile for user '${item.user.name}'`);
+    } else if (option === 'Challenge') {
+      console.log(`Challenging user '${item.user.name}'`);
+    } else if (option === 'Spectate') {
+      console.log(`Spectating user '${item.user.name}'`);
     } else if (option === 'Mute') {
       console.log(`Muting user '${item.user.name}'`)
       client.mute(selectedChannelUUID.value, item.user.id);
