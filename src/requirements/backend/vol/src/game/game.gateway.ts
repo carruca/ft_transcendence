@@ -160,6 +160,8 @@ export class GameGateway implements OnGatewayDisconnect {
       switch (queuedEvent.eventType) {
         case EventType.Challenge:
           console.log("Processed challenge event for: " + client.data.user?.nickname);
+          // User can accept challenge while in queue so we need to leave queue first
+          this.room_service.leave_queue(client);
           this.room_service.join_room(queuedEvent.data.room, client);
           break;
         case EventType.Spectate:
