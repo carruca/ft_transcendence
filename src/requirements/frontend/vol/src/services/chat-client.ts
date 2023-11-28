@@ -73,11 +73,14 @@ class ChatClient {
     return this.users_.get(userId);
   }
 
-  private getChannelUserById(channelId: string, userId: string): ChannelUser {
-    const channel = getChannelById_(channelId);
-    const user = getUserBiId_(userId);
-
-    return channel.user(user);
+  private getChannelUserById(channelId: string, userId: string): ChannelUser | undefined {
+    const channel = this.getChannelById_(channelId);
+    if (!channel) return undefined;
+  
+    const user = this.getUserById_(userId);
+    if (!user) return undefined;
+  
+    return channel?.user(user);
   }
 
   get me() {

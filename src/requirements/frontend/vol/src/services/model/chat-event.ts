@@ -20,15 +20,73 @@ import {
 
 // TODO instead of reinventing the wheel, just make it contain a 'Event' object
 export class ChatEvent extends BaseEvent {
-  message: string;
+  public readonly sourceChannelUser: ChannelUser | undefined;
+  public readonly targetChannelUser: ChannelUser | undefined;
+  public readonly message: string;
+  public readonly color: string;
 
-  constructor(event: BaseEvent, message: string) {
+  private static randomSeed = Math.floor(Math.random() * 1000000);
+  private static colors = [
+    '#ac2847',
+    '#ec273f',
+    '#de5d3a',
+    '#f3a833',
+    '#ce9248',
+    '#e8d282',
+    '#f7f3b7',
+    '#26854c',
+    '#5ab552',
+    '#9de64e',
+    '#62a477',
+    '#3388de',
+    '#36c5f4',
+    '#6dead6',
+    '#9a4d76',
+    '#c878af',
+    '#cc99ff',
+    '#fa6e79',
+    '#ffa2ac',
+    '#ffd1d5',
+  ];
+
+  constructor(event: BaseEvent, sourceChannelUser: ChannelUser, targetChannelUser?: ChannelUser) {
     super(event);
-    this.message = this.formatEventMessage(event);
+    this.message = ChatEvent.formatEventMessage(event);
+    this.color = ChatEvent.stringToColor(this.source.name);
+    this.sourceChannelUser = sourceChannelUser;
+    this.targetChannelUser = targetChannelUser;
   }
 
-  private formatEventMessage(event) {
-    let message ='';
+  // Public methods
+
+  public isMessageEvent() {
+    return this.type === EventTypeEnum.MESSAGE;
+  };
+  public isTargetEvent() {
+    if (this.type === EventTypeEnum.KICK)
+      return true;
+    if (this.type === EventTypeEnum.BAN)
+      return true;
+    if (this.type === EventTypeEnum.UNBAN)
+      return true;
+    if (this.type === EventTypeEnum.MUTE)
+      return true;
+    if (this.type === EventTypeEnum.UNMUTE)
+      return true;
+    return false;
+  };
+
+  // Private methods
+
+  private static stringToColor(str) {
+    let hash = ChatEvent.randomSeed;
+    for (let i = 0; i < str.length; i++) {
+      hash = str.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    return ChatEvent.colors[(Math.abs(hash) * ChatEvent.randomSeed) % this.colors.length];
+  };
+
+  private static formatEventMessage(event) {
     switch (event.type) {
       case EventTypeEnum.MESSAGE:
         return `${event.value}`;

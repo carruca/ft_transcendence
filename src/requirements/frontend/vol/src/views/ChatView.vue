@@ -21,7 +21,7 @@
                   @contextmenu="onRightClick(channel, channel, $event)"
                   :class="[ channelClass(channel), { 'selected': channel.id === selectedChannelUUID }, { 'selected': channel.id === contextChannelUUID } ]"
               >
-                {{ channel.name }}
+                {{ formatChannelName(channel.name) }}
               </li>
             </ul>
           </div>
@@ -40,24 +40,30 @@
             <div
                 v-for="event in formattedEvents"
                 :key="event.id"
-                :title="printTime(event.timestamp)"
-                :class="[ 'event', { 'other-event': !isMessageEvent(event) }, { 'selected': event.id === contextEventUUID } ]"
-                :style="isMessageEvent(event) ? { color: stringToColor(event.source.name) } : {}">
-              <span v-if="isMessageEvent(event)">&lt;</span>
-              <span v-if="!isMessageEvent(event)"> - </span>
+                :title="getTime(event.timestamp)"
+                :class="[ 'event', { 'other-event': !event.isMessageEvent() }, { 'selected': event.id === contextEventUUID } ]"
+                :style="event.isMessageEvent() ? { color: event.color } : {}"
+            >
+              <span v-if="event.isMessageEvent()">&lt;</span>
+              <span v-else>&nbsp;-&nbsp;</span>
               <span
                   class="event-user"
-                  @click="onClick(event, event.source)" 
-                  @contextmenu="onRightClick(event, event.source, $event)">
+                  :title="getUserTitle(event.sourceChannelUser)"
+                  @click="onClick(event, event.sourceChannelUser)" 
+                  @contextmenu="onRightClick(event, event.sourceChannelUser, $event)">
                 {{ event.source.name }}
               </span>
-              <span v-if="isMessageEvent(event)">&gt;</span>
-              {{ event.message }}
+              <span v-if="event.isMessageEvent()">&gt;</span>
+              <span>&nbsp;</span>
+              <span>
+                {{ event.message }}
+              </span>
               <span
-                  v-if="isTargetEvent(event)"
+                  v-if="event.isTargetEvent()"
                   class="event-user"
-                  @click="onClick(event, event.target)" 
-                  @contextmenu="onRightClick(event, event.target, $event)">
+                  :title="getUserTitle(event.targetChannelUser)"
+                  @click="onClick(event, event.targetChannelUser)"
+                  @contextmenu="onRightClick(event, event.targetChannelUser, $event)">
                 {{ event.target.name }}
               </span>
             </div>
@@ -84,9 +90,10 @@
               <li
                   v-for="channelUser in userCurrentChannel.users.values()"
                   :key="channelUser.user.id"
+                  :title="getUserTitle(channelUser)"
                   :class="{ selected: channelUser.user.id === contextUserUUID }"
-                  @click="onClick(channelUser, channelUser.user)"
-                  @contextmenu="onRightClick(channelUser, channelUser.user, $event)"
+                  @click="onClick(channelUser, channelUser)"
+                  @contextmenu="onRightClick(channelUser, channelUser, $event)"
               >
                   <span :class="userStatus(channelUser.user.status)">
                     <!--
@@ -98,11 +105,7 @@
                   <span :class="userClass(channelUser)">
                     {{ channelUser.user.name }}
                   </span>
-                  {{ channelUser.isOwner ? '(owner)' : '' }}
-                  {{ channelUser.isAdmin && !channelUser.isOwner ? '(admin)' : '' }}
-                  {{ channelUser.isMuted ? '(muted)' : '' }}
-                  {{ channelUser.isBanned ? '(banned)' : '' }}
-                  {{ channelUser.isFriend ? '(friend)' : '' }}
+                  {{ getUserInfo(channelUser) }}
               </li>
             </ul>
           </div>
@@ -194,12 +197,9 @@ onMounted(() => {
   window.addEventListener('resize', e => handleResize(leftSection.value, middleSection.value, rightSection.value, contentSection.value));
   leftResizer.value.addEventListener('mousedown', e => initDrag(e, leftSection.value, middleSection.value, rightSection.value, contentSection.value, true));
   rightResizer.value.addEventListener('mousedown', e => initDrag(e, leftSection.value, middleSection.value, rightSection.value, contentSection.value, false));
-  updateResizerWidth();
   scrollToBottom();
 
-  // FIXME Things that can fail below! to make sure all the code above is executed
-  if (userCurrentChannel);
-    selectedChannelUUID.value = userCurrentChannel.id;
+  updateResizerWidth();
 });
 
 onBeforeUnmount(() => {
@@ -213,6 +213,15 @@ onBeforeUnmount(() => {
   window.removeEventListener('resize', e => handleResize(leftSection.value, middleSection.value, rightSection.value, contentSection.value));
 });
 
+// Watch current channel for changes
+watch(userCurrentChannel, (newChannel) => {
+  if (newChannel.id !== selectedChannelUUID.value) {
+    selectedChannelUUID.value = newChannel.id;
+    nextTick(() => {
+      scrollToBottom();
+    });
+  }
+});
 // Watch the channel list for changes
 watch(userChannelList, (newChannelList) => {
   if (selectedChannelUUID.value && !newChannelList.some(channel => channel.id === selectedChannelUUID.value)) {
@@ -244,8 +253,29 @@ const selectChannel = (channelUUID) => {
   setUserCurrentChannel(channelUUID);
 };
 
-const printTime = (time) => {
-  return `${time.getHours()}:${time.getMinutes()}:${time.getSeconds()}`;
+const getTime = (time) => {
+  const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+  const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+
+  const dayOfWeek = days[time.getDay()];
+  const dayOfMonth = time.getDate();
+  const month = months[time.getMonth()];
+  const year = time.getFullYear();
+  const hours = String(time.getHours()).padStart(2, '0');
+  const minutes = String(time.getMinutes()).padStart(2, '0');
+  const seconds = String(time.getSeconds()).padStart(2, '0');
+
+  const ordinal = ((dayOfMonth) => {
+    if (dayOfMonth > 3 && dayOfMonth < 21) return 'th';
+    switch (dayOfMonth % 10) {
+      case 1:  return "st";
+      case 2:  return "nd";
+      case 3:  return "rd";
+      default: return "th";
+    }
+  })(dayOfMonth);
+
+  return `${dayOfWeek} ${dayOfMonth}${ordinal} ${month} ${year} ${hours}:${minutes}:${seconds}`;
 };
 
 // Uncomment and adapt the watch statement if needed
@@ -267,10 +297,15 @@ const scrollToBottom = () => {
 };
 
 // Functions to format events
+function formatChannelName(name) {
+  return name.startsWith('#') ? `# ${name.substring(1)}` : `# ${name}`;
+}
 const formattedEvents = computed(() => {
   if (userCurrentChannel.value && userCurrentChannel.value.events) {
     return [...userCurrentChannel.value.events.values()].map(event => {
-      return new ChatEvent(event);
+      const sourceChannelUser = client.getChannelUserById(selectedChannelUUID.value, event.source.id);
+      const targetChannelUser = event.target ? client.getChannelUserById(selectedChannelUUID.value, event.target.id) : undefined;
+      return new ChatEvent(event, sourceChannelUser, targetChannelUser);
     });
   }
   return [];
@@ -282,22 +317,6 @@ watch(formattedEvents, () => {
     scrollToBottom();
   });
 }, { deep: true });
-const isMessageEvent = (event) => {
-  return event.type === EventTypeEnum.MESSAGE;
-};
-const isTargetEvent = (event) => {
-  if (event.type === EventTypeEnum.KICK)
-    return true;
-  if (event.type === EventTypeEnum.BAN)
-    return true;
-  if (event.type === EventTypeEnum.UNBAN)
-    return true;
-  if (event.type === EventTypeEnum.MUTE)
-    return true;
-  if (event.type === EventTypeEnum.UNMUTE)
-    return true;
-  return false;
-};
 
 // Send message logic
 const sendMessage = () => {
@@ -311,10 +330,8 @@ const sendMessage = () => {
 
 // Click handlers
 const onClick = (selected, item) => {
-  if (selected instanceof ChatEvent) {
-    console.log(`Clicked on event '${item.name}'`);
-  } else if (selected instanceof ChannelUser) {
-    console.log(`Clicked on user '${item.name}'`);
+  if (selected instanceof ChatEvent || selected instanceof ChannelUser) {
+    console.log(`Clicked on user '${item.user.name}'`);
   } else {
     console.log(`ERROR: Clicked on item '${item}' not handled`);
   }
@@ -327,26 +344,42 @@ const onRightClick = (selected, item, event) => {
   contextEventUUID.value = null;
   contextUserUUID.value = null;
 
+  const myUser = client.me;
+  const myChannelUser = client.getChannelUserById(selectedChannelUUID.value, myUser.id);
+
   // TODO create the array of options based on our permissions and user permissions
+  contextMenuOptions.value = [];
   if (selected instanceof ChatEvent || selected instanceof ChannelUser) {
     if (selected instanceof ChatEvent)
       contextEventUUID.value = selected.id;
     else
       contextUserUUID.value = selected.id;
-    contextMenuOptions.value = [
-      'Profile',
-      'Mute',
-      'Block',
-      'Ban',
-      'Kick',
-    ]
+
+    contextMenuOptions.value.push('Profile');
+    if (item.isMuted)
+      contextMenuOptions.value.push('Unmute');
+    else
+      contextMenuOptions.value.push('Mute');
+
+    if (item.user.blocked)
+      contextMenuOptions.value.push('Unblock');
+    else
+      contextMenuOptions.value.push('Block');
+
+    if (myChannelUser.isOwner || myChannelUser.isAdmin) {
+      // TODO what if target is admin or owner?
+      contextMenuOptions.value.push('Promote');
+      contextMenuOptions.value.push('Ban');
+      contextMenuOptions.value.push('Kick');
+    }
   } else if (selected instanceof Channel) {
     contextChannelUUID.value = selected.id;
-    contextMenuOptions.value = [
-      'Edit',
-      'Destroy',
-      'Leave',
-    ]
+
+    if (myChannelUser.isOwner || myChannelUser.isAdmin) {
+      contextMenuOptions.value.push('Edit');
+      contextMenuOptions.value.push('Destroy');
+    }
+    contextMenuOptions.value.push('Leave');
   } else {
     console.log(`ERROR: Right click on item '${item}' not handled`);
   }
@@ -357,11 +390,13 @@ const onRightClick = (selected, item, event) => {
 
 // Context menu
 const handleContextMenuSelect = ({ option, item }) => {
-  if (['Kick',
+  if (['Block',
+       'Unblock',
+       'Promote',
+       'Demote',
        'Ban',
        'Unban',
-       'Block',
-       'Unblock',
+       'Kick',
        'Destroy',
        'Leave'].includes(option)) {
     confirmModalTitle.value = `Confirm ${option.toLowerCase()}`;
@@ -553,37 +588,34 @@ function userStatus(status) {
   return 'status-offline';
 }
 
-const randomSeed = Math.floor(Math.random() * 100);
-const colors = [
-  '#ac2847',
-  '#ec273f',
-  '#de5d3a',
-  '#f3a833',
-  '#ce9248',
-  '#e8d282',
-  '#f7f3b7',
-  '#26854c',
-  '#5ab552',
-  '#9de64e',
-  '#62a477',
-  '#3388de',
-  '#36c5f4',
-  '#6dead6',
-  '#9a4d76',
-  '#c878af',
-  '#cc99ff',
-  '#fa6e79',
-  '#ffa2ac',
-  '#ffd1d5',
-];
-const stringToColor = (str) => {
-  console.log(`stringToColor(${str})`);
-  let hash = randomSeed;
-  for (let i = 0; i < str.length; i++) {
-    hash = str.charCodeAt(i) + ((hash << 5) - hash);
-  }
-  return colors[(Math.abs(hash) * randomSeed) % colors.length];
-};
+const getUserRoles = (channelUser) => {
+  const roles = [];
+  if (!channelUser) return roles;
+  if (channelUser.isOwner) roles.push('owner');
+  if (channelUser.isAdmin && !channelUser.isOwner) roles.push('admin');
+  if (channelUser.isMuted) roles.push('muted');
+  if (channelUser.isBanned) roles.push('banned');
+  if (channelUser.isFriend) roles.push('friend');
+  return roles;
+}
+const getUserTitle = (channelUser) => {
+  if (!channelUser)
+    return '(user not in channel)';
+
+  const roles = getUserRoles(channelUser);
+  if (roles.length === 0)
+    return '(none)';
+  return `${roles.join(', ')}`;
+}
+const getUserInfo = (channelUser) => {
+  if (!channelUser)
+    return '(user not in channel)';
+
+  const roles = getUserRoles(channelUser);
+  if (roles.length === 0)
+    return '';
+  return roles.map(role => `(${role})`).join(' ');
+}
 </script>
 
 <style scoped>
