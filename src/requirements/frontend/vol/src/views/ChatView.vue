@@ -373,7 +373,7 @@ const onRightClick = (selected, item, event) => {
 
     if (item.user.status === UserStatusEnum.ONLINE)
       contextMenuOptions.value.push('Challenge');
-    else if (item.user.status === UserStatusEnum.INGAME)
+    else if (item.user.status === UserStatusEnum.IN_GAME)
       contextMenuOptions.value.push('Spectate');
 
     if (item.isMuted)
