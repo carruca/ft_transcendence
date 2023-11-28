@@ -458,15 +458,30 @@ const executeContextAction = ( option, item ) => {
     } else if (option === 'Mute') {
       console.log(`Muting user '${item.user.name}'`)
       client.mute(selectedChannelUUID.value, item.user.id);
+    } else if (option === 'Unmute') {
+      console.log(`Unmuting user '${item.user.name}'`)
+      client.unmute(selectedChannelUUID.value, item.user.id);
     } else if (option === 'Block') {
       console.log(`Blocking user '${item.user.name}'`)
       client.block(item.user.id);
+    } else if (option === 'Unblock') {
+      console.log(`Unblocking user '${item.user.name}'`)
+      client.unblock(selectedChannelUUID.value, item.user.id);
     } else if (option === 'Ban') {
       console.log(`Banning user '${item.user.name}'`)
       client.ban(selectedChannelUUID.value, item.user.id);
+    } else if (option === 'Unban') {
+      console.log(`Unbanning user '${item.user.name}'`)
+      client.unban(selectedChannelUUID.value, item.user.id);
     } else if (option === 'Kick') {
       console.log(`Kicking user '${item.user.name}'`)
       client.kick(selectedChannelUUID.value, item.user.id);
+    } else if (option === 'Promote') {
+      console.log(`Promoting user '${item.user.name}'`)
+      client.promote(selectedChannelUUID.value, item.user.id);
+    } else if (option === 'Demote') {
+      console.log(`Demoting user '${item.user.name}'`)
+      client.demote(selectedChannelUUID.value, item.user.id);
     }
   } else {
     console.log(`ERROR: Option '${option}' selected for item '${item}' not handled`);

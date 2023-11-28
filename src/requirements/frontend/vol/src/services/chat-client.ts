@@ -105,6 +105,7 @@ class ChatClient {
     socket.on('list', this.onList.bind(this));
     socket.on('adminData', this.onAdminData.bind(this));
     socket.on('watch', this.onWatch.bind(this));
+    socket.on('privMessage', this.onPrivMessage.bind(this));
 
     socket.on('challengeRequested', this.onChallengeRequested.bind(this));
     socket.on('challengeRejected', this.onChallengeRejected.bind(this));
@@ -177,17 +178,16 @@ class ChatClient {
     console.log("onChallengeRequested", sourceUser.nickname, sourceUser.id);
   }
 
-  private onChallengeSpectated(responseJSON: string): void {
-    const { sourceUserId, gameMode } = JSON.parse(responseJSON);
-    const sourceUser = this.getUserById_(sourceUserId);
-
-    router.push('/game');
-  }
-
   private onWatch(responseJSON: string): void {
     const [ targetUser ] = JSON.parse(responseJSON);
 
     this.addUserFromDTO_(targetUser);
+  }
+
+  private onPrivMessage(responseJSON: string): void {
+    const { sourceUserId, sourceUserNickname, message } = event;
+
+    this.privs_.set(sourceUserId, sourceUserNickname)
   }
 
   private onUserJoined(responseJSON: string): void {
@@ -263,10 +263,11 @@ class ChatClient {
     const { channelId, userId, ...changes} = JSON.parse(dataJSON);
     const channel = this.getChannelById_(channelId);
     const user = this.getUserById_(userId);
+    const channelUser = this.getChannelUserById(channelId, userId);
 
 
-    console.log('onChannelUpdated', data); 
-    channel.update(changes, user);
+    console.log('onChannelUpdated', channelId, userId, changes); 
+    channel.update(channelUser, changes);
   }
 
   private onChannelDeleted(dataJSON: string) {
@@ -446,6 +447,10 @@ class ChatClient {
 
   public chanmsg(channelId: string, message: string) {
     socket.emit('chanmsg', JSON.stringify([ channelId, message ]));
+  }
+
+  public privmsg(channelId: string, message: string) {
+    socket.emit('privmsg', JSON.stringify([ channelId, message ]));
   }
 
   public create(channelName: string, password?: string) {

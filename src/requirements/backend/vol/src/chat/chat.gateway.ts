@@ -363,6 +363,32 @@ export class ChatGateway {
             .send();
   }
 
+  @SubscribeMessage('mute')
+  async handleClientMute(client: Socket, dataJSON: string): Promise<void> {
+    if (!client.data.user) return;
+
+    const [ channelId, targetUserId ] = JSON.parse(dataJSON);
+    const sourceUser = client.data.user;
+    const response = await this.chat_.muteUserFromChannelId(sourceUser, channelId, targetUserId);
+
+    response.setSourceUser(sourceUser)
+            .setEvent('mute')
+            .send();
+  }
+
+  @SubscribeMessage('unmute')
+  async handleClientUnute(client: Socket, dataJSON: string): Promise<void> {
+    if (!client.data.user) return;
+
+    const [ channelId, targetUserId ] = JSON.parse(dataJSON);
+    const sourceUser = client.data.user;
+    const response = await this.chat_.unmuteUserFromChannelId(sourceUser, channelId, targetUserId);
+
+    response.setSourceUser(sourceUser)
+            .setEvent('unmute')
+            .send();
+  }
+
   @SubscribeMessage('challengerequest')
   async handleClientRequestChallenge(client: Socket, dataJSON: string): Promise<void> {
     if (!client.data.user) return;
@@ -498,6 +524,17 @@ export class ChatGateway {
     return true;
   }
 
+  @ChatManagerSubscribe('onUserMessageSended')
+  onUserMessageSended(event: any): void {
+    const { sourceUser, targetUser, message } = event;
+
+    targetUser.socket?.emit('privMessage', JSON.stringify({
+      sourceUserId: sourceUser.id,
+      sourceUserNickname: sourceUser.nickname,
+      message,
+    }));
+  }
+ 
   @ChatManagerSubscribe('onUserChallengeSpectated')
   onUserChallengeSpectated(event: any): void {
     const { sourceUser, targetUser, gameMode } = event;
