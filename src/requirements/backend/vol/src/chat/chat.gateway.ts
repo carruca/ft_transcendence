@@ -403,7 +403,7 @@ export class ChatGateway {
   }
 
   @SubscribeMessage('challengespectate')
-  async handleSpectate(client: Socket, dataJSON: string): Promise<void> {
+  async handleChallengeSpectate(client: Socket, dataJSON: string): Promise<void> {
     if (!client.data.user) return;
 
     const [ targetUserId ] = JSON.parse(dataJSON);
