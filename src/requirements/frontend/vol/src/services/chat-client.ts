@@ -290,7 +290,7 @@ class ChatClient {
     const { sourceUserId, changes } = JSON.parse(dataJSON);
     const sourceUser = this.getUserById_(sourceUserId);
    
-    console.log('onUserUpdated', changes);
+    console.log('onUserUpdated', sourceUserId, changes, sourceUser);
     if (sourceUser) {
       sourceUser.update(changes);
     }
@@ -542,6 +542,16 @@ class ChatClient {
     this.adminChannelList_.value = [];
     this.adminUserList_.value = [];
   }
+
+  public userWatch() {
+    socket.emit('userwatch');
+  }
+
+  public userUnwatch() {
+    socket.emit('userunwatch');
+  }
+
+
 
   public setUserCurrentChannel = (channelId: string): void => {
     if (this.channels_.has(channelId)) {
