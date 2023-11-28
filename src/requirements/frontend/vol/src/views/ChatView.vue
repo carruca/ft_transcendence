@@ -64,6 +64,7 @@
                   :title="getUserTitle(event.targetChannelUser)"
                   @click="onClick(event, event.targetChannelUser)"
                   @contextmenu="onRightClick(event, event.targetChannelUser, $event)">
+                &nbsp;
                 {{ event.target.name }}
               </span>
             </div>
@@ -474,7 +475,7 @@ const executeContextAction = ( option, item ) => {
       client.block(item.user.id);
     } else if (option === 'Unblock') {
       console.log(`Unblocking user '${item.user.name}'`)
-      client.unblock(selectedChannelUUID.value, item.user.id);
+      client.unblock(item.user.id);
     } else if (option === 'Ban') {
       console.log(`Banning user '${item.user.name}'`)
       client.ban(selectedChannelUUID.value, item.user.id);
@@ -646,7 +647,8 @@ const getUserRoles = (channelUser) => {
   if (channelUser.isAdmin && !channelUser.isOwner) roles.push('admin');
   if (channelUser.isMuted) roles.push('muted');
   if (channelUser.isBanned) roles.push('banned');
-  if (channelUser.isFriend) roles.push('friend');
+  if (channelUser.user.friend) roles.push('friend');
+  if (channelUser.user.blocked) roles.push('blocked');
   return roles;
 }
 const getUserTitle = (channelUser) => {

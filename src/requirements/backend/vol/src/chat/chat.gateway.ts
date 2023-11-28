@@ -219,29 +219,29 @@ export class ChatGateway {
             .send();
   }
 
-  @SubscribeMessage('watch')
+  @SubscribeMessage('userwatch')
   async handleWatch(client: Socket, dataJSON: string): Promise<void> {
     if (!client.data.user) return;
 
     const [ targetUserId ] = JSON.parse(dataJSON);
     const sourceUser = client.data.user;
-    const response = await this.chat_.watchUserId(sourceUser, targetUserId);
+    const response = await this.chat_.userWatchUserId(sourceUser, targetUserId);
 
     response.setSourceUser(sourceUser)
-            .setEvent('watch')
+            .setEvent('userwatch')
             .send();
   }
 
-  @SubscribeMessage('unwatch')
+  @SubscribeMessage('userunwatch')
   async handleUnwatch(client: Socket, dataJSON: string): Promise<void> {
     if (!client.data.user) return;
 
     const [ targetUserId ] = JSON.parse(dataJSON);
     const sourceUser = client.data.user;
-    const response = await this.chat_.unwatchUserId(sourceUser, targetUserId);
+    const response = await this.chat_.userUnwatchUserId(sourceUser, targetUserId);
 
     response.setSourceUser(sourceUser)
-            .setEvent('unwatch')
+            .setEvent('userunwatch')
             .send();
   }
 
@@ -583,7 +583,7 @@ export class ChatGateway {
   onUserWatchUser(event: any): void {
     const { sourceUser, targetUser } = event;
 
-    sourceUser.socket.emit('watch', JSON.stringify(targetUser.DTO));
+    sourceUser.socket.emit('watch', JSON.stringify([ targetUser.DTO ]));
   }
 
   @ChatManagerSubscribe('onUserConnected')

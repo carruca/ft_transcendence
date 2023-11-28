@@ -318,7 +318,7 @@ export class ChatManager {
       admin: false,
     };
 
-    this.raise_<void>('onUserJoined', { channel, sourceUser: user, targetUsers: channel.getUsers() });
+    this.raise_<void>('onUserJoined', { channel, sourceUser: user, targetUsers: channel.getUsersOnline() });
     channel.addUser(user);
     user.addChannel(channel);
     this.raise_<void>('onChannelCreated', { channel, targetUsers: [ user ] });
@@ -336,7 +336,7 @@ export class ChatManager {
 
     channel.removeUser(user);
     user.removeChannel(channel);
-    this.raise_<void>('onUserParted', { channel, sourceUser: user, targetUsers: channel.getUsers() });
+    this.raise_<void>('onUserParted', { channel, sourceUser: user, targetUsers: channel.getUsersOnline() });
     this.raise_<void>('onChannelDeleted', { channel, targetUsers: [ user ] });
 
     if (channel.isEmpty) {
@@ -344,10 +344,11 @@ export class ChatManager {
     }
   }
 
-  public async watchUserId(sourceUser: User, targetUserId: string): Promise<Response> {
+  public async userWatchUserId(sourceUser: User, targetUserId: string): Promise<Response> {
     const targetUser = this.getUserById(targetUserId);
 
     if (!targetUser) return Response.UserNotExists();
+    if (targetUser.hasWatcher(sourceUser)) return Response.Success();
     targetUser.addWatcher(sourceUser);
     
     this.raise_<void>('onUserWatchUser', { sourceUser, targetUser });
@@ -355,10 +356,12 @@ export class ChatManager {
   }
 
 
-  public async unwatchUserId(sourceUser: User, targetUserId: string): Promise<Response> {
+  public async userUnwatchUserId(sourceUser: User, targetUserId: string): Promise<Response> {
     const targetUser = this.getUserById(targetUserId);
 
     if (!targetUser) return Response.UserNotExists();
+    if (!targetUser.hasWatcher(sourceUser)) return Response.Success();
+    targetUser.removeWatcher(sourceUser);
 
     return Response.Success();
   }
@@ -742,6 +745,15 @@ export class ChatManager {
 
   //  this.raise_<void>('onUserBlocked', { sourceUser, targetUser });
     sourceUser.addBlock(targetUser);
+
+    console.log("blockUserId");
+    this.raise_<void>('onUserUpdated', {
+      sourceUser: targetUser,
+      targetUsers: [ sourceUser ],
+      changes: {
+        blocked: true,
+    }});
+
     await this.usersService_.createBlock({
       userId: sourceUser.id,
       blockId: targetUser.id,
@@ -761,6 +773,14 @@ export class ChatManager {
 
     //this.raise_<void>('onUserUnblocked', { sourceUser, targetUser });
     sourceUser.removeBlock(targetUser);
+
+    this.raise_<void>('onUserUpdated', {
+      sourceUser: targetUser,
+      targetUsers: [ sourceUser ],
+      changes: {
+        blocked: false,
+    }});
+
     await this.usersService_.removeBlock(sourceUser.id, targetUser.id);
     return Response.Success();
   }
@@ -1043,7 +1063,7 @@ export class ChatManager {
 
 	private notifyEvent_(objects: any[], type: NotifyEventTypeEnum, changes: {}) {
 	  const [ event, object ] = objects;
-	  const targetUsers = object.getUsers();
+	  const targetUsers = object.getUsersOnline();
 	 // console.log(`notifyEvent ${type}: ${object.id} ${event.id} ${changes}`);
     if (type === NotifyEventTypeEnum.UPDATE) {
       if (object instanceof Channel)
@@ -1136,7 +1156,7 @@ export class ChatManager {
   private async cleanChannel_(channel: Channel): Promise<void> {
     for (const user of channel.getUsers()) {
       channel.removeUser(user);
-      this.raise_<void>('onChannelUserDeleted', { channel, targetUsers: [ channel.getUsers() ]});
+      this.raise_<void>('onChannelUserDeleted', { channel, targetUsers: [ channel.getUsersOnline() ]});
       user.removeChannel(channel);
       this.raise_<void>('onChannelDeleted', { channel, targetUsers: [ user ] });
       await this.channelsService_.removeChannelUser(channel.id, user.id);
