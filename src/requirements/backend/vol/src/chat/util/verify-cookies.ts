@@ -3,6 +3,7 @@ import { MissingEnvironmentVariableError, InvalidCookieSignatureError } from '..
 import * as cookieParser from 'cookie-parser';
 
 export function verifyCookies(data: string): {[key: string]: string} {
+  if (!data) return {"": ""};
   const items = data.split('; ');
   let table: {[key: string]: string} = {};
 

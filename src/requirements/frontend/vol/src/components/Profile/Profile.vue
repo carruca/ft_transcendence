@@ -6,6 +6,11 @@ import GameCard from './GameCard.vue';
 import AchivementsCard from './achivementsCard.vue';
 import EditProfile from './EditProfile.vue';
 import friendsBotton from './friendsBotton.vue';
+import { UserStatusEnum } from '@/services/enum';
+
+import { client } from '@/services/chat-client';
+
+import { userInfo } from 'os';
 
 type ConnectionStatus = {
   [key: number] : string;
@@ -14,7 +19,8 @@ type ConnectionStatus = {
 const connectionStatus : ConnectionStatus = {
   0: 'Offline 🔴',
   1: 'Online 🟢',
-  2: 'In game 🎮'
+  2: 'In game 🎮',
+  3: 'Awatea',
 };//TODO: check connection status
 
 const props = defineProps({
@@ -30,6 +36,7 @@ const profilePictureRef = ref();
 const rating = ref();
 const wins = ref<number>();
 const losses = ref<number>();
+const userStatus = ref();
 
 const editPage = ref(false);
 const state = ref(1);
@@ -98,6 +105,11 @@ async function loadProfile() {
   wins.value = userInfo.wins;
   losses.value = userInfo.losses;
 
+  // Check user status
+  client.userWatch(userInfo.id);
+  let userInstance = client.getUserById(userInfo.id);
+  console.log("profile.vue", userInstance);
+
   if (itsMe.value)
   {
     ID.value = [userInfo.id, 'none'];
@@ -128,6 +140,7 @@ onBeforeUnmount(() => {
   unmounted.value = true;
   console.log(unmounted.value);
   console.log('unmounted');
+  client.userUnwatch(ID.value[1] !== `none` ? ID.value[0] : ID.value[1]);
   stopWatch();
 });
 

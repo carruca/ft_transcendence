@@ -12,6 +12,7 @@ import { Axis, Axis2, Player, Room } from './game.interface';
 import { RoomService } from './room.service';
 import { ChatManagerHandler, ChatManagerSubscribe, ChatManagerInstance } from '../chat/decorator';
 import { ChatManager } from '../chat/manager';
+import { UserStatusEnum } from '../chat/enum';
 
 import { EventType } from './enum';
 
@@ -81,6 +82,15 @@ export class GameGateway implements OnGatewayDisconnect {
     if (!player)
       return;
     this.room_service.ready(player);
+  }
+
+  @SubscribeMessage('menu')
+  onMenu(client: Socket): void {
+    if (!client.data.user)
+      return;
+    // Set user status to online when on menu
+    // (in case it exited erroneously and didn't change on room.stop())
+    client.data.user.status = UserStatusEnum.ONLINE;
   }
 
   @SubscribeMessage('down')
