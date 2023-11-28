@@ -459,15 +459,6 @@ socket.on('delete', (id: number) => {
   es.remove(id);
 });
 
-// TODO this is rnavarre42 part hardcoded
-const spectate = (id: string) => {
-  socket.emit('get-room', id);
-};
-socket.on('room', (code: string) => {
-  console.log("got room: " + code + ", joining...");
-  socket.emit('join-room', code);
-});
-
 /** EVENTS ------------------------------------- */
 
 // keys
@@ -512,6 +503,8 @@ onMounted(() => {
     // game loop
     displayMenu();
     game.changeStatus(Status.MENU);
+    // tell backend to check for queued events
+    socket.emit("events");
   });
 });
 
@@ -550,6 +543,8 @@ const handleButton2Click = () => {
 };
 const handleBottomButton = () => {
   showBottomButton.value = false;
+  // emit leave
+  socket.emit("leave_game");
   // return to menu
   Engine.reset();
   displayMenu();
