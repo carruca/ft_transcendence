@@ -38,11 +38,24 @@ import router from '@/router';
 import './client';
 
 
+watch(userCurrentChannel, (newChannel) => {
+  if (!newChannel) {
+    selectedChannelUUID.value = undefined;
+  } else if (newChannel.id !== selectedChannelUUID.value) {
+    selectedChannelUUID.value = newChannel.id;
+    nextTick(() => {
+      scrollToBottom();
+    });
+  }
+});
 
 class ChatClient {
   private me_: User;
   private channels_: Map<string, Channel> = reactive(new Map());
   private users_: Map<string, User> = reactive(new Map());
+
+  private userWatchCallback_?: Function;
+  private isConnected_ = ref<boolen>(false);
 
   private channelsSummary_ = ref<ChannelSummaryDTO[]>([]);
   public channelsSummary = readonly(this.channelsSummary_);
@@ -98,7 +111,13 @@ class ChatClient {
   get users() {
     return Array.from(this.users_.values());
   }
+
+  get isConnected(): boolean {
+    return readonly(this.isConnected_);
+  }
+
   private setupSocketEventHandlers_() {
+    socket.on('error', this.onError.bind(this));
     socket.on('reterror', this.onRetError.bind(this));
     socket.on('retsuccess', this.onRetSuccess.bind(this));
     socket.on('registered', this.onRegistered.bind(this));
@@ -129,6 +148,10 @@ class ChatClient {
     socket.on('userChannelCreated', this.onUserChannelCreated.bind(this));
     socket.on('userChannelUpdated', this.onUserChannelUpdated.bind(this));
     socket.on('userChannelDeleted', this.onUserChannelDeleted.bind(this));
+  }
+
+  private onError(data: any): void {
+    this.isConnected_ = false;
   }
 
   private onList(responseJSON: string): void {
@@ -236,6 +259,7 @@ class ChatClient {
     }
     this.updateUserChannelList_();
     this.userCurrentChannel_.value = this.userChannelList.value[0];
+    this.isConnected_ = true;
   }
 
   updateUserChannelList_(): void {
@@ -543,15 +567,14 @@ class ChatClient {
     this.adminUserList_.value = [];
   }
 
-  public userWatch(userId: string) {
+  public userWatch(userId: string, callback?: Function) {
     socket.emit('userwatch', JSON.stringify([ userId ]));
+    this.userWatchCallback =  callback;
   }
 
   public userUnwatch(userId: string) {
     socket.emit('userunwatch', JSON.stringify([ userId ]));
   }
-
-
 
   public setUserCurrentChannel = (channelId: string): void => {
     if (this.channels_.has(channelId)) {
