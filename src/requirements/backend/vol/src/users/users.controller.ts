@@ -98,6 +98,14 @@ export class UsersController {
     return this.usersService.createBlock(createBlockDto);
   }
 
+  @Delete('block')
+  removeBlock(@Body() createBlockDto: CreateBlockDto) {
+    return this.usersService.removeBlock(
+      createBlockDto.userId,
+      createBlockDto.blockId
+    );
+  }
+
   @Get(':id/blocks')
   getBlocks(@Param('id') id: string) {
     return this.usersService.getBlocks(id);
