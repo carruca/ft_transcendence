@@ -102,7 +102,6 @@ export class RoomService {
     // remove from room
     for (const room of this.rooms.values()) {
       if (room.spectators.indexOf(socket) != -1) {
-        console.log("leave spectator: " + socket.data.user!.nickname);
         room.spectators.splice(room.spectators.indexOf(socket), 1);
       }
       // find disconnected player
