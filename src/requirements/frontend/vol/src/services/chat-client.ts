@@ -109,6 +109,7 @@ class ChatClient {
     socket.on('challengeRequested', this.onChallengeRequested.bind(this));
     socket.on('challengeRejected', this.onChallengeRejected.bind(this));
     socket.on('challengeAccepted', this.onChallengeAccepted.bind(this));
+    socket.on('challengeSpectated', this.onChallengeSpectated.bind(this));
 
     socket.on('channelCreated', this.onChannelCreated.bind(this));
     socket.on('channelUpdated', this.onChannelUpdated.bind(this));
@@ -145,11 +146,19 @@ class ChatClient {
     console.log("onAdminData users", this.adminUserList_.value);
   }
 
+  private onChallengeSpectated(responseJSON: string): void {
+    const { sourceUserId, gameMode } = JSON.parse(responseJSON);
+    const sourceUser = this.getUserById_(sourceUserId);
+  
+    //TODO: modal notify?? 
+    router.push('/game');
+  }
+
   private onChallengeAccepted(responseJSON: string): void {
     const { sourceUserId, gameMode } = JSON.parse(responseJSON);
     const sourceUser = this.getUserById_(sourceUserId);
   
-    //TODO: modal notify?? ... change browser route to game
+    //TODO: modal notify?? 
     router.push('/game');
   }
 
@@ -166,6 +175,13 @@ class ChatClient {
 
     //TODO: modal notify with user and game mode.
     console.log("onChallengeRequested", sourceUser.nickname, sourceUser.id);
+  }
+
+  private onChallengeSpectated(responseJSON: string): void {
+    const { sourceUserId, gameMode } = JSON.parse(responseJSON);
+    const sourceUser = this.getUserById_(sourceUserId);
+
+    router.push('/game');
   }
 
   private onWatch(responseJSON: string): void {
@@ -505,7 +521,7 @@ class ChatClient {
   }
 
   public spectate(userId: string) {
-    socket.emit('spectate'. JSON.stringify([ userId ]));
+    socket.emit('spectate', JSON.stringify([ userId ]));
   }
 
   public list() {

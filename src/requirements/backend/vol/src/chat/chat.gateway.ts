@@ -402,7 +402,7 @@ export class ChatGateway {
             .send();
   }
 
-  @SubscribeMessage('spectate')
+  @SubscribeMessage('challengespectate')
   async handleSpectate(client: Socket, dataJSON: string): Promise<void> {
     if (!client.data.user) return;
 
@@ -411,7 +411,7 @@ export class ChatGateway {
     const response = await this.chat_.spectateUserId(sourceUser, targetUserId)
 
     response.setSourceUser(sourceUser)
-            .setEvent('spectate')
+            .setEvent('challengespectate')
             .send();
   }
 
@@ -496,6 +496,13 @@ export class ChatGateway {
 
     console.log("Fin de test");
     return true;
+  }
+
+  @ChatManagerSubscribe('onUserChallengeSpectated')
+  onUserChallengeRequested(event: any): void {
+    const { sourceUser, targetUser, gameMode } = event;
+
+    targetUser.socket?.emit('challengeSpectated', JSON.stringify({ sourceUserId: sourceUser.id, gameMode }));
   }
 
   @ChatManagerSubscribe('onUserChallengeRequested')
