@@ -1,14 +1,21 @@
 import {
+<<<<<<<< HEAD:src/requirements/backend/vol/src/chat/manager/event.manager.ts.bk
   Event,
+========
+  EventModel as Event,
+>>>>>>>> master:src/requirements/backend/vol/src/chat/manager/event.manager.ts
 } from '../model';
 
 import {
   EventTypeEnum,
 } from '../enum';
+<<<<<<<< HEAD:src/requirements/backend/vol/src/chat/manager/event.manager.ts.bk
 
 import {
   EventPayload,
 } from '../interface';
+========
+>>>>>>>> master:src/requirements/backend/vol/src/chat/manager/event.manager.ts
 
 export class EventManager {
   private readonly events_: Event[];

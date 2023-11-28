@@ -18,7 +18,6 @@ import {
     reactive,
 } from 'vue';
 
-// TODO instead of reinventing the wheel, just make it contain a 'Event' object
 export class ChatEvent extends BaseEvent {
   public readonly sourceChannelUser: ChannelUser | undefined;
   public readonly targetChannelUser: ChannelUser | undefined;

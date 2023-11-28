@@ -151,7 +151,6 @@ export class User {
   }
 
   
-
   getChannels(): Channel[] {
     return Array.from(this.channels_);
   }
