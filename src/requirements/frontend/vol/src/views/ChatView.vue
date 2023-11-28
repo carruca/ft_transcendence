@@ -474,7 +474,7 @@ const executeContextAction = ( option, item ) => {
       client.block(item.user.id);
     } else if (option === 'Unblock') {
       console.log(`Unblocking user '${item.user.name}'`)
-      client.unblock(selectedChannelUUID.value, item.user.id);
+      client.unblock(item.user.id);
     } else if (option === 'Ban') {
       console.log(`Banning user '${item.user.name}'`)
       client.ban(selectedChannelUUID.value, item.user.id);
