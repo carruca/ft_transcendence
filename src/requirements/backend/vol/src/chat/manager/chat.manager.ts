@@ -459,7 +459,7 @@ export class ChatManager {
 
   }
 
-  public async spectateUserId(sourceUser: User, targetUserid: string): Promise<Response> {
+  public async spectateChallengeUserId(sourceUser: User, targetUserid: string): Promise<Response> {
     const targetUser = this.getUserById(targetUserid);
 
     if (!targetUser) return Response.UserNotExists();
@@ -469,7 +469,7 @@ export class ChatManager {
 
     //TODO advertir al resto de usuarios el cambio de estado.
     sourceUser.status = UserStatusEnum.IN_GAME;
-    this.raise_<void>('onUserSpectated', { sourceUser, targetUser })
+    this.raise_<void>('onUserChallengeSpectated', { sourceUser, targetUser })
     return Response.Success();
   }
 
