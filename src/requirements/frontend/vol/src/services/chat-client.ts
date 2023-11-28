@@ -73,7 +73,7 @@ class ChatClient {
     return this.users_.get(userId);
   }
 
-  private getChannelUserById(channelId: string, userId: string): ChannelUser | undefined {
+  public getChannelUserById(channelId: string, userId: string): ChannelUser | undefined {
     const channel = this.getChannelById_(channelId);
     if (!channel) return undefined;
   
@@ -84,7 +84,6 @@ class ChatClient {
   }
 
   get me() {
-    console.log(this.channels_);
     return this.me_;
   }
 
@@ -101,7 +100,8 @@ class ChatClient {
     socket.on('registered', this.onRegistered.bind(this));
     socket.on('list', this.onList.bind(this));
     socket.on('adminData', this.onAdminData.bind(this));
-    socket.on('watch'), this.onWatch.bind(this);
+    socket.on('watch', this.onWatch.bind(this));
+
 
     socket.on('channelCreated', this.onChannelCreated.bind(this));
     socket.on('channelUpdated', this.onChannelUpdated.bind(this));
@@ -110,6 +110,9 @@ class ChatClient {
     socket.on('userCreated', this.onUserCreated.bind(this));
     socket.on('userUpdated', this.onUserUpdated.bind(this));
     socket.on('userDeleted', this.onUserDeleted.bind(this));
+
+    socket.on('userJoined', this.onUserJoined.bind(this));
+    socket.on('userParted', this.onUserParted.bind(this));
 
     socket.on('channelEventCreated', this.onChannelEventCreated.bind(this));
     //socket.on('channelEventUpdated', this.onChannelEventUpdated.bind(this));
@@ -141,6 +144,22 @@ class ChatClient {
     this.addUserFromDTO_(targetUser);
   }
 
+  private onUserJoined(responseJSON: string): void {
+    const { channelId, sourceChannelUserDTO } = JSON.parse(responseJSON);
+    const channel = this.getChannelById_(channelId);
+    const sourceChannelUser = this.channelUserFromDTO_(sourceChannelUserDTO);
+
+    this.addChannelUserToChannel_(channel, sourceChannelUser);
+  }
+
+  private onUserParted(responseJSON: string): void {
+    const { channelId, sourceUserId } = JSON.parse(responseJSON);
+    const channel = this.getChannelById_(channelId);
+    const sourceUser = this.getUserById_(sourceUserId);
+
+    this.delUserFromChannel_(channel, sourceUser);
+  }
+
   private onRetError(responseJSON: string): void {
     const response = JSON.parse(responseJSON);
 
@@ -169,13 +188,21 @@ class ChatClient {
       console.log(`${channel.name}: ${channel.id}`);
       console.log('users', channel.users);
     }
-    //console.log(meUserDTO);
-    this.userChannelList_.value = Array.from(this.me_.channels.values());
     this.updateUserChannelList_();
+    this.userCurrentChannel_.value = this.userChannelList.value[0];
   }
 
   updateUserChannelList_(): void {
-    this.userCurrentChannel_.value = this.userChannelList.value[0]; //this.me_.channels.values().next().value;
+    this.userChannelList_.value = Array.from(this.me_.channels.values());
+  }
+
+  private manageDestroyedChannelSelection_(channel: Channel) {
+    if (this.userCurrentChannel_.value === channel) {
+      if (this.userChannelList.value.length)
+        this.userCurrentChannel_.value = this.userChannelList.value[0];
+      else
+        this.userCurrentChannel_.value = undefined;
+    }
   }
 
   private onChannelCreated(dataJSON: string) {
@@ -190,6 +217,7 @@ class ChatClient {
     const data = JSON.parse(dataJSON);
 
     console.log('onChannelUpdated', data);
+
   }
 
   private onChannelDeleted(dataJSON: string) {
@@ -199,6 +227,7 @@ class ChatClient {
     console.log('onChannelDeleted', channelId);
     this.deleteChannel_(channel);
     this.updateUserChannelList_();
+    this.manageDestroyedChannelSelection_(channel);
   }
 
   private onUserCreated(dataJSON: string) {
@@ -274,8 +303,10 @@ class ChatClient {
       this.addUser_(user);
     }
 
-    for (const channelDTO of userDTO.channels) {
-      this.addChannelFromDTO_(channelDTO);
+    if (userDTO.channels) {
+      for (const channelDTO of userDTO.channels) {
+        this.addChannelFromDTO_(channelDTO);
+      }
     }
     return user;
   }
@@ -360,6 +391,7 @@ class ChatClient {
  
     channel.addUsers(channelUsers);
     channel.addEvents(events);
+    this.userCurrentChannel_.value = channel;
     return channel;
   }
 
@@ -455,16 +487,13 @@ class ChatClient {
     }
   }
 
-  //Sin uso?
-  public addUserToChannel_(channel: Channel, user: User, props: ChannelUserProperties): ChannelUser {
-    const newChannelUser = new ChannelUser(user, props);
-    channel.addUser(newChannelUser);
-    return newChannelUser;
+  public addChannelUserToChannel_(channel: Channel, channelUser: User) {
+    channel.addUser(channelUser);
   }
 
   //Sin uso?
   public delUserFromChannel_(channel: Channel, user: User) {
-    channel.users.delete(user.id);
+    channel.delUser(user);
   }
 
   private addChannel_(channel: Channel) {

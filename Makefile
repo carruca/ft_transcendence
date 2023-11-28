@@ -31,6 +31,8 @@ DOCKER				= 	docker
 
 COMMANDS			= 	top ps stop start restart pause unpause down config events up images
 
+ADMINS 				= 	dpoveda- madorna pmira-pe tsierra- rnavarre
+
 POSTGRES_PATH		= 	$(SRC_PATH)/$(REQUIREMENTS_PATH)/$(POSTGRESQL)/vol/db/
 POSTGRES_DIRS		= 	pg_notify pg_replslot pg_tblspc pg_twophase pg_commit_ts pg_stat_tmp pg_logical/snapshots pg_logical/mappings
 POSTGRES_DIRS		:= 	$(addprefix $(POSTGRES_PATH), $(POSTGRES_DIRS))
@@ -76,10 +78,17 @@ export:
 	$(DOCKER_COMPOSE) exec -u root -t $(POSTGRESQL) pg_dump $(DATABASE) --data-only
 
 data:
-	$(DOCKER_COMPOSE) exec -u root -t $(POSTGRESQL) psql $(DATABASE) -c "SELECT * FROM \"user\"; SELECT * FROM \"channel\"; SELECT * FROM \"channel_user\"; SELECT * FROM \"block\";"
+	$(DOCKER_COMPOSE) exec -u root -t $(POSTGRESQL) psql $(DATABASE) -c "SELECT * FROM \"user\"; SELECT * FROM \"channel\"; SELECT * FROM \"channel_user\"; SELECT * FROM \"block\"; SELECT * FROM \"ban\";"
 
 clear:
-	$(DOCKER_COMPOSE) exec -u root -t $(POSTGRESQL) psql $(DATABASE) -c "DELETE FROM \"channel_user\"; DELETE FROM \"channel\"; DELETE FROM \"user\";"
+	$(DOCKER_COMPOSE) exec -u root -t $(POSTGRESQL) psql $(DATABASE) -c "DELETE FROM \"ban\"; DELETE FROM \"channel_user\"; DELETE FROM \"channel\"; DELETE FROM \"user\";"
+
+
+$(ADMINS): ADMINUSER := $(word 1,$(MAKECMDGOALS))
+$(ADMINS): admin
+
+admin:
+	$(DOCKER_COMPOSE) exec -u root -t $(POSTGRESQL) psql $(DATABASE) -c "UPDATE \"user\" SET \"mode\" = 1 WHERE \"login\" = '$(ADMINUSER)'"
 
 $(CONTAINERS):
 	$(DOCKER) exec -ti $(addprefix $(CONTAINER_PREFIX), $@) sh

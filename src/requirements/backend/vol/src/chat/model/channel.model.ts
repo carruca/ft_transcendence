@@ -14,6 +14,7 @@ import {
 
 import {
   ChannelDTO,
+  ChannelUserDTO,
   ChannelSummaryDTO,
 } from '../dto';
 
@@ -136,14 +137,14 @@ export class Channel {
       this.admins_.delete(user);
     
     if (channelUserDB.banned)
-      this.admins_.add(user);
+      this.bans_.add(user);
     else
-      this.admins_.delete(user);
+      this.bans_.delete(user);
 
     if (channelUserDB.muted)
-      this.admins_.add(user);
+      this.mutes_.add(user);
     else
-      this.admins_.delete(user);
+      this.mutes_.delete(user);
   }
 
   public hasPrivileges(user: User): boolean {
@@ -209,40 +210,79 @@ export class Channel {
   }
 
   banUser(user: User) {
-    this.bans_.add(user); 
+    if (!this.isBanned(user)) {
+      this.bans_.add(user); 
+      this.notify_(NotifyEventTypeEnum.UPDATE, {
+        userId: user.id,
+        banned: true,
+      });
+    }
   }
 
   unbanUser(user: User) {
-    this.bans_.delete(user);
+    if (this.isBanned(user)) {
+      this.bans_.delete(user);
+      this.notify_(NotifyEventTypeEnum.UPDATE, {
+        userId: user.id,
+        banned: false,
+      });
+    }
   }
 
   muteUser(user: User) {
-    this.mutes_.add(user);
+    if (!this.isMuted(user)) {
+      this.mutes_.add(user);
+      this.notify_(NotifyEventTypeEnum.UPDATE, {
+        userId: user.id,
+        muted: true,
+      });
+    }
   }
 
   unmuteUser(user: User) {
-    this.mutes_.delete(user);
+    if (this.isMuted(user)) {
+      this.mutes_.delete(user);
+      this.notify_(NotifyEventTypeEnum.UPDATE, { 
+        userId: user.id,
+        muted: false,
+      });
+    }
   }
 
   promoteUser(user: User) {
-    this.admins_.add(user);
+    if (!this.isAdmin(user)) {
+      this.admins_.add(user); 
+      this.notify_(NotifyEventTypeEnum.UPDATE, {
+        userId: user.id,
+        admin: true });
+    }
   }
 
   demoteUser(user: User) {
-    this.admins_.delete(user);
+    if (this.isAdmin(user)) {
+      this.admins_.delete(user);
+      this.notify_(NotifyEventTypeEnum.UPDATE, {
+        userId: user.id,
+        admin: false,
+      });
+    }
   }
 
   set owner(value: User) {
     if (this.owner_ !== value) {
       this.owner_ = value;
-      this.notify_(NotifyEventTypeEnum.UPDATE, { owner: value });
+      this.notify_(NotifyEventTypeEnum.UPDATE, {
+        owner: value,
+      });
     }
   }
 
   set topic(value: string | undefined) {
     if (this.topic_ !== value) {
       this.topic_ = value;
-      this.notify_(NotifyEventTypeEnum.UPDATE, { topic: value });
+      this.notify_(NotifyEventTypeEnum.UPDATE, {
+        topic: value,
+      });
     }
   }
 
@@ -253,7 +293,9 @@ export class Channel {
   set topicSetDate(value: Date | undefined) {
     if (this.topicSetDate_ !== value) {
       this.topicSetDate_ = value;
-      this.notify_(NotifyEventTypeEnum.UPDATE, { topicSetDate: value });
+      this.notify_(NotifyEventTypeEnum.UPDATE, {
+        topicSetDate: value,
+      });
     }
   }
 
@@ -264,19 +306,27 @@ export class Channel {
   set topicUser(value: User) {
     if (this.topicUser_ !== value) {
       this.topicUser_ = value;
-      this.notify_(NotifyEventTypeEnum.UPDATE, { topicUser: value });
+      this.notify_(NotifyEventTypeEnum.UPDATE, {
+        topicUser: value,
+      });
     }
   }
 
   set password(value: string | undefined) {
     if (this.password_ !== value) {
       this.password_ = value;
-      this.notify_(NotifyEventTypeEnum.UPDATE, { password: value });
+      this.notify_(NotifyEventTypeEnum.UPDATE, {
+        password: value,
+      });
     }
   }
 
   get password(): string | undefined {
     return this.password_;
+  }
+
+  channelUserDTO(user: User): ChannelUserDTO {
+    return new ChannelUserDTO(this, user);
   }
 
   get DTO(): ChannelDTO {

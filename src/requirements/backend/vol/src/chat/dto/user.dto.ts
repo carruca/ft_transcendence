@@ -24,6 +24,7 @@ export class UserDTO {
   channelsDTO: ChannelDTO[];
 
   //TODO: hay que hacer que ciertos campos sean completados según quien haga la solicitud de información
+  //para eso, este constructor debe aceptar otro usuario para construir la información a partir del anterior
   constructor(user: User) {
     this.id = user.id;
     this.name = user.name;

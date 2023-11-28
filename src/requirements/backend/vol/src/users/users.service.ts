@@ -252,7 +252,7 @@ export class UsersService {
     const block = await this.blocksRepository.findOne({
       where: {
         user: user,
-	blockId: blockId
+	      blockId: blockId
       },
     });
     if (!block) {

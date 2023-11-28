@@ -500,17 +500,17 @@ export class ChatGateway {
 
   @ChatManagerSubscribe('onUserChallengeRequest')
   onUserChallengeRequest(event: any): void {
-    event.targetUser.socket.emit('challengerequest', event.sourceUser.id, event.gameMode);
+    event.targetUser.socket?.emit('challengerequest', event.sourceUser.id, event.gameMode);
   }
 
   @ChatManagerSubscribe('onUserChallengeAccepted')
   onUserChallengeAccepted(event: any): void {
-    event.sourceUser.socket.emit('challengeaccepted', event.targetUser.id, event.gameMode);
+    event.sourceUser.socket?.emit('challengeaccepted', event.targetUser.id, event.gameMode);
   }
 
   @ChatManagerSubscribe('onUserChallengeRejected')
   onUserChallengeRejected(event: any): void {
-    event.sourceUser.socket.emit('challengerejected', event.targetUser.id, event.gameMode);
+    event.sourceUser.socket?.emit('challengerejected', event.targetUser.id, event.gameMode);
   }
 
   @ChatManagerSubscribe('onUserChannelsSummarized')
@@ -524,8 +524,7 @@ export class ChatGateway {
   onUserAdminChannels(event: any): void {
     const { sourceUser, channelsDTO, usersDTO } = event;
 
-
-    sourceUser.socket.emit('adminData', JSON.stringify([ sourceUser, channelsDTO, usersDTO ]));
+    sourceUser.socket.emit('adminData', JSON.stringify([ channelsDTO, usersDTO ]));
   }
 
 
@@ -555,7 +554,7 @@ export class ChatGateway {
     const createJSON = JSON.stringify(sourceUser);
 
     for (const targetUser of targetUsers) {
-      targetUser.socket.emit('userCreated', createJSON);
+      targetUser.socket?.emit('userCreated', createJSON);
     }
   }
 
@@ -569,7 +568,7 @@ export class ChatGateway {
     });
     console.log("ChatGateway: onUserUpdated", changesJSON);
     for (const targetUser of targetUsers) {
-      targetUser.socket.emit('userUpdated', changesJSON);
+      targetUser.socket?.emit('userUpdated', changesJSON);
     }
   }
 
@@ -579,7 +578,33 @@ export class ChatGateway {
     const deleteJSON = JSON.stringify(sourceUser.id);
 
     for (const targetUser of targetUsers) {
-      targetUser.socket.emit('userDeleted', deleteJSON);
+      targetUser.socket?.emit('userDeleted', deleteJSON);
+    }
+  }
+
+  @ChatManagerSubscribe('onUserJoined')
+  onUserJoined(data: any): void {
+    const { channel, sourceUser, targetUsers } = data;
+    const joinedJSON = JSON.stringify({
+      channelId: channel.id,
+      sourceChannelUserDTO: channel.channelUserDTO(sourceUser),
+    });
+
+    for (const targetUser of targetUsers) {
+      targetUser.socket?.emit('userJoined', joinedJSON);
+    }
+  }
+
+  @ChatManagerSubscribe('onUserParted')
+  onUserParted(data: any): void {
+    const { channel, sourceUser, targetUsers } = data;
+    const partedJSON = JSON.stringify({
+      channelId: channel.id,
+      sourceUserId: sourceUser.id,
+    });
+
+    for (const targetUser of targetUsers) {
+      targetUser.socket?.emit('userParted', partedJSON);
     }
   }
 
@@ -590,7 +615,7 @@ export class ChatGateway {
     const createJSON = JSON.stringify(channel.DTO);
 
     for (const targetUser of targetUsers) {
-      targetUser.socket.emit('channelCreated', createJSON);
+      targetUser.socket?.emit('channelCreated', createJSON);
     }
   }
 
@@ -603,7 +628,7 @@ export class ChatGateway {
 
     console.log("Channel UPDATE:", changes);
     for (const targetUser of targetUsers) {
-      targetUser.socket.emit('channelUpdated', changesJSON);
+      targetUser.socket?.emit('channelUpdated', changesJSON);
     }
   }
 
@@ -613,7 +638,7 @@ export class ChatGateway {
     const deleteJSON = JSON.stringify(channel.id);
 
     for (const targetUser of targetUsers) {
-      targetUser.socket.emit('channelDeleted', deleteJSON);
+      targetUser.socket?.emit('channelDeleted', deleteJSON);
     }
   }
 
@@ -623,7 +648,7 @@ export class ChatGateway {
     const createJSON = JSON.stringify(event)
 
     for (const targetUser of targetUsers) {
-      targetUser.socket.emit('eventCreated', createJSON);
+      targetUser.socket?.emit('eventCreated', createJSON);
     }
   }
 
@@ -636,7 +661,7 @@ export class ChatGateway {
     const changesJSON = JSON.stringify(changes);
 
     for (const targetUser of targetUsers) {
-      targetUser.socket.emit('eventUpdated', changesJSON);
+      targetUser.socket?.emit('eventUpdated', changesJSON);
     }
   }
 
@@ -651,7 +676,7 @@ export class ChatGateway {
 
     for (const targetUser of targetUsers) {
       console.log("onChannelEventCreated", changesJSON);
-      targetUser.socket.emit('channelEventCreated', changesJSON);
+      targetUser.socket?.emit('channelEventCreated', changesJSON);
     }
   }
 }

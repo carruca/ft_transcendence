@@ -215,7 +215,9 @@ onBeforeUnmount(() => {
 
 // Watch current channel for changes
 watch(userCurrentChannel, (newChannel) => {
-  if (newChannel.id !== selectedChannelUUID.value) {
+  if (!newChannel) {
+    selectedChannelUUID.value = undefined;
+  } else if (newChannel.id !== selectedChannelUUID.value) {
     selectedChannelUUID.value = newChannel.id;
     nextTick(() => {
       scrollToBottom();

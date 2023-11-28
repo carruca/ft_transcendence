@@ -14,6 +14,7 @@ import { CreateChannelUserDto } from './dto/create-channel-user.dto';
 import { ChannelUserModeDto } from './dto/channel-user-mode.dto';
 
 import { User } from '../users/entities/user.entity';
+import { Ban } from '../users/entities/ban.entity';
 import * as bcrypt from 'bcrypt';
 
 @Injectable()
@@ -226,16 +227,6 @@ export class ChannelsService {
     );
 
     channelUser.admin = channelUserModeDto.mode;
-    return this.channelUsersRepository.save(channelUser);
-  }
-
-  async setBannedToChannelUser(channelUserModeDto: ChannelUserModeDto): Promise<ChannelUser> {
-    const channelUser = await this.findChannelUser(
-      channelUserModeDto.channelId,
-      channelUserModeDto.userId
-    );
-
-    channelUser.banned = channelUserModeDto.mode;
     return this.channelUsersRepository.save(channelUser);
   }
 
