@@ -17,6 +17,7 @@ import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { CreateBlockDto } from './dto/create-block.dto';
+import { CreateBanDto } from './dto/create-ban.dto';
 
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Express, Request, Response } from 'express';
@@ -107,10 +108,28 @@ export class UsersController {
   }
 
   @Get(':id/blocks')
-  getBlocks(@Param('id') id: string) {
-    return this.usersService.getBlocks(id);
+  getBlocks(@Param('userId') userId: string) {
+    return this.usersService.getBlocks(userId);
   }
 
+  @Post('ban')
+  createBan(@Body() createBanDto: CreateBanDto) {
+    return this.usersService.createBan(createBanDto);
+  }
+
+  @Delete('ban')
+  removeBan(@Body() createBanDto: CreateBanDto) {
+    return this.usersService.removeBan(
+      createBanDto.userId,
+      createBanDto.channelId
+    );
+  }
+/*
+  @Get(':id/bans')
+  getBansByUser(@Param('userId') userId: string) {
+    return this.usersService.getBansByUser(userId);
+  }
+*/
   @Get('leaderboard')
   async getLeaderboard() {
     return this.usersService.getLeaderboard();
