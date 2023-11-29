@@ -49,6 +49,11 @@ const routes = [
         component: AdminView,
       },
       {
+        path: 'friends',
+        name: 'Friends',
+        component: undefined,
+      },
+      {
         path: '/:username',
         name: 'Profile',
         component: Profile,
