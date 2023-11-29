@@ -90,6 +90,9 @@ export class ChatClient {
   private showModal_ = ref<boolean>(false);
   public showModal = readonly(this.showModal_);
 
+  private toastMessage_ = ref<string>(undefined);
+  public toastMessage = readonly(this.toastMessage_);
+
   private modalProps_ = ref({
     title: undefined,
     onAccept: undefined,
@@ -192,15 +195,13 @@ export class ChatClient {
     const { sourceUserId, gameMode } = JSON.parse(responseJSON);
     const sourceUser = this.getUserById(sourceUserId);
   
-    //TODO: modal notify?? 
     router.push('/game');
   }
 
   private onChallengeAccepted(responseJSON: string): void {
     const { sourceUserId, gameMode } = JSON.parse(responseJSON);
     const sourceUser = this.getUserById(sourceUserId);
-  
-    //TODO: modal notify?? 
+
     router.push('/game');
   }
 
@@ -209,7 +210,6 @@ export class ChatClient {
     const sourceUser = this.getUserById(sourceUserId);
 
     this.showModal_.value = false;
-    //TODO: modal notify game reject 
   }
 
   private onChallengeRequested(responseJSON: string): void {
@@ -270,6 +270,7 @@ export class ChatClient {
 
   private onRetError(responseJSON: string): void {
     const response = JSON.parse(responseJSON);
+    this.toastMessage_.value = response.message;
 
     console.log(`%cError: ${response.message}`, "color: red;");
   }

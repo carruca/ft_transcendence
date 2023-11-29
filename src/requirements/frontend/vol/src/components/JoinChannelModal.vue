@@ -3,7 +3,7 @@
     <div ref="modalContent" class="modal-content" @click.stop>
       <h2>Join a Channel</h2>
       <div class="scrollable-content">
-        <ul class="channel-list">
+        <ul v-if="channels.length" class="channel-list">
           <li
               v-for="channel in channels"
               :key="channel.id"
@@ -13,6 +13,9 @@
             {{ channel.name }}
           </li>
         </ul>
+        <div v-else>
+          No channels available
+        </div>
       </div>
       <div class="buttons">
         <button @click="closeModal">Close</button>
@@ -65,7 +68,7 @@ const handlePasswordBackgroundClick = (event) => {
 };
 
 const attemptJoinChannel = (channel) => {
-  if (channel.hasPassword) {
+  if (channel.password) {
     selectedChannel.value = channel;
     passwordRequired.value = true;
   } else {
@@ -76,7 +79,7 @@ const joinChannel = () => {
   let isValid = true;
   nameError.value = '';
 
-  if (!channelPassword.value.trim()) {
+  if (!channelPassword.value) {
     nameError.value = "Password is required";
     isValid = false;
   }
@@ -101,7 +104,7 @@ const closeModal = () => {
 };
 
 function channelClass(channel) {
-  if (channel.hasPassword)
+  if (channel.password)
     return 'channel-passwd';
   return '';
 }
@@ -142,6 +145,7 @@ function channelClass(channel) {
   list-style: none;
   padding: 0;
   margin: 0;
+  color: white;
 }
 
 .channel-list li {
@@ -149,7 +153,6 @@ function channelClass(channel) {
   padding: 0.5em;
   border-bottom: 1px solid #444;
   background-color: #272727;
-  color: white;
 }
 
 .channel-list li:hover {
