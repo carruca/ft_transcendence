@@ -20,7 +20,7 @@ import {
 import {
   //UserDTO,
   ChannelDTO,
-  ChannelSummmaryDTO,
+  ChannelSummaryDTO,
 } from './dto';
 
 import {
@@ -76,7 +76,9 @@ export class ChatClient {
   private users_: Map<string, User> = reactive(new Map());
 
   private userWatchCallback_?: Function;
-  private isConnected_ = ref<boolen>(false);
+  
+  private isConnected_ = ref<boolean>(false);
+  public isConnected = readonly(this.isConnected_);
 
   private channelsSummary_ = ref<ChannelSummaryDTO[]>([]);
   public channelsSummary = readonly(this.channelsSummary_);
@@ -142,9 +144,6 @@ export class ChatClient {
     return Array.from(this.users_.values());
   }
 
-  get isConnected(): boolean {
-    return readonly(this.isConnected_);
-  }
 
   private setupSocketEventHandlers_() {
     socket.on('error', this.onError.bind(this));
@@ -181,7 +180,7 @@ export class ChatClient {
   }
 
   private onError(data: any): void {
-    this.isConnected_ = false;
+    this.isConnected_.value = false;
   }
 
   private onList(responseJSON: string): void {
@@ -256,6 +255,9 @@ export class ChatClient {
     const [ targetUser ] = JSON.parse(responseJSON);
 
     this.addUserFromDTO_(targetUser);
+	if (this.userWatchCallback_) {
+	  this.userWatchCallback_(targetUser);
+	}
   }
 
   private onPrivMessage(responseJSON: string): void {
@@ -310,7 +312,7 @@ export class ChatClient {
     }
     this.updateUserChannelList_();
     this.userCurrentChannel_.value = this.userChannelList.value[0];
-    this.isConnected_ = true;
+    this.isConnected_.value = true;
   }
 
   updateUserChannelList_(): void {
@@ -620,7 +622,7 @@ export class ChatClient {
 
   public userWatch(userId: string, callback?: Function) {
     socket.emit('userwatch', JSON.stringify([ userId ]));
-    this.userWatchCallback =  callback;
+    this.userWatchCallback_ =  callback;
   }
 
   public userUnwatch(userId: string) {
