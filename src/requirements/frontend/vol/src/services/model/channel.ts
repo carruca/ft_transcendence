@@ -3,9 +3,13 @@ import {
     ChannelUser,
     ChannelTopic,
     Event,
+    ChannelTopic,
+    Event,
 } from '.';
 
 import {
+    ChannelDTO,
+} from '../dto';
     ChannelDTO,
 } from '../dto';
 
@@ -100,6 +104,7 @@ export class Channel {
     }
 
     get events(): Map<string, Event> {
+      return readonly(this.events_);
       return readonly(this.events_);
     }
 }

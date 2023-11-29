@@ -25,13 +25,12 @@
           },
           credentials: "include",
         });
-      if (response.ok)
+      if (!response.ok)
       {
-        const responseData : rankingUser[] = await response.json();
-        rankingUsers.value = responseData.sort((a, b) => b.rating - a.rating);
-      } else {
-        console.log('Error: could not recieve ranking data');
-    }
+        throw new Error('Could not recieve ranking data');
+      }
+      const responseData : rankingUser[] = await response.json();
+      rankingUsers.value = responseData.sort((a, b) => b.rating - a.rating);
     } catch (error) {
       console.log(error);
     }
@@ -49,7 +48,7 @@
 
     <div v-if="rankingUsers" class="leaderboard-cardscont">
       <div class="leaderboard-card-table">
-        <h3>Top 3 Users</h3>
+        <h3>Top 3</h3>
         <Podium :rankingUsers="rankingUsers"/>
       </div>
       
@@ -64,11 +63,6 @@
 </template>
 
 <style scoped>
-
-canvas {
-  border: 1px solid black;
-}
-
 .leaderboard-container {
   display: flex;
   flex-direction: column;

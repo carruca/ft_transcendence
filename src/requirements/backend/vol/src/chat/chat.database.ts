@@ -20,10 +20,6 @@ import {
   Logger,
 } from '@nestjs/common';
 
-import { 
-  v4 as uuidv4,
-} from 'uuid';
-
 @ChatManagerHandler()
 export class ChatDatabase {
   private readonly logger_: Logger = new Logger("ChatDatabase");

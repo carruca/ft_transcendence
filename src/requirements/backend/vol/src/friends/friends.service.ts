@@ -42,6 +42,7 @@ export class FriendsService {
     const newFriend = new Friend(
       users,
       createFriendDto.receiverId,
+      createFriendDto.senderId,
       FriendStatus.requested,
     );
     await this.friendsRepository.save(newFriend);
@@ -83,6 +84,31 @@ export class FriendsService {
   }
 
   async remove(id: string) {
-    return this.friendsRepository.delete(id);
+    const friend = await this.friendsRepository.findOne({
+      where: {
+        id,
+      },
+    });
+    if (!friend) {
+      throw new HttpException('Friend not found', HttpStatus.NOT_FOUND);
+    }
+
+    const users = await this.usersRepository.find({
+      relations: ['friends'],
+      where: {
+        id: In([
+          friend.receiverId,
+          friend.senderId,
+        ]),
+      },
+    });
+    if (!users || users.length === 1) {
+      throw new HttpException('Users not found', HttpStatus.NOT_FOUND);
+    }
+    users.forEach((user) => {
+      user.friends = user.friends.filter((userFriend) => userFriend.id !== id);
+    });
+    await this.usersRepository.save(users);
+    return this.friendsRepository.delete({ id });
   }
 }

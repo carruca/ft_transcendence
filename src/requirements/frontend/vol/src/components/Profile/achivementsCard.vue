@@ -61,7 +61,7 @@ function formatMilliseconds(milliseconds) {
 async function loadAchievements() {
   try {
     const response = await fetch(
-      `${import.meta.env.VITE_BACKEND_URL}/users/${userID.value}/achievements`, //TODO: ONLY TAKES LOGGED USER ACHIEVEMENTS 
+      `${import.meta.env.VITE_BACKEND_URL}/users/${userID.value}/achievements`,
       {
         method: "GET",
         headers: {
@@ -91,7 +91,6 @@ async function loadAchievements() {
 }
 
 onMounted(async () => {
-  console.log('mounted')
   loadAchievements();
 });
 

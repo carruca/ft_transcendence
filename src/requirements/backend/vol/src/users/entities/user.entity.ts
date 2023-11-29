@@ -77,7 +77,9 @@ export class User {
   @OneToMany(() => ChannelUser, (channelUser) => channelUser.user)
   channels: ChannelUser[];
 
-  @ManyToMany(() => Friend, (friend) => friend.users)
+  @ManyToMany(() => Friend, (friend) => friend.users, {
+    onDelete: 'CASCADE',
+  })
   @JoinTable()
   friends: Friend[];
 

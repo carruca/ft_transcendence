@@ -73,6 +73,9 @@ const clearError = () => {
       <router-view :user="props.user" />
     </main>
   </div>
+  <template v-for="friend in friendPetition" :key="friend.id">
+    <Modal :title="friend.senderId" :text="friend.receiverId" :on-accept="() => acceptPetition(friend)" :on-reject="() => rejectPetition(friend)" />
+  </template>
 </template>
 
 <style scoped>

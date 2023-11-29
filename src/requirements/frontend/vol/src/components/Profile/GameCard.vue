@@ -1,8 +1,15 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 
+const props = defineProps({
+  user: {
+    type: String,
+    required: true
+  }
+});
+
 const matches = ref<Array <gameMatch>>();
-const userID : Number = 3;
+const userID : string = props.user;
 let currentPage : number = 0;
 let totalHist : number;
 
@@ -13,8 +20,11 @@ interface APIResponseArrayHistory {
   end: string;
   users: {
     id: string;
-    userId: number;
     score: number;
+    user: {
+      id: string;
+      nickname: string;
+    }
   } [];
 }
 
@@ -29,7 +39,7 @@ interface gameMatch {
   type : String,
   date : String,
   win : Boolean,
-  who : String,
+  who : String | String[],
   myPoints : Number,
   hisPoints : Number,
   duration : String,
@@ -38,8 +48,8 @@ interface gameMatch {
 const weGotHist = ref(false);
 const no_hist = `${import.meta.env.VITE_BACKEND_URL}/public/no_hist.png`;
 
-function winStatus(points1 : Number, points2 : Number) {
-  return points1 >= points2 ? '✅Victory✅' : '❌Defeated❌';
+function winStatus(didWon : Boolean) {
+  return didWon ? '✅Victory✅' : '❌Defeated❌';
 }
 
 async function askHistorial() {
@@ -57,16 +67,37 @@ async function askHistorial() {
     if (response.ok) {
       const responseData : APIResponseHistorial = await response.json();
       matches.value = responseData.results.map(match => {
-        return {
-          id: match.id,
-          type: match.type,
-          date: new Date(match.start).toLocaleString(),
-          win: match.users[0].score >= match.users[1].score ? true : false,
-          who: 'Zacarías',//TODO: take user
-          myPoints: match.users[0].score,
-          hisPoints: match.users[1].score,
-          duration: `${Math.floor((new Date(match.end).getTime() - new Date(match.start).getTime()) / 1000)}s`
-        };
+        if (match.type === `normal`) {
+          const me = match.users.find(user => user.user.id === userID);
+          const opponent = match.users.find(user => user.user.id !== userID);
+          return {
+            id: match.id,
+            type: match.type,
+            date: new Date(match.start).toLocaleString(),
+            win: me.score >= opponent.score ? true : false,
+            who: opponent.user.nickname,
+            myPoints: match.users[0].score,
+            hisPoints: match.users[1].score,
+            duration: `${Math.floor((new Date(match.end).getTime() - new Date(match.start).getTime()) / 1000)}s`
+          };
+        }
+        else {
+          const me = match.users.find(user => user.user.id === userID);
+          const ally = match.users.find(user => user.score === me?.score);
+          const opponent1 = match.users.find(user => user.score !== me?.score);
+          const opponent2 = match.users.find(user => user.score !== me?.score && user.user !== opponent1?.user);
+          return {
+            id: match.id,
+            type: match.type,
+            date: new Date(match.start).toLocaleString(),
+            win: me?.score !== undefined && opponent1?.score !== undefined ? me.score >= opponent1.score : false,
+            who: [ ally?.user.nickname, opponent1?.user.nickname, opponent2?.user.nickname ],
+            myPoints: match.users[0].score,
+            hisPoints: match.users[1].score,
+            duration: `${Math.floor((new Date(match.end).getTime() - new Date(match.start).getTime()) / 1000)}s`
+          };
+
+        }
       });
       totalHist = Math.ceil(responseData.total / 10);//Total number of historial pages
       if (matches.value.length > 0) {
@@ -114,23 +145,23 @@ onMounted(async () => {
           <th>Duration</th>
         </tr>
         <tr v-for="match in matches">
-          <td>{{ winStatus(match.myPoints, match.hisPoints) }}</td>
+          <td>{{ winStatus(match.win) }}</td>
           <td>{{ match.date }}</td>
           <td class="type-section">{{ match.type }}</td>
           <td v-if="match.type==='special'">
             <ul>
-              <li>Hola</li>
-              <li>cara</li>
-              <li>cola</li>
+              <li><router-link :to="`${match.who[0]}`" style="color:rgb(101, 203, 114)">{{ match.who[0] }}</router-link></li>
+              <li><router-link :to="`${match.who[1]}`" style="color:rgb(251, 99, 99)">{{ match.who[1] }}</router-link></li>
+              <li><router-link :to="`${match.who[2]}`" style="color:rgb(251, 99, 99)">{{ match.who[2] }}</router-link></li>
             </ul>
           </td>
-          <td v-else>{{ match.who }}</td>
+          <td v-else><router-link :to="`${match.who}`" style="color:aliceblue">{{ match.who }}</router-link></td>
           <td>{{ match.myPoints }}/{{ match.hisPoints }}</td>
           <td>{{ match.duration }}</td>
         </tr>
       </table>
       <button @click="prevHistorial" :disabled="currentPage === 0">&#8592;</button>
-      <button @click="nextHistorial" :disabled="currentPage <= (totalHist - 1)">&#8594;</button> <!-- TODO: This do not get disabled when no history -->
+      <button @click="nextHistorial" :disabled="currentPage <= (totalHist - 1)">&#8594;</button>
     </div>
     <img v-else :src="no_hist" alt="empty historial"/>
   </div>
@@ -138,7 +169,6 @@ onMounted(async () => {
 
 <style scoped>
 /* TODO: deal with special games */
-/* TODO: add lines between values */
 img {
   width: 90%;
   height: 80%;
@@ -170,6 +200,14 @@ img {
 .table-card td {
   border: none;
   padding: 8px;
+}
+
+ul {
+padding: 0;
+}
+
+li {
+  list-style-type: none;
 }
 
 .type-section {
