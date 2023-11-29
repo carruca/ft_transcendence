@@ -268,10 +268,6 @@ export class UsersService {
     return this.blocksRepository.remove(block);
   }
 
-  async removeBlock(id: string) {
-    return this.blocksRepository.delete(id);
-  }
-  
   async update(id: string, updateUserDto?: UpdateUserDto, avatar?: Express.Multer.File): Promise<User> {
     const user = await this.usersRepository.findOneBy({ id });
     if (!user) {

@@ -10,8 +10,6 @@ import {
 import {
     ChannelDTO,
 } from '../dto';
-    ChannelDTO,
-} from '../dto';
 
 import {
     readonly,
