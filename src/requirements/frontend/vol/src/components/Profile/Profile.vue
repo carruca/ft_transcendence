@@ -7,28 +7,24 @@ import GameCard from './GameCard.vue';
 import AchivementsCard from './achivementsCard.vue';
 import EditProfile from './EditProfile.vue';
 import friendsBotton from './friendsBotton.vue';
-import { UserStatusEnum } from '@/services/enum';
-
 import { client } from '@/services/chat-client';
-
-import { userInfo } from 'os';
+import { User } from '@/services/model';
 
 type ConnectionStatus = {
-  [key: number] : string;
+	[key: number] : string;
 };
 
 const connectionStatus : ConnectionStatus = {
-  0: 'Offline 🔴',
-  1: 'Online 🟢',
-  2: 'In game 🎮',
-  3: 'Awatea',
-};//TODO: check connection status
+	0: 'Offline 🔴',
+	1: 'Online 🟢',
+	2: 'Checking... 🟡',
+};
 
 const props = defineProps({
-  user: {
-    type: Object,
-    required: true
-  }
+	user: {
+		type: Object,
+		required: true
+	}
 })
 
 const ID = ref<[string, string]>(['none', 'none']);
@@ -37,7 +33,9 @@ const profilePictureRef = ref();
 const rating = ref();
 const wins = ref<number>();
 const losses = ref<number>();
-const userStatus = ref();
+
+const userStatus = ref<number>(2);
+const { isConnected } = client;
 
 const editPage = ref(false);
 const state = ref(1);
@@ -102,20 +100,28 @@ async function loadProfile() {
   wins.value = userInfo.wins;
   losses.value = userInfo.losses;
 
-  // Check user status
-  client.userWatch(userInfo.id);
-  let userInstance = client.getUserById(userInfo.id);
-  console.log("profile.vue", userInstance);
-
+  
   if (itsMe.value)
   {
     ID.value = [userInfo.id, 'none'];
-  }
-  else {
+	}
+	else {
     ID.value = [user.id, userInfo.id];
-  }
-  loadedProfile.value = true;
+	}
+
+  // Check user status
+	if (!itsMe.value) client.userWatch(ID.value[1]);
 };
+
+// Watch user status
+watch(client.isConnected, (connected: boolean) => {
+  if (connected) {
+    client.userWatch(ID.value[1], (watchedUser: User) => {
+      console.log(watchedUser);
+      userStatus.value = watchedUser.status;
+    });
+  }
+});
 
 const stopWatch = watch(
   () => router.currentRoute.value.params.username,
@@ -136,7 +142,7 @@ onBeforeUnmount(() => {
   unmounted.value = true;
   console.log(unmounted.value);
   console.log('unmounted');
-  client.userUnwatch(ID.value[1] !== `none` ? ID.value[0] : ID.value[1]);
+  if (!itsMe.value) client.userUnwatch(ID.value[1]);
   stopWatch();
 });
 
@@ -155,9 +161,9 @@ const closeEditPage = async () => {
 <div v-if="loadedProfile" class="profile">
   <div class="profile-container">
     <div>
-      <div class="profile-picture"></div>
-      <div>
-        <div class="state">{{ connectionStatus[state] }}</div>
+      <img class="profile-picture" :src="profilePictureRef" alt="Profile Picture">
+      <div v-if="!itsMe">
+        <div class="state">{{ connectionStatus[userStatus] }}</div>
       </div>
     </div>
     <div class="profile-info">
