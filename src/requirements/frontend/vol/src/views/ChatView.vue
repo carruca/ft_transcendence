@@ -611,7 +611,7 @@ const initDrag = (e, leftSection, middleSection, rightSection, contentSection, i
 
 // Channels and Users colors
 function channelClass(channel) {
-  if (channel.hasPassword)
+  if (channel.password)
     return 'channel-passwd';
   return '';
 }
