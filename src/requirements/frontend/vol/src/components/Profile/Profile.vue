@@ -114,6 +114,10 @@ async function loadProfile() {
 
   // Check user status
 	if (!itsMe.value) client.userWatch(ID.value[1]);
+  client.userWatch(ID.value[1], (watchedUser: User) => {
+    console.log(watchedUser);
+    userStatus.value = watchedUser.status;
+  });
 };
 
 // Watch user status
@@ -133,6 +137,7 @@ const stopWatch = watch(
       if (unmounted.value) return;
       loadProfile();
     }, 10);
+    if (!itsMe.value) client.userUnwatch(ID.value[1]);
   }
 );
 
