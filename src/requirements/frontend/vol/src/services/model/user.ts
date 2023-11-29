@@ -22,6 +22,7 @@ export class User {
   public blocked: boolean;
   public siteBanned: boolean;
   public siteDisabled: boolean;
+  public nickname: string;
   public readonly channels = new Map<string, Channel>();
 
   constructor(userDTO: UserDTO) {
