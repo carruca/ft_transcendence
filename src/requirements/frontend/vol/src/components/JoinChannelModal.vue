@@ -79,7 +79,7 @@ const joinChannel = () => {
   let isValid = true;
   nameError.value = '';
 
-  if (!channelPassword.value.trim()) {
+  if (!channelPassword.value) {
     nameError.value = "Password is required";
     isValid = false;
   }
