@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
+import md5 from 'md5';
 
 interface rankingUser {
     nickname: string;
@@ -38,14 +39,40 @@ const redirectToProfile = (nickname : string) => {
   window.location.href = `/${nickname}`;
 };
 
-onMounted(() => {
-  firstUser.value  = rankingUsers.value[0]?.nickname ?? 'no_podium';
-  secondUser.value = rankingUsers.value[1]?.nickname ?? 'no_podium';
-  thirdUser.value  = rankingUsers.value[2]?.nickname ?? 'no_podium';
-  
-  firstPlace.value  = firstUser.value !== 'no_podium'   ? `${import.meta.env.VITE_BACKEND_URL}/public/avatars/${firstUser.value}.png`  : `${import.meta.env.VITE_BACKEND_URL}/public/no_podium.png`;
-  secondPlace.value = secondUser.value !== 'no_podium'  ? `${import.meta.env.VITE_BACKEND_URL}/public/avatars/${secondUser.value}.png` : `${import.meta.env.VITE_BACKEND_URL}/public/no_podium.png`;
-  thirdPlace.value  = thirdUser.value !== 'no_podium'   ? `${import.meta.env.VITE_BACKEND_URL}/public/avatars/${thirdUser.value}.png`  : `${import.meta.env.VITE_BACKEND_URL}/public/no_podium.png`;
+const checkImage = async (username : string) => {
+  if (username === 'no_podium') return `${import.meta.env.VITE_BACKEND_URL}/public/no_podium.png`;
+
+  const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/public/avatars/${username}.png`);
+  if (response.ok) {
+    const imageBlob = await response.blob();
+    return URL.createObjectURL(imageBlob);
+  } else {
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_BACKEND_URL}/users/${username}`,
+        {
+          method: "GET",
+          headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+          },
+          credentials: "include",
+        });
+      const intraLogin = await response.json().then((data) => data.login);
+      return `https://www.gravatar.com/avatar/${md5(intraLogin)}/?d=wavatar`;
+    } catch (error) {
+      console.log(error);
+    }
+  }
+}
+
+onMounted(async () => {
+  firstUser.value   = rankingUsers.value[0]?.nickname ?? 'no_podium';
+  secondUser.value  = rankingUsers.value[1]?.nickname ?? 'no_podium';
+  thirdUser.value   = rankingUsers.value[2]?.nickname ?? 'no_podium';
+
+  firstPlace.value  = await checkImage(firstUser.value);
+  secondPlace.value = await checkImage(secondUser.value);
+  thirdPlace.value  = await checkImage(thirdUser.value);
 });
 
 </script>
@@ -60,7 +87,7 @@ onMounted(() => {
         @mouseover="animateImage(1)"
         @mouseleave="resetImage(1)"
       />
-      <div class="label" style="color: rgb(226, 226, 226);">2</div>
+      <div class="label" style="color: rgb(226, 226, 226);">SECOND</div>
     </div>
 
     <div class="podium-item" @click="redirectToProfile(firstUser)">
@@ -71,7 +98,7 @@ onMounted(() => {
       @mouseover="animateImage(2)"
       @mouseleave="resetImage(2)"  
       />
-      <div class="label" style="color: rgb(255, 255, 0);">1</div>
+      <div class="label" style="color: rgb(255, 255, 0);">FIRST</div>
     </div>
     
     <div class="podium-item" @click="redirectToProfile(thirdUser)">
@@ -81,7 +108,7 @@ onMounted(() => {
         @mouseover="animateImage(3)"
         @mouseleave="resetImage(3)"
       />
-      <div class="label" style="color: rgb(179, 72, 72);">3</div>
+      <div class="label" style="color: rgb(179, 72, 72);">THIRD</div>
     </div>
     
   </div>

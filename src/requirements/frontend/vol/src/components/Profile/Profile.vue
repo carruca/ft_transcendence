@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
+import md5 from 'md5';
 import router from '@/router';
 import GameCard from './GameCard.vue';
 import AchivementsCard from './achivementsCard.vue';
@@ -37,6 +38,7 @@ const itsMe = ref(true);
 
 const route = useRouter();
 const unmounted = ref(false);
+const loadedProfile = ref(false);
 
 async function askUserinfo(username : string | string[]) {
   try {
@@ -49,15 +51,11 @@ async function askUserinfo(username : string | string[]) {
         },
         credentials: "include",
       });
-    if (response.ok)
+    if (!response.ok)
     {
-      const userInfo = await response.json();
-      return userInfo;
+          router.push('/404');
     }
-    else
-    {
-      router.push('/404');
-    }
+    return await response.json();
   } catch (error) {
     console.log(error);
   }
@@ -66,7 +64,6 @@ async function askUserinfo(username : string | string[]) {
 async function loadProfile() {
   // TODO: Add animation while loading profile info
   const { user } = props;
-  // console.log({ user })
 
   let username : string | string[]; 
   username = route.currentRoute.value.params.username;
@@ -84,7 +81,6 @@ async function loadProfile() {
   // If it's not the user, fetch the user info
   if (itsMe.value === false) {
     userInfo = await askUserinfo(username);
-    console.log(userInfo);
   }
   else {
     userInfo = user;
@@ -92,8 +88,9 @@ async function loadProfile() {
  
   // Assign the values to the refs
   usernameRef.value = username;
-  profilePictureRef.value = `${import.meta.env.VITE_BACKEND_URL}/public/avatars/${username}.png`
-  
+  profilePictureRef.value = `url('${import.meta.env.VITE_BACKEND_URL}/public/avatars/${username}.png'),` +
+                            `url('https://www.gravatar.com/avatar/${md5(userInfo.login)}/?d=wavatar')`;
+
   rating.value = userInfo.rating;
   wins.value = userInfo.wins;
   losses.value = userInfo.losses;
@@ -105,13 +102,12 @@ async function loadProfile() {
   else {
     ID.value = [user.id, userInfo.id];
   }
-  console.log('ACA TA EL INODOROQUE HABLA 1 ->' + ID.value[0]);
-  console.log('ACA TA EL INODOROQUE HABLA 2 ->' + ID.value[1]);
+  loadedProfile.value = true;
 };
 
 const stopWatch = watch(
   () => router.currentRoute.value.params.username,
-  (username) => {
+  () => {
     setTimeout(() => {
       if (unmounted.value) return;
       loadProfile();
@@ -126,8 +122,6 @@ onMounted(async () => {
 
 onBeforeUnmount(() => {
   unmounted.value = true;
-  console.log(unmounted.value);
-  console.log('unmounted');
   stopWatch();
 });
 
@@ -143,10 +137,10 @@ const closeEditPage = async () => {
 
 <template>
 
-<div class="profile">
+<div v-if="loadedProfile" class="profile">
   <div class="profile-container">
     <div>
-      <img class="profile-picture" :src="profilePictureRef" alt="Profile Picture">
+      <div class="profile-picture"></div>
       <div>
         <div class="state">{{ connectionStatus[state] }}</div>
       </div>
@@ -169,7 +163,7 @@ const closeEditPage = async () => {
       </div>
       <div v-if="itsMe">
         <button class="fancy-button-green" @click="launchEditPage">Edit profile</button>
-        <EditProfile v-if="editPage" @close="closeEditPage" :user="user.nickname"></EditProfile>
+        <EditProfile v-if="editPage" @close="closeEditPage" :user="user.nickname" :profileImage="profilePictureRef"></EditProfile>
       </div>
       <div v-else>
         <friendsBotton :users="ID"></friendsBotton>
@@ -178,17 +172,18 @@ const closeEditPage = async () => {
   </div>
 
   <div class="profile-cards" v-if="ID[0] !== 'none'">
-    <GameCard/>
-    <AchivementsCard :user="ID[0]"/>
+    <GameCard :user="ID[itsMe ? 0 : 1]"/>
+    <AchivementsCard :user="ID[itsMe ? 0 : 1]"/>
   </div>
+</div>
+<div v-else>
+  <h1>Loading...</h1>
 </div>
 
 
 </template>
 
 <style scoped>
-/* TODO: Profile photo on the left and the rest on the right */
-/* TODO: improve css */
 .profile {
   text-align: center;
   background-color: rgb(34, 31, 31);
@@ -215,12 +210,16 @@ const closeEditPage = async () => {
   margin: 0;
 }
 
-.profile-picture {
+div.profile-picture {
   width: 150px;
   height: 150px;
+  padding: .7em;
+  background: v-bind('profilePictureRef');
+  background-position: 50% 10px;
+  background-size: cover;
+  background-repeat: no-repeat;
   border-radius: 50%;
-  object-fit: cover;
-  margin-right: 30px;
+  background-clip: content-box;
 }
 
 .profile-info {

@@ -73,27 +73,13 @@ export class MatchesService {
   async findAll(): Promise<Match[]> {
     return this.matchesRepository.find();
   }
-/*
-  async history(id: string): Promise<Match[]> {
-    const matchUsers = await this.matchUsersRepository.find({
-      relations: ['match', 'user'],
-      where: {
-        user: {
-          id: id,
-        },
-      },
-    });
 
-    const matchHistory = matchUsers.map(matchUser => matchUser.match);
-    return matchHistory.sort((a,b) => b.start.getTime() - a.start.getTime());
-  }
-*/
   async paginate(
     id: string,
     options: PaginationOptionsDto,
   ): Promise<PaginationDto<Match>> {
     const [ results, total ] = await this.matchUsersRepository.findAndCount({
-      relations: ['match', 'user'],
+      relations: ['match', 'user', 'match.users.user'],
       where: {
         user: {
           id: id,

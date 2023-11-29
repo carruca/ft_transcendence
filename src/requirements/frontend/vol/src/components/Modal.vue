@@ -17,12 +17,12 @@ const props = defineProps({
     <section>
         <main>
             <div>
-                <h2>{{title}}</h2>
-                <p>{{text}}</p>
+                <h2>{{ props.title }}</h2>
+                <p>{{ props.text }}</p>
             </div>
             <div class="response__buttons">
-                <button @click="onAccept">Accept</button>
-                <button @click="onReject">Reject</button>
+                <button @click="props.onAccept">Accept</button>
+                <button @click="props.onReject">Reject</button>
             </div>
         </main>
     </section>

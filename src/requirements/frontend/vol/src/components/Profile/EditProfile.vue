@@ -2,21 +2,23 @@
 import { on } from 'events';
 import { defineEmits, onMounted, ref } from 'vue';
 
-//TODO: create interface
-
-  const props = defineProps({
-    user: {
-      type: String,
-      required: true
-    }
-  });
+const props = defineProps({
+  user: {
+    type: String,
+    required: true
+  },
+  profileImage: {
+    type: String,
+    required: true
+  },
+});
 
 const emit = defineEmits(['close']);
 
 let selectedImage : File;
-const username = ref<string>(props.user);
-const profilePicture = ref(`${import.meta.env.VITE_BACKEND_URL}/public/avatars/${username.value}.png`);
+const profilePicture = ref<String>(props.profileImage);
 
+const imageSet : boolean = ref(false);
 
 function sendChanges() {
   // Add condition if new image has been put or new nickname
@@ -78,6 +80,7 @@ function handleImageUpload(event : Event) {
   const file = (event.target as HTMLInputElement).files[0];
   selectedImage = file;
   profilePicture.value = URL.createObjectURL(selectedImage);
+  imageSet.value = true;
 };
 
 let failedFetch = ref<Boolean>(false);
@@ -98,7 +101,8 @@ const hidePopup = () => {
     <div class="popup" v-if="!failedFetch">
       <div class="popup-box">
         <form>
-          <img :src="profilePicture" alt="Profile Picture" class="profile-picture">
+          <div v-if="!imageSet" class="profile-picture"></div>
+          <img v-else :src="profilePicture" class="profile-picture">
           <label for="imageInput" class="custom-file-upload">
             <i class="fas fa-cloud-upload-alt"></i> Change Profile Picture
           </label>
@@ -137,11 +141,15 @@ const hidePopup = () => {
 }
 
 .profile-picture {
+  background: v-bind('profilePicture');
   width: 150px;
   height: 150px;
-  object-fit: cover;
+  padding: .7em;
+  background-position: 50% 10px;
+  background-size: cover;
+  background-repeat: no-repeat;
   border-radius: 50%;
-  margin-bottom: 10px;
+  background-clip: content-box;
 }
 
 .custom-file-upload:hover {
@@ -172,10 +180,6 @@ input[type="text"]:focus {
   outline: none;
   border-color: #007bff;
   box-shadow: 0 0 4px rgba(0, 123, 255, 0.4);
-}
-
-.nickname {
-  margin-bottom: 30px;
 }
 
 .popup {

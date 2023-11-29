@@ -103,6 +103,11 @@ export class UsersController {
     return this.usersService.getBlockIds(id);
   }
 
+  @Delete('block/:id')
+  removeBlock(@Param('id') id: string) {
+    return this.usersService.removeBlock(id);
+  }
+
   @Get('leaderboard')
   async getLeaderboard() {
     return this.usersService.getLeaderboard();

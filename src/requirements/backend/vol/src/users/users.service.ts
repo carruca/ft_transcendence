@@ -130,22 +130,21 @@ export class UsersService {
     return this.blocksRepository.save(newBlock);
   }
 
-  async getBlockIds(userId: string) : Promise<string[]> {
+  async getBlockIds(userId: string) : Promise<Block[]> {
     const blocks = await this.blocksRepository.find({
       where: {
         userId: userId
       },
-      select: ['blockId']
     });
     if (!blocks) {
       throw new HttpException('Block not found', HttpStatus.NOT_FOUND);
     }
 
-    return blocks.map((block) => block.blockId);
+    return blocks;
   }
 
-  async removeBlock(userId: string) : Promise<void> {
-    await this.blocksRepository.delete(userId);
+  async removeBlock(id: string) {
+    return this.blocksRepository.delete(id);
   }
   
   async update(id: string, updateUserDto?: UpdateUserDto, avatar?: Express.Multer.File): Promise<User> {
