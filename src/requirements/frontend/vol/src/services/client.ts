@@ -1,7 +1,24 @@
 import socket from './ws';
 import { client } from './chat-client';
 
-class Client {
+export class Client {
+    static instance: Client;
+
+    constructor() {
+        if (typeof Client.instance === 'object') {
+            return Client.instance;
+        }
+        Client.instance = this;
+        return Client.instance;
+    }
+
+    static getInstance(): Client {
+        if (!Client.instance) {
+            Client.instance = new Client();
+        }
+        return Client.instance;
+    }
+
     get me() {
         return client.me;
     }
@@ -118,4 +135,4 @@ class Client {
     }
 }
 
-window.c = new Client();
+window.c = Client.getInstance();

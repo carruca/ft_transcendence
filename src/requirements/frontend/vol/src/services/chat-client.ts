@@ -36,7 +36,7 @@ import socket from './ws';
 
 import router from '@/router';
 
-import './client';
+import { Client } from './client';
 
 /*
 watch(userCurrentChannel, (newChannel) => {
@@ -51,8 +51,27 @@ watch(userCurrentChannel, (newChannel) => {
 });
 */
 
-class ChatClient {
-  private me_: User;
+export class ChatClient {
+  static instance: ChatClient;
+  private _client: Client;
+
+  constructor() {
+    if (ChatClient.instance)
+      return ChatClient.instance;
+    this.setupSocketEventHandlers_();
+    this._client = Client.getInstance();
+    ChatClient.instance = this;
+    return ChatClient.instance;
+  }
+
+  static getInstance() {
+    if (!ChatClient.instance) {
+      ChatClient.instance = new ChatClient();
+    }
+    return ChatClient.instance;
+  }
+
+  private me_ = ref<User>(undefined);
   private channels_: Map<string, Channel> = reactive(new Map());
   private users_: Map<string, User> = reactive(new Map());
 
@@ -78,11 +97,20 @@ class ChatClient {
   public adminCurrentChannel = readonly(this.adminCurrentChannel_);
 
   private adminCurrentUser_ = ref<User | null>(null);
-  public adminCurrentUser = readonly(this.adminCurrentUser_); 
+  public adminCurrentUser = readonly(this.adminCurrentUser_);
 
-  constructor() {
-    this.setupSocketEventHandlers_();
-  }
+  private showModal_ = ref<boolean>(false);
+  public showModal = readonly(this.showModal_);
+
+  private modalProps_ = ref({
+    title: undefined,
+    onAccept: undefined,
+    onReject: undefined,
+    acceptText: 'Accept',
+    rejectText: 'Reject',
+    content: undefined
+  });
+  public modalProps = readonly(this.modalProps_);
 
   private getChannelById_(channelId: string): Channel {
     return this.channels_.get(channelId); 
@@ -192,14 +220,35 @@ class ChatClient {
     const { sourceUserId, gameMode } = JSON.parse(responseJSON);
     const sourceUser = this.getUserById(sourceUserId);
 
+    this.showModal_.value = false;
     //TODO: modal notify game reject 
   }
 
   private onChallengeRequested(responseJSON: string): void {
     const { sourceUserId, gameMode } = JSON.parse(responseJSON);
     const sourceUser = this.getUserById(sourceUserId);
+    this.showModal_.value = true;
 
-    //TODO: modal notify with user and game mode.
+    this.modalProps_.value = {
+      title: 'Challenge Requested',
+      onAccept: (() => {
+        this.challengeAccept(sourceUserId, gameMode);
+        this.showModal_.value = false;
+      }),
+      onReject: (() => {
+        this.challengeReject(sourceUserId);
+        this.showModal_.value = false;
+      }),
+      acceptText: 'Accept',
+      rejectText: 'Reject',
+      content: `${sourceUser.nickname} has challenged you to a game.`
+    };
+    const timeout = setTimeout(() => {
+      if (this.showModal_.value) {
+        this.modalProps_.value.onReject();
+      }
+      clearTimeout(timeout);
+    }, 10000);
     console.log("onChallengeRequested", sourceUser.nickname, sourceUser.id);
   }
 
@@ -248,14 +297,14 @@ class ChatClient {
 
     //TODO: Aquí lo que llega es la información de nuestro usuario, eso contempla
     //todos los canales y de estos, los usuarios y los eventos.
-    this.me_ = this.addUserFromDTO_(meUserDTO);
+    this.me_.value = this.addUserFromDTO_(meUserDTO);
     //meUserDTO.channels.map((channelDTO: ChannelDTO) => this.me_.channels.set(channelDTO.id, this.addChannel_(this.channelFromDTO_(channelDTO))));
 
 
-    console.log(`%cSuccess: Your id is '${this.me_.id}' and '${this.me_.nickname}' is your nick. You are in ${this.me_.channels.size} channels`, "color: green;");
+    console.log(`%cSuccess: Your id is '${this.me_.value.id}' and '${this.me_.value.nickname}' is your nick. You are in ${this.me_.value.channels.size} channels`, "color: green;");
 
-    console.log(this.me_.channels.values());
-    for (const channel of this.me_.channels.values()) {
+    console.log(this.me_.value.channels.values());
+    for (const channel of this.me_.value.channels.values()) {
       console.log(`${channel.name}: ${channel.id}`);
       console.log('users', channel.users);
     }
@@ -265,7 +314,7 @@ class ChatClient {
   }
 
   updateUserChannelList_(): void {
-    this.userChannelList_.value = Array.from(this.me_.channels.values());
+    this.userChannelList_.value = Array.from(this.me_.value.channels.values());
   }
 
   private manageDestroyedChannelSelection_(channel: Channel) {
@@ -580,7 +629,7 @@ class ChatClient {
 
   public setUserCurrentChannel = (channelId: string): void => {
     if (this.channels_.has(channelId)) {
-      this.userCurrentChannel_.value = this.me_.channels.get(channelId) || undefined;
+      this.userCurrentChannel_.value = this.me_.value.channels.get(channelId) || undefined;
     }
   }
 
@@ -637,4 +686,3 @@ class ChatClient {
 }
 
 export const client = new ChatClient();
-
