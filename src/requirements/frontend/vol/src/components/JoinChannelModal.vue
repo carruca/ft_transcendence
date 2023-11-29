@@ -68,8 +68,7 @@ const handlePasswordBackgroundClick = (event) => {
 };
 
 const attemptJoinChannel = (channel) => {
-  // FIXME all channels have password? so hardocded not to enter password never until fixed
-  if (false && channel.password) {
+  if (channel.password) {
     selectedChannel.value = channel;
     passwordRequired.value = true;
   } else {
