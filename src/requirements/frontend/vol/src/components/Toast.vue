@@ -70,14 +70,15 @@ const props = defineProps({
 .toast__content {
   background: v-bind(background);
   border-radius: 0.5rem;
-  padding: 1rem;
+  padding: 0 1rem;
   box-shadow: 0 0 0.5rem rgba(0, 0, 0, 0.5);
-  width: 100%;
+  width: 25%;
   display: flex;
   flex-direction: row;
   align-items: center;
   flex-wrap: nowrap;
   gap: 1rem;
+  margin: 1rem;
 }
 
 .toast__content img {

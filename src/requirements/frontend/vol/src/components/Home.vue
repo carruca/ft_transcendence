@@ -5,6 +5,7 @@ import Modal from './Modal.vue';
 import { onMounted, defineProps, watch, ref } from 'vue';
 import { UserSiteRoleEnum } from '@/services/enum/user-site-role.enum'
 import { ChatClient } from '@/services/chat-client'
+import Toast, { DEFAULT_TIMEOUT } from './Toast.vue'
 
 const props = defineProps({
   user: {
@@ -24,12 +25,18 @@ const modalProps = ref({
   rejectText: undefined,
   content: undefined
 })
+const toastError = ref(undefined)
 
 onMounted(() => {
   const client = ChatClient.getInstance()
   const stopMe = watch(client.me, (newVal, oldVal) => {
     if (newVal && !oldVal) {
       me.value = newVal
+    }
+  })
+  watch(client.toastMessage, (newVal, _oldVal) => {
+    if (newVal) {
+      toastError.value = newVal
     }
   })
   watch(client.showModal, (newVal, _oldVal) => {
@@ -43,10 +50,17 @@ onMounted(() => {
   }, 5000)
 })
 
+const clearError = () => {
+  toastError.value = undefined
+};
+
 </script>
 
 <template>
   <div class="main_content">
+    <Toast v-if="toastError != undefined" :error-message="toastError" @closeToast="clearError">
+      <i class="material-icons">error</i>
+    </Toast>
     <TopBar :user="props.user" />
     <NavBar :admin="me?.siteRole == UserSiteRoleEnum.MODERATOR
       || me?.siteRole == UserSiteRoleEnum.OWNER"/>
@@ -85,4 +99,9 @@ main {
   align-items: center;
   overflow: hidden;
 }
+
+.material-icons {
+  color: #fafafa;
+}
+
 </style>
