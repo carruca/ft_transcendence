@@ -38,7 +38,6 @@ const userStatus = ref<number>(2);
 const { isConnected } = client;
 
 const editPage = ref(false);
-const state = ref(1);
 const itsMe = ref(true);
 
 const route = useRouter();
@@ -108,20 +107,12 @@ async function loadProfile() {
 	else {
     ID.value = [user.id, userInfo.id];
 	}
-
-  // Check user status
-	if (!itsMe.value) client.userWatch(ID.value[1]);
-  client.userWatch(ID.value[1], (watchedUser: User) => {
-    console.log(watchedUser);
-    userStatus.value = watchedUser.status;
-  });
 };
 
 // Watch user status
 watch(client.isConnected, (connected: boolean) => {
   if (connected) {
     client.userWatch(ID.value[1], (watchedUser: User) => {
-      console.log(watchedUser);
       userStatus.value = watchedUser.status;
     });
   }
@@ -136,15 +127,16 @@ const stopWatch = watch(
     }, 10);
     if (!itsMe.value) client.userUnwatch(ID.value[1]);
   }
-);
-
-onMounted(async () => {
-  await route.isReady();
-  loadProfile();
-});
-
-onBeforeUnmount(() => {
-  unmounted.value = true;
+  );
+  
+  onMounted(async () => {
+    await route.isReady();
+    loadProfile();
+    loadedProfile.value = true;
+  });
+  
+  onBeforeUnmount(() => {
+    unmounted.value = true;
   console.log(unmounted.value);
   console.log('unmounted');
   if (!itsMe.value) client.userUnwatch(ID.value[1]);
