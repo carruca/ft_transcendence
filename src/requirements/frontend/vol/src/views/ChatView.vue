@@ -198,14 +198,13 @@ const confirmModalText = ref('');
 
 onMounted(() => {
   window.addEventListener('click', closeContextMenu);
-  window.addEventListener('resize', e => handleResize(leftSection.value, middleSection.value, rightSection.value, contentSection.value));
-  leftResizer.value.addEventListener('mousedown', e => initDrag(e, leftSection.value, middleSection.value, rightSection.value, contentSection.value, true));
-  rightResizer.value.addEventListener('mousedown', e => initDrag(e, leftSection.value, middleSection.value, rightSection.value, contentSection.value, false));
-  scrollToBottom();
-
-  updateResizerWidth();
 
   nextTick(() => {
+    window.addEventListener('resize', e => handleResize(leftSection.value, middleSection.value, rightSection.value, contentSection.value));
+    leftResizer.value.addEventListener('mousedown', e => initDrag(e, leftSection.value, middleSection.value, rightSection.value, contentSection.value, true));
+    rightResizer.value.addEventListener('mousedown', e => initDrag(e, leftSection.value, middleSection.value, rightSection.value, contentSection.value, false));
+    updateResizerWidth();
+    scrollToBottom();
     if (userCurrentChannel.value && userCurrentChannel.value.id != selectedChannelUUID.value) {
       selectedChannelUUID.value = userCurrentChannel.value.id;
       nextTick(() => {
