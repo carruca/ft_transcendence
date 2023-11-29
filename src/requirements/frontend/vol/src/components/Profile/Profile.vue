@@ -25,7 +25,7 @@ const props = defineProps({
 		type: Object,
 		required: true
 	}
-})
+});
 
 const ID = ref<[string, string]>(['none', 'none']);
 const usernameRef = ref()
@@ -35,7 +35,6 @@ const wins = ref<number>();
 const losses = ref<number>();
 
 const userStatus = ref<number>(2);
-const { isConnected } = client;
 
 const editPage = ref(false);
 const itsMe = ref(true);
@@ -107,6 +106,7 @@ async function loadProfile() {
 	else {
     ID.value = [user.id, userInfo.id];
 	}
+  loadedProfile.value = true;
 };
 
 // Watch user status
@@ -123,6 +123,7 @@ const stopWatch = watch(
   () => {
     setTimeout(() => {
       if (unmounted.value) return;
+      loadedProfile.value = false;
       loadProfile();
     }, 10);
     if (!itsMe.value) client.userUnwatch(ID.value[1]);
@@ -132,15 +133,12 @@ const stopWatch = watch(
   onMounted(async () => {
     await route.isReady();
     loadProfile();
-    loadedProfile.value = true;
   });
   
   onBeforeUnmount(() => {
     unmounted.value = true;
-  console.log(unmounted.value);
-  console.log('unmounted');
-  if (!itsMe.value) client.userUnwatch(ID.value[1]);
-  stopWatch();
+    if (!itsMe.value) client.userUnwatch(ID.value[1]);
+    stopWatch();
 });
 
 const launchEditPage = () => {
@@ -154,7 +152,6 @@ const closeEditPage = async () => {
 </script>
 
 <template>
-
 <div v-if="loadedProfile" class="profile">
   <div class="profile-container">
     <div>
@@ -189,7 +186,7 @@ const closeEditPage = async () => {
     </div>
   </div>
 
-  <div class="profile-cards" v-if="ID[0] !== 'none'">
+  <div class="profile-cards">
     <GameCard :user="ID[itsMe ? 0 : 1]"/>
     <AchivementsCard :user="ID[itsMe ? 0 : 1]"/>
   </div>
@@ -197,8 +194,6 @@ const closeEditPage = async () => {
 <div v-else>
   <h1>Loading...</h1>
 </div>
-
-
 </template>
 
 <style scoped>
