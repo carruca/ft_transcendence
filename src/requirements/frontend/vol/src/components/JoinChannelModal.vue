@@ -3,7 +3,7 @@
     <div ref="modalContent" class="modal-content" @click.stop>
       <h2>Join a Channel</h2>
       <div class="scrollable-content">
-        <ul class="channel-list">
+        <ul v-if="channels.length" class="channel-list">
           <li
               v-for="channel in channels"
               :key="channel.id"
@@ -13,6 +13,9 @@
             {{ channel.name }}
           </li>
         </ul>
+        <div v-else>
+          No channels available
+        </div>
       </div>
       <div class="buttons">
         <button @click="closeModal">Close</button>
