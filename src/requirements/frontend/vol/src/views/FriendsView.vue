@@ -31,7 +31,7 @@
 import { ref, onMounted } from 'vue';
 
 // Replace with your actual user ID
-// TODO get my user id, somehow ?
+// TODO get my user id, somehow (?
 
 const props = defineProps({
 	user: {
