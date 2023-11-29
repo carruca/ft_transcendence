@@ -14,19 +14,21 @@ import { Ban } from '../../users/entities/ban.entity';
 @Entity()
 export class Channel {
   constructor(
-    createChannelDto: CreateChannelDto,
+    name: string,
+    ownerId: string,
+    id?: string | undefined,
+    topic?: string | undefined,
+    password?: string | undefined,
   ) {
-    if (createChannelDto) {
-	    if (createChannelDto.id !== undefined) {
-        this.id = createChannelDto.id;
-      }
-      this.name = createChannelDto.name;
-      this.ownerId = createChannelDto.ownerId;
-      this.topic = createChannelDto.topic;
-      if (createChannelDto.password !== undefined) {
-        this.password = createChannelDto.password;
-      }
-		}
+	  if (id !== undefined) {
+      this.id = id;
+    }
+    this.name = name;
+    this.ownerId = ownerId;
+    this.topic = topic;
+    if (password !== undefined) {
+      this.password = password;
+    }
   }
   @PrimaryGeneratedColumn('uuid')
   id: string;

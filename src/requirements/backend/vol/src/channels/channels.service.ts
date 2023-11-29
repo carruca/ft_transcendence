@@ -33,7 +33,16 @@ export class ChannelsService {
   ) {}
 
   async create(createChannelDto: CreateChannelDto): Promise<Channel> {
-    const newChannel = new Channel(createChannelDto);
+    if (createChannelDto.password !== undefined) {
+      createChannelDto.password = await this.encryptPassword(createChannelDto.password);
+    }
+    const newChannel = new Channel(
+      createChannelDto.name,
+      createChannelDto.ownerId,
+      createChannelDto.id,
+      createChannelDto.topic,
+      createChannelDto.password
+    );
     await this.channelsRepository.save(newChannel);
 
     newChannel.users = [
@@ -201,12 +210,16 @@ export class ChannelsService {
     return this.channelsRepository.save(channel);
   }
 
+  async encryptPassword(password: string) : Promise<string> {
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
+    return hashedPassword;
+  }
+
   async setChannelPassword(channelId: string, password: string): Promise<Channel> {
     const channel = await this.findOneById(channelId);
 
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
-    channel.password = hashedPassword;
+    channel.password = await this.encryptPassword(password);
     return this.channelsRepository.save(channel);
   }
 
