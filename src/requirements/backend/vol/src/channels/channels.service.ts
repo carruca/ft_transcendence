@@ -61,13 +61,13 @@ export class ChannelsService {
 
   async	findAllWithUsers(): Promise<Channel[]> {
     return await this.channelsRepository.find({
-      relations: ['users', 'users.channel', 'users.user'],
+      relations: ['users', 'users.user'],
     })
   }
 
   async	findAllWithUsersAndBans(): Promise<Channel[]> {
     return await this.channelsRepository.find({
-      relations: ['users', 'users.channel', 'users.user', 'bans'],
+      relations: ['users', 'users.user', 'bans.user'],
     })
   }
 

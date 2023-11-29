@@ -59,7 +59,7 @@ export class ChatDatabase {
       if (userDB.nickname)
         this.chatManager_.addUserDB(userDB);
     }
-    for (const channelDB of await this.channelsService_.findAllWithUsers()) {
+    for (const channelDB of await this.channelsService_.findAllWithUsersAndBans()) {
       this.chatManager_.addChannelDB(channelDB);
     }
   }
