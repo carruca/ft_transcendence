@@ -305,7 +305,8 @@ export class ChatClient {
   }
 
   updateUserChannelList_(): void {
-    this.userChannelList_.value = Array.from(this.me_.value.channels.values());
+    if (this.me_.value)
+      this.userChannelList_.value = Array.from(this.me_.value.channels.values()).sort((a, b) => a.name.localeCompare(b.name));
   }
 
   private manageDestroyedChannelSelection_(channel: Channel) {
@@ -643,13 +644,13 @@ export class ChatClient {
 
   private addChannel_(channel: Channel) {
     this.channels_.set(channel.id, channel);
-    this.userChannelList_.value = Array.from(this.channels_.values());
+    this.updateUserChannelList_()
   }
 
   private deleteChannel_(channel: Channel) {
     channel.clear();
     this.channels_.delete(channel.id);
-    this.userChannelList_.value = Array.from(this.channels_.values());
+    this.updateUserChannelList_()
   }
 
   private deleteChannelId_(channelId: string) {
