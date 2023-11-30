@@ -245,9 +245,8 @@ export class ChannelsService {
   async verifyChannelPassword(channelId: string, password: string): Promise<boolean> {
     const channel = await this.findOneById(channelId);
 
-    if (channel.password === '' && password === '') {
-      return true;
-    }
+    if (!channel.password) return false;
+    if (channel.password === '' && password === '') return true;
     return await bcrypt.compare(password, channel.password);
   }
 

@@ -32,9 +32,6 @@ export class ChannelUser {
   admin: boolean;
 
   @Column({ default: false })
-  banned: boolean;
-
-  @Column({ default: false })
   muted: boolean;
 
 }
