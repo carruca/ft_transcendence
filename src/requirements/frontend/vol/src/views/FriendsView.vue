@@ -40,10 +40,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue';
 
-// Replace with your actual user ID
-// TODO get my user id, somehow (?
+import { ref, onMounted, computed } from 'vue';
+import friendsBotton from '@/components/Profile/friendsBotton.vue';
 
 const props = defineProps({
   user: {
@@ -58,7 +57,6 @@ const isLoading = ref(true);
 
 const friendsUsers = computed(() => friendsList.value.filter(friend => friend.status === 1));
 const pendingUsers = computed(() => friendsList.value.filter(friend => friend.status === 0));
-//const blockedUsers = computed(() => friendsList.value.map(friend => friend.status === 2));
 
 onMounted(async () => {
   isLoading.value = true;
@@ -82,7 +80,6 @@ async function fetchFriends() {
     }
 
     const data = await response.json();
-    console.log("AAAAA" + JSON.stringify(data));
     return data;
   } catch (error) {
     console.error('Error fetching friends:', error);
@@ -91,6 +88,7 @@ async function fetchFriends() {
 
 // Helper function to get profile picture URL
 function getProfilePictureUrl(username) {
+  // TODO get profile picture from gravatar when no picture on backend
   return `${import.meta.env.VITE_BACKEND_URL}/public/avatars/${username}.png`;
 }
 
@@ -183,6 +181,7 @@ function getProfilePictureUrl(username) {
   flex-grow: 1;
   cursor: pointer;
   margin-left: 1em;
+  margin-right: 1em;
 }
 .user-info:hover {
   text-decoration: underline;
