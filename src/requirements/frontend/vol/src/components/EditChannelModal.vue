@@ -22,7 +22,7 @@
 </template>
 
 <script setup>
-import { ref, defineProps, defineEmits } from 'vue';
+import { ref, defineProps, defineEmits, onMounted, onBeforeUnmount } from 'vue';
 
 const props = defineProps({
   visible: Boolean,
@@ -34,6 +34,22 @@ const channelPassword = ref('');
 const hasPassword = ref(false);
 
 const passwordError = ref('');
+
+onMounted(() => {
+  window.addEventListener('keydown', handleKeyDown);
+});
+
+onBeforeUnmount(() => {
+  window.removeEventListener('keydown', handleKeyDown);
+});
+
+const handleKeyDown = (event) => {
+  if (event.key === 'Escape') {
+    closeModal();
+  } else if (event.key === 'Enter') {
+    confirmEdit();
+  }
+};
 
 const handleBackgroundClick = (event) => {
   if (event.target.classList.contains('modal')) {
