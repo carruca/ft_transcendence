@@ -56,6 +56,20 @@ const channelPassword = ref('');
 
 const nameError = ref('');
 
+onMounted(() => {
+  window.addEventListener('keydown', handleKeyDown);
+});
+
+onBeforeUnmount(() => {
+  window.removeEventListener('keydown', handleKeyDown);
+});
+
+const handleKeyDown = (event) => {
+  if (event.key === 'Escape') {
+    closeModal();
+  }
+};
+
 const handleBackgroundClick = (event) => {
   if (event.target.classList.contains('modal')) {
     closeModal();
