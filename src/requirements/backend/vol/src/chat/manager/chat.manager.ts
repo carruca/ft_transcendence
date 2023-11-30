@@ -496,21 +496,24 @@ export class ChatManager {
   public async passwordChannelId(sourceUser: User, channelId: string, password?: string): Promise<Response> {
     const channel = this.getChannelById(channelId);
 
-    console.log("passwordChangeId", password);
     //TODO: password debe permitir caracteres extraños?
     if (!channel)
       return Response.ChannelNotExists();
+    console.log("passwordChangeId", password, channel.password);
+    if (password)
+      console.log(await this.channelsService_.verifyChannelPassword(channel.id, password));
     if (!channel.hasPrivileges(sourceUser))
       return Response.InsufficientPrivileges();
-    if (password)
+    if (!password) {
+      if (channel.password === false) return Response.SameChannelPassword();
+    } else 
       if (await this.channelsService_.verifyChannelPassword(channel.id, password)) return Response.SameChannelPassword();
-    else
-      if (channel.password === undefined) return Response.SameChannelPassword();
 
     //if (this.raise_<boolean>("onChannelPasswordChanging", { channel, sourceUser, newPassword }).includes(true))
     //  return Response.Denied();
     //this.raise_<void>("onChannelPasswordChanged", { channel, sourceUser, newPassword });
-    channel.password = password != undefined;
+    
+    channel.password = !password;
     if (password == undefined) {
       await this.channelsService_.removeChannelPassword(channel.id);
     }
@@ -751,7 +754,7 @@ export class ChatManager {
     const targetUser = this.getUserById(targetUserid);
 
     if (!targetUser) return Response.UserNotExists();
-    if (sourceUser === targetUser) return Response.Success();
+    if (sourceUser === targetUser) return Response.SameUser();
     if (sourceUser.hasBlocked(targetUser)) return Response.UserAlreadyBlocked();
 
 //    if (this.raise_<boolean>('onUserBlocking', { sourceUser, targetUser }).includes(true))
@@ -779,7 +782,7 @@ export class ChatManager {
     const targetUser = this.getUserById(targetUserid);
 
     if (!targetUser) return Response.UserNotExists();
-    if (sourceUser === targetUser) return Response.Success();
+    if (sourceUser === targetUser) return Response.SameUser();
     if (!sourceUser.hasBlocked(targetUser)) return Response.UserNotBlocked();
 
  //   if (this.raise_<boolean>('onUserUnblocking', { sourceUser, targetUser }).includes(true))

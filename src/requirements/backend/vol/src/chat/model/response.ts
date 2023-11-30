@@ -28,6 +28,7 @@ enum ResponseCode {
   USER_ALREADY_BLOCKED,
   USER_NOT_BLOCKED,
   SAME_CHANNEL_PASSWORD,
+  SAME_USER,
 }
 
 export class Response {
@@ -185,5 +186,9 @@ export class Response {
 
   static SameChannelPassword(): Response {
     return new Response(ResponseCode.SAME_CHANNEL_PASSWORD, "Channel has same password");
+  }
+
+  static SameUser(): Response {
+    return new Response(ResponseCode.SAME_USER, "Same user");
   }
 }

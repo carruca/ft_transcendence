@@ -28,7 +28,7 @@ export class ChannelDTO {
     this.topic = channel.topic;
     this.topicSetDate = channel.topicSetDate,
     this.topicUserDTO = channel.topicUser?.DTO;
-    this.password = channel.password ?? false;
+    this.password = channel.password;
     this.channelUsersDTO = channel.getUsers().map((user) => new ChannelUserDTO(channel, user));
     this.eventsDTO = channel.getEvents().map((event) => event.DTO);
   }

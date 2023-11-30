@@ -48,7 +48,7 @@ export class Channel {
   private topic_?: string;
   private topicSetDate_?: Date;
   private topicUser_?: User;
-  private password_?: boolean;
+  private password_: boolean;
 
   private readonly users_ = new Set<User>;
   private readonly admins_ = new Set<User>;
@@ -136,11 +136,6 @@ export class Channel {
     else
       this.admins_.delete(user);
     
-    if (channelUserDB.banned)
-      this.bans_.add(user);
-    else
-      this.bans_.delete(user);
-
     if (channelUserDB.muted)
       this.mutes_.add(user);
     else
@@ -312,16 +307,16 @@ export class Channel {
     }
   }
 
-  set password(value: boolean | undefined) {
+  set password(value: boolean) {
     if (this.password_ !== value) {
       this.password_ = value;
       this.notify_(NotifyEventTypeEnum.UPDATE, {
-        password: this.password != undefined,
+        password: this.password,
       });
     }
   }
 
-  get password(): boolean | undefined {
+  get password(): boolean {
     return this.password_;
   }
 
