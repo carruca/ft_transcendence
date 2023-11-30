@@ -64,8 +64,17 @@ async function askUserinfo(username : string | string[]) {
   }
 };
 
+const checkImage = async (username : string, login : string) => {
+  const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/public/avatars/${username}.png`);
+  if (response.ok) {
+    const imageBlob = await response.blob();
+    return URL.createObjectURL(imageBlob);
+  } else {
+    return `https://www.gravatar.com/avatar/${md5(login)}/?d=wavatar`;
+  }
+};
+
 async function loadProfile() {
-  // TODO: Add animation while loading profile info
   const { user } = props;
 
   let username : string | string[]; 
@@ -91,8 +100,7 @@ async function loadProfile() {
  
   // Assign the values to the refs
   usernameRef.value = username;
-  profilePictureRef.value = `url('${import.meta.env.VITE_BACKEND_URL}/public/avatars/${username}.png'),` +
-                            `url('https://www.gravatar.com/avatar/${md5(userInfo.login)}/?d=wavatar')`;
+  profilePictureRef.value = await checkImage(username, userInfo.login);
 
   rating.value = userInfo.rating;
   wins.value = userInfo.wins;
@@ -110,6 +118,7 @@ async function loadProfile() {
 };
 
 // Watch user status
+// TODO: Solve problem that this always watch
 watch(client.isConnected, (connected: boolean) => {
   if (connected) {
     client.userWatch(ID.value[1], (watchedUser: User) => {
@@ -155,7 +164,7 @@ const closeEditPage = async () => {
 <div v-if="loadedProfile" class="profile">
   <div class="profile-container">
     <div>
-      <img class="profile-picture" :src="profilePictureRef" alt="Profile Picture">
+      <img class="profile-picture" :src="profilePictureRef" alt="Profile picture">
       <div v-if="!itsMe">
         <div class="state">{{ connectionStatus[userStatus] }}</div>
       </div>
@@ -223,16 +232,12 @@ const closeEditPage = async () => {
   margin: 0;
 }
 
-div.profile-picture {
+.profile-picture {
   width: 150px;
   height: 150px;
-  padding: .7em;
-  background: v-bind('profilePictureRef');
-  background-position: 50% 10px;
-  background-size: cover;
-  background-repeat: no-repeat;
   border-radius: 50%;
-  background-clip: content-box;
+  object-fit: cover;
+  margin-right: 30px;
 }
 
 .profile-info {
