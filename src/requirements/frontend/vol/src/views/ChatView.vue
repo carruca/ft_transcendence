@@ -73,7 +73,7 @@
             <p>No channel selected.</p>
           </div>
         </div>
-        <div class="message-input">
+        <div v-if="userCurrentChannel" class="message-input">
           <input type="text" v-model="newMessage" @keyup.enter="sendMessage" placeholder="Message...">
           <button @click="sendMessage">Send</button>
         </div>
