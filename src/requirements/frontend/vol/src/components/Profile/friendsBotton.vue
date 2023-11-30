@@ -210,8 +210,6 @@ async function unblockIt() {
 
 onMounted(async () => {
   users.value = props.users;
-  console.log("tu ide", users.value[0]);
-  console.log("su ide", users.value[1]);
   takeFriendStatus();
   takeBlockStatus();
   checkedFriend.value = true;
