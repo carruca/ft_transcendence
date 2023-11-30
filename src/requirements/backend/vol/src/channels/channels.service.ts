@@ -33,7 +33,7 @@ export class ChannelsService {
   ) {}
 
   async create(createChannelDto: CreateChannelDto): Promise<Channel> {
-    if (createChannelDto.password !== undefined) {
+    if (createChannelDto.password != undefined) {
       createChannelDto.password = await this.encryptPassword(createChannelDto.password);
     }
     const newChannel = new Channel(
