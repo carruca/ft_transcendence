@@ -268,6 +268,28 @@ export class UsersService {
     return this.blocksRepository.remove(block);
   }
 
+  async findFriendsUser(userId: string, status?: FriendStatus) {
+    const user = await this.usersRepository.findOne({
+      relations: ['friends.users'],
+      where: {
+        id: userId,
+      },
+    });
+    if (!user) {
+      throw new HttpException('User not found', HttpStatus.NOT_FOUND);
+    }
+
+    let friends = (!status) ? user.friends.filter(friend => friend.status === status) : user.friends;
+    const filterFriends = friends.map(friend => ({
+      user: friend.users
+        .filter(user => user.id !== userId)
+        .map(({ id, nickname, login }) => ({ id, nickname, login })),
+      receiverId: friend.receiverId,
+      status: friend.status,
+    }));
+    return filterFriends;
+  }
+
   async update(id: string, updateUserDto?: UpdateUserDto, avatar?: Express.Multer.File): Promise<User> {
     const user = await this.usersRepository.findOneBy({ id });
     if (!user) {
@@ -330,22 +352,6 @@ export class UsersService {
     }
 
     return user.achievements;
-  }
-
-  async findFriendsUser(userId: string, status?: FriendStatus) : Promise<Friend[]> {
-    const user = await this.usersRepository.findOne({
-      relations: ['friends'],
-      where: {
-        id: userId,
-      },
-    });
-    if (!user) {
-      throw new HttpException('User not found', HttpStatus.NOT_FOUND);
-    }
-    if (status) {
-      return user.friends.filter(friend => friend.status === status);
-    }
-    return user.friends;
   }
 
   async getLeaderboard() : Promise<RatingUserDto[]> {

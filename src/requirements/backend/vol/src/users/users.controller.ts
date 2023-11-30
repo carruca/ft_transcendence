@@ -5,6 +5,7 @@ import {
   Put,
   Body,
   Param,
+  Query,
   Delete,
   UseInterceptors,
   UploadedFile,
@@ -90,8 +91,11 @@ export class UsersController {
   }
 
   @Get(':id/friends')
-  findFriendsUser(@Param('id') id: string) {
-    return this.usersService.findFriendsUser(id);
+  findFriendsUser(
+    @Param('id') id: string,
+    @Query('status') status?: FriendStatus
+  ) {
+    return this.usersService.findFriendsUser(id, status);
   }
 
   @Post('block')
