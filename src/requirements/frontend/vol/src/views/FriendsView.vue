@@ -115,7 +115,7 @@ function getSelectedTabEmptyText() {
 // Function to fetch friends data
 async function fetchFriends() {
   try {
-    const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/users/${me.id}/friends?status=0`, {
+    const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/users/${me.id}/friends`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
