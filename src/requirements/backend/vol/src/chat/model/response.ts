@@ -26,6 +26,7 @@ enum ResponseCode {
   CONVERSATION_NOT_EXISTS,
   USER_ALREADY_BANNED,
   USER_NOT_BANNED,
+  USER_ALREADY_BLOCKED,
 }
 
 export class Response {
@@ -171,5 +172,9 @@ export class Response {
 
   static UserNotBanned(): Response {
     return new Response(ResponseCode.USER_NOT_BANNED, "User not banned");
+  }
+
+  static UserAlreadyBlocked(): Response {
+    return new Response(ResponseCode.USER_ALREADY_BLOCKED, "User already blocked");
   }
 }

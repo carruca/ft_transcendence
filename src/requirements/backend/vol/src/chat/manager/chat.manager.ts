@@ -451,7 +451,9 @@ export class ChatManager {
     let channelsSummaryDTO: ChannelSummaryDTO[] = [];
 
     for (const channel of this.getChannels()) {
-      channelsSummaryDTO.push(channel.summaryDTO);
+      if (!channel.hasUser(sourceUser)) {
+        channelsSummaryDTO.push(channel.summaryDTO);
+      }
     }
 
     this.raise_<void>('onUserChannelsSummarized', { sourceUser, channelsSummaryDTO })
@@ -738,7 +740,7 @@ export class ChatManager {
 
     if (!targetUser) return Response.UserNotExists();
     if (sourceUser === targetUser) return Response.Success();
-    if (sourceUser.hasBlocked(targetUser)) return Response.Success();
+    if (sourceUser.hasBlocked(targetUser)) return Response.UserAlreadyBlocked();
 
 //    if (this.raise_<boolean>('onUserBlocking', { sourceUser, targetUser }).includes(true))
   //    return Response.Denied();
