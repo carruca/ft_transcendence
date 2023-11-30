@@ -7,15 +7,27 @@
       <div class="section friends-section">
         <div class="section-header">
           <h2>Friends</h2>
+          <div class="tabs">
+            <div class="buttons">
+              <button
+                  v-for="tab in tabs"
+                  :key="tab"
+                  @click="selectedTab = tab"
+                  :class="{ active: selectedTab === tab }"
+              >
+                {{ tab }}
+              </button>
+            </div>
+          </div>
         </div>
         <div class="scrollable-content">
           <div class="friends-list">
-            <div v-if="friendsUsers.length === 0">
-              <p>You have no friends yet.</p>
+            <div v-if="getSelectedTabList().length === 0">
+              <p>{{ getSelectedTabEmptyText() }}</p>
             </div>
             <div v-else class="list">
               <div
-                  v-for="user in friendsUsers"
+                  v-for="user in getSelectedTabList()"
                   :key="user.user[0].id"
                   class="user">
                 <div class="user-picture">
@@ -52,17 +64,53 @@ const props = defineProps({
 });
 const me = props.user;
 
-const friendsList = ref([]);
 const isLoading = ref(true);
 
-const friendsUsers = computed(() => friendsList.value.filter(friend => friend.status === 1));
+// TODO change to 'Online' when possible
+const selectedTab = ref('All');
+const tabs = ['Online', 'All', 'Pending', 'Blocked'];
+
+// TODO onlineUsers and blockedUsers
+const friendsList = ref([]);
+const allUsers = computed(() => friendsList.value.filter(friend => friend.status === 1));
+const onlineUsers = [];
 const pendingUsers = computed(() => friendsList.value.filter(friend => friend.status === 0));
+const blockedUsers = [];
 
 onMounted(async () => {
   isLoading.value = true;
   friendsList.value = await fetchFriends();
   isLoading.value = false;
 });
+
+function getSelectedTabList() {
+  switch (selectedTab.value) {
+    case 'All':
+      return allUsers.value;
+    case 'Online':
+      return [];
+    case 'Pending':
+      return pendingUsers.value;
+    case 'Blocked':
+      return [];
+    default:
+      return [];
+  }
+}
+function getSelectedTabEmptyText() {
+  switch (selectedTab.value) {
+    case 'All':
+      return 'You have no friends yet.';
+    case 'Online':
+      return 'None of your friends are online.';
+    case 'Pending':
+      return 'You have no pending friend requests.';
+    case 'Blocked':
+      return 'You have no blocked users.';
+    default:
+      return '';
+  }
+}
 
 // Function to fetch friends data
 async function fetchFriends() {
@@ -194,7 +242,7 @@ function getProfilePictureUrl(username) {
   flex-wrap: wrap;
 }
 .buttons button {
-  background-color: #444;
+  background-color: #333;
   color: white;
   border: none;
   padding: 0.5em  1em;
@@ -202,6 +250,17 @@ function getProfilePictureUrl(username) {
   cursor: pointer;
 }
 .buttons button:hover {
+  background-color: #555;
+}
+
+.tabs {
+  display: flex;
+}
+
+.tabs button {
+  background-color: #333;
+}
+.tabs button.active {
   background-color: #555;
 }
 
