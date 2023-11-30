@@ -48,7 +48,7 @@ export class Channel {
   private topic_?: string;
   private topicSetDate_?: Date;
   private topicUser_?: User;
-  private password_?: string;
+  private password_?: boolean;
 
   private readonly users_ = new Set<User>;
   private readonly admins_ = new Set<User>;
@@ -312,7 +312,7 @@ export class Channel {
     }
   }
 
-  set password(value: string | undefined) {
+  set password(value: boolean | undefined) {
     if (this.password_ !== value) {
       this.password_ = value;
       this.notify_(NotifyEventTypeEnum.UPDATE, {
@@ -321,7 +321,7 @@ export class Channel {
     }
   }
 
-  get password(): string | undefined {
+  get password(): boolean | undefined {
     return this.password_;
   }
 

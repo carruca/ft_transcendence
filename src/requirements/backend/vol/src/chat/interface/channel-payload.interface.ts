@@ -13,5 +13,5 @@ export interface ChannelPayload {
     topic?: string;
     topicSetDate?: Date;
     topicUser?: User;
-    password?: string;
+    password?: boolean;
 }

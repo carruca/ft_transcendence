@@ -14,7 +14,7 @@
           </li>
         </ul>
         <div v-else>
-          No channels available
+          No more channels available
         </div>
       </div>
       <div class="buttons">
