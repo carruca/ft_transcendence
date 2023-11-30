@@ -28,9 +28,13 @@ export class MatchUser {
   @Column()
   winner: boolean;
 */
-  @ManyToOne(() => Match, (match) => match.users)
+  @ManyToOne(() => Match, (match) => match.users, {
+    onDelete: 'CASCADE'
+  })
   match: Match;
 
-  @ManyToOne(() => User, (user) => user.matches)
+  @ManyToOne(() => User, (user) => user.matches, {
+    onDelete: 'CASCADE'
+  })
   user: User;
 }

@@ -58,14 +58,17 @@ export class FriendsService {
     };
   }
 
-  async updateStatus(updateFriendDto: UpdateFriendDto) : Promise<Friend> {
+  async update(updateFriendDto: UpdateFriendDto) : Promise<Friend> {
     const friend = await this.friendsRepository.findOne({
       where: {
-        id: updateFriendDto.friendId,
+        id: updateFriendDto.id,
       },
     });
     if (!friend) {
       throw new HttpException('Friend not found', HttpStatus.NOT_FOUND);
+    }
+    if (updateFriendDto.status === FriendStatus.rejected) {
+      return this.remove(updateFriendDto.id);
     }
     friend.status = updateFriendDto.status;
     return this.friendsRepository.save(friend);
@@ -92,23 +95,6 @@ export class FriendsService {
     if (!friend) {
       throw new HttpException('Friend not found', HttpStatus.NOT_FOUND);
     }
-
-    const users = await this.usersRepository.find({
-      relations: ['friends'],
-      where: {
-        id: In([
-          friend.receiverId,
-          friend.senderId,
-        ]),
-      },
-    });
-    if (!users || users.length === 1) {
-      throw new HttpException('Users not found', HttpStatus.NOT_FOUND);
-    }
-    users.forEach((user) => {
-      user.friends = user.friends.filter((userFriend) => userFriend.id !== id);
-    });
-    await this.usersRepository.save(users);
-    return this.friendsRepository.delete({ id });
+    return this.friendsRepository.remove(friend);
   }
 }

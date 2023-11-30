@@ -22,7 +22,9 @@ import { CreateBanDto } from './dto/create-ban.dto';
 
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Express, Request, Response } from 'express';
-import { ApiTags } from '@nestjs/swagger';
+import {
+  ApiTags,
+} from '@nestjs/swagger';
 import { FriendStatus } from '../friends/entities/friend.entity';
 import { JwtService } from '@nestjs/jwt';
 import * as speakeasy from 'speakeasy';
@@ -32,8 +34,10 @@ const THREE_DAYS = 1000 * 60 * 60 * 24 * 3;
 @ApiTags('users')
 @Controller('users')
 export class UsersController {
-  constructor(private readonly usersService: UsersService,
-    private readonly jwtService: JwtService) { }
+  constructor(
+    private readonly usersService: UsersService,
+    private readonly jwtService: JwtService
+  ) {}
 
   @Post()
   create(@Body() createUserDto: CreateUserDto) {
@@ -72,12 +76,7 @@ export class UsersController {
 
   @Get('me/friends')
   findMyFriends(@Req() req: Request) {
-    return this.usersService.findFriendsUser(req.user?.id);
-  }
-
-  @Get('me/pending-friends')
-  findMyPendingFriends(@Req() req: Request) {
-    return this.usersService.findFriendsUser(req.user?.id, FriendStatus.requested);
+    return this.usersService.findUserFriends(req.user?.id);
   }
 
   @Get(':id/channels')
@@ -93,9 +92,9 @@ export class UsersController {
   @Get(':id/friends')
   findFriendsUser(
     @Param('id') id: string,
-    @Query('status') status?: FriendStatus
+    @Body('status') status?: FriendStatus
   ) {
-    return this.usersService.findFriendsUser(id, status);
+    return this.usersService.findUserFriends(id, status);
   }
 
   @Post('block')

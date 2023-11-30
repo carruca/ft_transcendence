@@ -24,6 +24,7 @@ import { Channel } from '../channels/entities/channel.entity';
 import { ChannelUser } from '../channels/entities/channel-user.entity';
 import { RatingUserDto } from './dto/rating-user.dto';
 import { Friend, FriendStatus } from '../friends/entities/friend.entity';
+import { FriendsService } from '../friends/friends.service';
 import { ChatManager } from '../chat/manager';
 
 @Injectable()
@@ -39,6 +40,7 @@ export class UsersService {
     private channelsRepository: Repository<Channel>,
     @Inject(forwardRef(() => ChatManager))
     private chatManager: ChatManager,
+    private readonly friendsService: FriendsService,
   ) { }
 
   async create(createUserDto: CreateUserDto): Promise<User> {
@@ -268,9 +270,9 @@ export class UsersService {
     return this.blocksRepository.remove(block);
   }
 
-  async findFriendsUser(userId: string, status?: FriendStatus) {
+  async findUserFriends(userId: string, status?: FriendStatus) {
     const user = await this.usersRepository.findOne({
-      relations: ['friends.users'],
+      relations: ['friends.users', 'blocks'],
       where: {
         id: userId,
       },
@@ -279,15 +281,24 @@ export class UsersService {
       throw new HttpException('User not found', HttpStatus.NOT_FOUND);
     }
 
-    let friends = (!status) ? user.friends.filter(friend => friend.status === status) : user.friends;
-    const filterFriends = friends.map(friend => ({
+    let friends = user.friends.filter(friend => (status === undefined || friend.status === status));
+
+    friends = friends.filter(friend => {
+      if (!user.blocks.some(block => block.blockId === friend.senderId)) {
+        return true;
+      } else {
+        return false;
+      }
+    });
+
+    return friends.map(friend => ({
       user: friend.users
         .filter(user => user.id !== userId)
         .map(({ id, nickname, login }) => ({ id, nickname, login })),
       receiverId: friend.receiverId,
       status: friend.status,
+      id: friend.id,
     }));
-    return filterFriends;
   }
 
   async update(id: string, updateUserDto?: UpdateUserDto, avatar?: Express.Multer.File): Promise<User> {
