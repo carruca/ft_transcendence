@@ -12,7 +12,6 @@ export class ChannelSummaryDTO {
     this.id = channel.id;
     this.name = channel.name;
     this.topic = channel.topic;
-    this.password = channel.password !== null;
-    console.log("ChannelSummaryDTO", this.password, channel.password);
+    this.password = channel.password || false;
   }
 }

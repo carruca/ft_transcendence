@@ -149,6 +149,9 @@ export class ChannelsService {
 
     const channelUser = await this.findChannelUser(channelId, userId);
 
+    if (!channelUser) {
+      throw new HttpException('ChannelUser not found', HttpStatus.NOT_FOUND);
+    }
     await this.channelUsersRepository.delete(channelUser);
     channel.users = channel.users.filter(user => user.id !== userId);
     return this.channelsRepository.save(channel);
@@ -197,6 +200,9 @@ export class ChannelsService {
   async setChannelTopic(channelId: string, userId: string, topic: string): Promise<Channel> {
     const channel = await this.findOneById(channelId);
 
+    if (!channel) {
+      throw new HttpException('Channel not found', HttpStatus.NOT_FOUND);
+    }
     channel.topic = topic;
     channel.topicSetDate = new Date();
     channel.topicUser = userId;
@@ -206,6 +212,9 @@ export class ChannelsService {
   async removeChannelTopic(channelId: string): Promise<Channel> {
     const channel = await this.findOneById(channelId);
 
+    if (!channel) {
+      throw new HttpException('Channel not found', HttpStatus.NOT_FOUND);
+    }
     channel.topic = undefined;
     return this.channelsRepository.save(channel);
   }
@@ -219,6 +228,9 @@ export class ChannelsService {
   async setChannelPassword(channelId: string, password: string): Promise<Channel> {
     const channel = await this.findOneById(channelId);
 
+    if (!channel) {
+      throw new HttpException('Channel not found', HttpStatus.NOT_FOUND);
+    }
     channel.password = await this.encryptPassword(password);
     return this.channelsRepository.save(channel);
   }

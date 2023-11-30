@@ -392,6 +392,7 @@ export class ChatManager {
       ownerId: sourceUser.id,
       password: password,
     });
+
     channel = this.addChannelDB(channelDB);
     channel.createEventGeneric(EventTypeEnum.CREATE, sourceUser);
     //this.raise_<void>('onChannelCreated', { channel, sourceUser });
@@ -417,7 +418,9 @@ export class ChatManager {
 
     if (!channel) return Response.ChannelNotExists();
     if (channel.hasUser(sourceUser)) return Response.AlreadyInChannel();
-    if (channel.password !== password) return Response.InvalidPassword();
+    if (password == undefined) {
+      if (channel.password == true) return Response.BadChannelPassword();
+    } else if (!await this.channelsService_.verifyChannelPassword(channel.id, password)) return Response.BadChannelPassword();
     if (channel.isBanned(sourceUser)) return Response.BannedFromChannel();
 
     //this.raise_<void>('onUserJoined', { channel, sourceUser });
@@ -490,20 +493,29 @@ export class ChatManager {
     return Response.Success();
   }
 
-  public async passwordChannelId(sourceUser: User, channelId: string, newPassword: string): Promise<Response> {
+  public async passwordChannelId(sourceUser: User, channelId: string, password?: string): Promise<Response> {
     const channel = this.getChannelById(channelId);
 
-    //TODO: newPassword se debería verificar los caracteres?
+    console.log("passwordChangeId", password);
+    //TODO: password debe permitir caracteres extraños?
     if (!channel)
       return Response.ChannelNotExists();
     if (!channel.hasPrivileges(sourceUser))
       return Response.InsufficientPrivileges();
-    if (channel.password === newPassword) return Response.Success();
+    if (password)
+      if (await this.channelsService_.verifyChannelPassword(channel.id, password)) return Response.SameChannelPassword();
+    else
+      if (channel.password === undefined) return Response.SameChannelPassword();
 
     //if (this.raise_<boolean>("onChannelPasswordChanging", { channel, sourceUser, newPassword }).includes(true))
     //  return Response.Denied();
     //this.raise_<void>("onChannelPasswordChanged", { channel, sourceUser, newPassword });
-    channel.password = newPassword;
+    channel.password = password != undefined;
+    if (password == undefined) {
+      await this.channelsService_.removeChannelPassword(channel.id);
+    }
+    else
+      await this.channelsService_.setChannelPassword(channel.id, password);
     channel.createEventGeneric(EventTypeEnum.PASSWORD, sourceUser);
     return Response.Success();
   }
@@ -768,7 +780,7 @@ export class ChatManager {
 
     if (!targetUser) return Response.UserNotExists();
     if (sourceUser === targetUser) return Response.Success();
-    if (!sourceUser.hasBlocked(targetUser)) return Response.Success();
+    if (!sourceUser.hasBlocked(targetUser)) return Response.UserNotBlocked();
 
  //   if (this.raise_<boolean>('onUserUnblocking', { sourceUser, targetUser }).includes(true))
    //   return Response.Denied();
@@ -1133,7 +1145,7 @@ export class ChatManager {
       topicSetDate: channelDB.topicSetDate!,
       topic: channelDB.topic!,
       createdDate: channelDB.createdDate,
-      password: channelDB.password,
+      password: channelDB.password != undefined,
     });
 
     if (channelDB.users) {
