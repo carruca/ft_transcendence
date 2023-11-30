@@ -11,8 +11,8 @@ import {
 } from './manager';
 
 import {
-  ChannelModel as Channel,
-  UserModel as User,
+  Channel,
+  User,
 } from './model';
 
 import {
@@ -105,9 +105,17 @@ export class ChatGateway {
         return;
       }
       const userIntra = await this.auth_.getUser(cookies.auth_method, cookies.token, cookies.refresh_token);
-      let sourceUser = this.chat_.getUserByID(userIntra.id);
+      if (!userIntra) {
+        this.logger_.error(`42 nos peta la vida`);
+        client.emit('error', "42 nos peta la vida");
+        setTimeout(() => {
+          client.disconnect();
+        }, 100);
+        return;
+      }
+      let sourceUser = this.chat_.getUserByIntraId(userIntra.id);
       if (!sourceUser) {
-        const userDB = await this.usersService_.findOneByIntraId(userIntra.id); 
+        const userDB = await this.usersService_.findOneByIntraId(userIntra.id);
         if (!userDB?.nickname) {
           this.logger_.warn(`The user ${userIntra.login} (${userIntra.id}) does not appear in the in-memory database of ChatManager.`);
           client.emit('error', `${userIntra.login} not registered.`);
@@ -132,7 +140,7 @@ export class ChatGateway {
         console.error(`${error.message}`);
       //else if (error instanceof UserNotFoundError)
         //console.error(`${client.datio.intraID} does not have a created profile yet.`);
-      
+
       else
         throw error;
     }
@@ -143,242 +151,346 @@ export class ChatGateway {
       this.chat_.disconnectUser(client.data.user);
   }
 
-  private replyToClient_(client: Socket, event: string, response: ReturnMessage) {
-    if (response.code === ReturnCodeEnum.ALLOWED) {
-      client.emit(event, JSON.stringify(response));
-    } else if (response.code !== ReturnCodeEnum.NOTHING_HAPPENED) {
-      client.emit('reterr', JSON.stringify(response));
-    }
-  }
-
   /*
   ** WebSocket events handler
   */
 
   @SubscribeMessage('create')
   async handleClientCreate(client: Socket, dataJSON: string): Promise<void> {
-    if (!client.data.user) return
+    if (!client.data.user) return;
 
     const [ channelName, password ] = JSON.parse(dataJSON);
     const sourceUser = client.data.user;
     const response = await this.chat_.createChannelName(sourceUser, channelName, password);
 
-    response
-      .setEvent('create')
-      .setSourceUser(client.data.user)
-      .send();
+    response.setSourceUser(sourceUser)
+            .setEvent('create')
+            .send();
   }
 
   @SubscribeMessage('join')
   async handleClientJoin(client: Socket, dataJSON: string): Promise<void> {
-    if (!client.data.user) return
+    if (!client.data.user) return;
 
-    const [ channelUUID, password ] = JSON.parse(dataJSON);
+    const [ channelId, password ] = JSON.parse(dataJSON);
     const sourceUser = client.data.user;
-    const response = await this.chat_.joinChannelUUID(sourceUser, channelUUID, password);
+    const response = await this.chat_.joinChannelId(sourceUser, channelId, password);
 
-    response
-      .setEvent('join')
-      .setSourceUser(client.data.user)
-      .send();
+    response.setSourceUser(sourceUser)
+            .setEvent('join')
+            .send();
   }
 
   @SubscribeMessage('close')
   async handleClientClose(client: Socket, dataJSON: string): Promise<void> {
-    if (!client.data.user) return
+    if (!client.data.user) return;
 
-    const [ channelUUID, message ] = JSON.parse(dataJSON);
+    const [ channelId, message ] = JSON.parse(dataJSON);
     const sourceUser = client.data.user;
-    const response = await this.chat_.closeChannelUUID(sourceUser, channelUUID, message);
+    const response = await this.chat_.closeChannelId(sourceUser, channelId, message);
 
-    this.replyToClient_(client, 'close', response);
+    response.setSourceUser(sourceUser)
+            .setEvent('close')
+            .send();
   }
 
   @SubscribeMessage('part')
   async handleClientPart(client: Socket, dataJSON: string): Promise<void> {
-    if (!client.data.user) return
+    if (!client.data.user) return;
 
-    const [ channelUUID ] = JSON.parse(dataJSON);
+    const [ channelId ] = JSON.parse(dataJSON);
     const sourceUser = client.data.user;
-    const response = await this.chat_.partChannelUUID(sourceUser, channelUUID);
+    const response = await this.chat_.partChannelId(sourceUser, channelId);
 
-    this.replyToClient_(client, 'part', response);
+    response.setSourceUser(sourceUser)
+            .setEvent('part')
+            .send();
   }
 
   @SubscribeMessage('list')
   async handleClientList(client: Socket): Promise<void> {
-    if (!client.data.user) return
+    if (!client.data.user) return;
 
-    const [ sourceUser ] = client.data.user;
+    const sourceUser = client.data.user;
     const response = await this.chat_.summarizeChannels(sourceUser);
 
-    this.replyToClient_(client, 'list', response);
+    response.setSourceUser(sourceUser)
+            .setEvent('list')
+            .send();
   }
- 
+
+  @SubscribeMessage('userwatch')
+  async handleWatch(client: Socket, dataJSON: string): Promise<void> {
+    if (!client.data.user) return;
+
+    const [ targetUserId ] = JSON.parse(dataJSON);
+    const sourceUser = client.data.user;
+    const response = await this.chat_.userWatchUserId(sourceUser, targetUserId);
+
+    response.setSourceUser(sourceUser)
+            .setEvent('userwatch')
+            .send();
+  }
+
+  @SubscribeMessage('userunwatch')
+  async handleUnwatch(client: Socket, dataJSON: string): Promise<void> {
+    if (!client.data.user) return;
+
+    const [ targetUserId ] = JSON.parse(dataJSON);
+    const sourceUser = client.data.user;
+    const response = await this.chat_.userUnwatchUserId(sourceUser, targetUserId);
+
+    response.setSourceUser(sourceUser)
+            .setEvent('userunwatch')
+            .send();
+  }
+
   @SubscribeMessage('kick')
   async handleClientKick(client: Socket, dataJSON: string): Promise<void> {
-    if (!client.data.user) return
+    if (!client.data.user) return;
 
-    const [ channelUUID, targetUserUUID, message ] = JSON.parse(dataJSON);
+    const [ channelId, targetUserId, message ] = JSON.parse(dataJSON);
     const sourceUser = client.data.user;
-    const response = await this.chat_.kickUserFromChannelUUID(sourceUser, channelUUID, targetUserUUID, message);
+    const response = await this.chat_.kickUserFromChannelId(sourceUser, channelId, targetUserId, message);
 
-    this.replyToClient_(client, 'kick', response);
+    response.setSourceUser(sourceUser)
+            .setEvent('kick')
+            .send();
   }
 
   @SubscribeMessage('ban')
   async handleClientBan(client: Socket, dataJSON: string): Promise<void> {
-    if (!client.data.user) return
+    if (!client.data.user) return;
 
-    const [ channelUUID, targetUserUUID ] = JSON.parse(dataJSON);
+    const [ channelId, targetUserId ] = JSON.parse(dataJSON);
     const sourceUser = client.data.user;
-    const response = await this.chat_.banUserFromChannelUUID(sourceUser, channelUUID, targetUserUUID);
+    const response = await this.chat_.banUserFromChannelId(sourceUser, channelId, targetUserId);
 
-    this.replyToClient_(client, 'ban', response);
+    response.setSourceUser(sourceUser)
+            .setEvent('ban')
+            .send();
   }
 
   @SubscribeMessage('unban')
   async handleClientUnban(client: Socket, dataJSON: string): Promise<void> {
-    if (!client.data.user) return
+    if (!client.data.user) return;
 
-    const [ channelUUID, targetUserUUID ] = JSON.parse(dataJSON);
+    const [ channelId, targetUserId ] = JSON.parse(dataJSON);
     const sourceUser = client.data.user;
-    const response = await this.chat_.unbanUserFromChannelUUID(sourceUser, channelUUID, targetUserUUID);
+    const response = await this.chat_.unbanUserFromChannelId(sourceUser, channelId, targetUserId);
 
-    this.replyToClient_(client, 'unban', response);
+    response.setSourceUser(sourceUser)
+            .setEvent('unban')
+            .send();
   }
 
   @SubscribeMessage('promote')
-  async handleClientPromote(client: Socket, data: string): Promise<void> {
-    if (!client.data.user) return
+  async handleClientPromote(client: Socket, dataJSON: string): Promise<void> {
+    if (!client.data.user) return;
 
-    const [ channelUUID, targetUserUUID ] = data;
+    const [ channelId, targetUserId ] = JSON.parse(dataJSON);
     const sourceUser = client.data.user;
-    const response = await this.chat_.promoteUserInChannelUUID(sourceUser, channelUUID, targetUserUUID);
+    const response = await this.chat_.promoteUserInChannelId(sourceUser, channelId, targetUserId);
 
-    this.replyToClient_(client, 'promote', response);
+    response.setSourceUser(sourceUser)
+            .setEvent('promote')
+            .send();
   }
 
   @SubscribeMessage('demote')
-  async handleClientDemote(client: Socket, data: string): Promise<void> {
-    if (!client.data.user) return
+  async handleClientDemote(client: Socket, dataJSON: string): Promise<void> {
+    if (!client.data.user) return;
 
-    const [ channelUUID, targetUserUUID ] = data;
+    const [ channelId, targetUserId ] = JSON.parse(dataJSON);
     const sourceUser = client.data.user;
-    const response = await this.chat_.demoteUserInChannelUUID(sourceUser, channelUUID, targetUserUUID);
+    const response = await this.chat_.demoteUserInChannelId(sourceUser, channelId, targetUserId);
 
-    this.replyToClient_(client, 'demote', response);
+    response.setSourceUser(sourceUser)
+            .setEvent('demote')
+            .send();
   }
 
 
   @SubscribeMessage('topic')
   async handleClientTopic(client: Socket, dataJSON: string): Promise<void> {
-    if (!client.data.user) return
+    if (!client.data.user) return;
 
-    const [ channelUUID, topic ] = JSON.parse(dataJSON);
+    const [ channelId, topic ] = JSON.parse(dataJSON);
     const sourceUser = client.data.user;
-    const response = await this.chat_.topicChannelUUID(sourceUser, channelUUID, topic);
+    const response = await this.chat_.topicChannelId(sourceUser, channelId, topic);
 
-    this.replyToClient_(client, 'topic', response);
+    response.setSourceUser(sourceUser)
+            .setEvent('topic')
+            .send();
   }
 
   @SubscribeMessage('password')
   async handleClientPassword(client: Socket, dataJSON: string): Promise<void> {
-    if (!client.data.user) return
+    if (!client.data.user) return;
 
-    const [ channelUUID, password ] = JSON.parse(dataJSON);
+    const [ channelId, password ] = JSON.parse(dataJSON);
     const sourceUser = client.data.user;
-    const response = await this.chat_.passwordChannelUUID(sourceUser, channelUUID, password);
+    const response = await this.chat_.passwordChannelId(sourceUser, channelId, password);
 
-    this.replyToClient_(client, 'password', response);
+    response.setSourceUser(sourceUser)
+            .setEvent('password')
+            .send();
   }
 
   @SubscribeMessage('block')
   async handleClientBlock(client: Socket, dataJSON: string): Promise<void> {
     if (!client.data.user) return;
 
-    const [ targetUserUUID ] = JSON.parse(dataJSON);
+    const [ targetUserId ] = JSON.parse(dataJSON);
     const sourceUser = client.data.user;
-    const response = await this.chat_.blockUserUUID(sourceUser, targetUserUUID);
+    const response = await this.chat_.blockUserId(sourceUser, targetUserId);
 
-    this.replyToClient_(client, 'block', response);
+    response.setSourceUser(sourceUser)
+            .setEvent('block')
+            .send();
   }
 
   @SubscribeMessage('unblock')
   async handleClientUnblock(client: Socket, dataJSON: string): Promise<void>  {
-    if (!client.data.user) return
+    if (!client.data.user) return;
 
-    const [ targetUserUUID ] = JSON.parse(dataJSON);
+    const [ targetUserId ] = JSON.parse(dataJSON);
     const sourceUser = client.data.user;
-    const response = await this.chat_.unblockUserUUID(sourceUser, targetUserUUID);
+    const response = await this.chat_.unblockUserId(sourceUser, targetUserId);
 
-    this.replyToClient_(client, 'unblock', response);
+    response.setSourceUser(sourceUser)
+            .setEvent('unblock')
+            .send();
+  }
+
+  @SubscribeMessage('mute')
+  async handleClientMute(client: Socket, dataJSON: string): Promise<void> {
+    if (!client.data.user) return;
+
+    const [ channelId, targetUserId ] = JSON.parse(dataJSON);
+    const sourceUser = client.data.user;
+    const response = await this.chat_.muteUserFromChannelId(sourceUser, channelId, targetUserId);
+
+    response.setSourceUser(sourceUser)
+            .setEvent('mute')
+            .send();
+  }
+
+  @SubscribeMessage('unmute')
+  async handleClientUnute(client: Socket, dataJSON: string): Promise<void> {
+    if (!client.data.user) return;
+
+    const [ channelId, targetUserId ] = JSON.parse(dataJSON);
+    const sourceUser = client.data.user;
+    const response = await this.chat_.unmuteUserFromChannelId(sourceUser, channelId, targetUserId);
+
+    response.setSourceUser(sourceUser)
+            .setEvent('unmute')
+            .send();
   }
 
   @SubscribeMessage('challengerequest')
   async handleClientRequestChallenge(client: Socket, dataJSON: string): Promise<void> {
-    if (!client.data.user) return
+    if (!client.data.user) return;
 
-    const [ targetUserUUID, gameMode ] = JSON.parse(dataJSON);
+    const [ targetUserId, gameMode ] = JSON.parse(dataJSON);
     const sourceUser = client.data.user;
-    const response = await this.chat_.requestChallengeUserUUID(sourceUser, targetUserUUID, parseInt(gameMode, 10));
+    const response = await this.chat_.requestChallengeUserId(sourceUser, targetUserId, parseInt(gameMode, 10));
 
-    this.replyToClient_(client, 'challenge', response);
+    response.setSourceUser(sourceUser)
+            .setEvent('challengerequest')
+            .send();
   }
 
   @SubscribeMessage('challengeaccept')
   async handleClientAcceptChallenge(client: Socket, dataJSON: string): Promise<void> {
-    if (!client.data.user) return
+    if (!client.data.user) return;
 
-    const [ targetUserUUID ] = JSON.parse(dataJSON);
+    const [ targetUserId ] = JSON.parse(dataJSON);
     const sourceUser = client.data.user;
-    const response = await this.chat_.acceptChallengeUserUUID(sourceUser, targetUserUUID);
+    const response = await this.chat_.acceptChallengeUserId(sourceUser, targetUserId);
 
-    this.replyToClient_(client, 'challengeaccept', response);
+    response.setSourceUser(sourceUser)
+            .setEvent('challengeaccept')
+            .send();
   }
 
   @SubscribeMessage('challengereject')
   async handleRejectChallenge(client: Socket, dataJSON: string): Promise<void> {
-    if (!client.data.user) return
+    if (!client.data.user) return;
 
-    const [ targetUserUUID ] = JSON.parse(dataJSON);
+    const [ targetUserId ] = JSON.parse(dataJSON);
     const sourceUser = client.data.user;
-    const response = await this.chat_.rejectChallengeUserUUID(sourceUser, targetUserUUID);
+    const response = await this.chat_.rejectChallengeUserId(sourceUser, targetUserId);
 
-    this.replyToClient_(client, 'challengereject', response);
+    response.setSourceUser(sourceUser)
+            .setEvent('challengereject')
+            .send();
   }
 
-  @SubscribeMessage('userobserve')
-  async handleObserveUser(client: Socket, dataJSON: string): Promise<void> {
-    if (!client.data.user) return
+  @SubscribeMessage('challengespectate')
+  async handleChallengeSpectate(client: Socket, dataJSON: string): Promise<void> {
+    if (!client.data.user) return;
 
-    const [ targetUserUUID ] = JSON.parse(dataJSON);
+    const [ targetUserId ] = JSON.parse(dataJSON);
     const sourceUser = client.data.user;
-    const response = await this.chat_.observeUserUUID(sourceUser, targetUserUUID)
- 
-    this.replyToClient_(client, 'userobserve', response);
+    const response = await this.chat_.spectateChallengeUserId(sourceUser, targetUserId)
+
+    response.setSourceUser(sourceUser)
+            .setEvent('challengespectate')
+            .send();
   }
 
   @SubscribeMessage('chanmsg')
   async onClientChannelMessage(client: Socket, dataJSON: string): Promise<void> {
-    if (!client.data.user) return
+    if (!client.data.user) return;
 
-    const [ channelUUID, message ] = JSON.parse(dataJSON);
+    const [ channelId, message ] = JSON.parse(dataJSON);
     const sourceUser = client.data.user;
-    const response = await this.chat_.messageChannelUUID(sourceUser, channelUUID, message);
+    const response = await this.chat_.messageChannelId(sourceUser, channelId, message);
 
-    this.replyToClient_(client, 'chanmsg', response);
+
+    response.setSourceUser(sourceUser)
+            .setEvent('chanmsg')
+            .send();
+    /*
     if (response.code === ReturnCodeEnum.ALLOWED)
       console.log("chanmsg:", response.data.messageEvent);
+      */
   }
 
+  @SubscribeMessage('adminwatch')
+  async onClientAdminWatch(client: Socket): Promise<void> {
+    if (!client.data.user) return;
+
+    const sourceUser = client.data.user;
+    const response = await this.chat_.adminWatch(sourceUser);
+
+    response.setSourceUser(sourceUser)
+            .setEvent('adminwatch')
+            .send();
+  }
+
+  @SubscribeMessage('adminunwatch')
+  async onClientAdminUnwatch(client: Socket): Promise<void> {
+    if (!client.data.user) return;
+
+    const sourceUser = client.data.user;
+    const response = await this.chat_.adminUnwatch(sourceUser);
+
+    response.setSourceUser(sourceUser)
+            .setEvent('adminunwatch')
+            .send();
+  }
+
+  /*
   @SubscribeMessage('convmsg')
   async onClientConversationMessage(client: Socket, dataJSON: string): Promise<void> {
     if (!client.data.user) return
 
-    const [ targetUserUUID, message ] = JSON.parse(dataJSON);
+    const [ targetUserId, message ] = JSON.parse(dataJSON);
     const sourceUser = client.data.user;
-    const response = await this.chat_.messageConversationUUID(sourceUser, targetUserUUID, message);
+    const response = await this.chat_.messageConversationId(sourceUser, targetUserId, message);
 
     //TODO: Si yo mando un mensaje pero la conversación no se ha creado, se me ha de enviar conversationDetails
     //si ya existe, sólo se enviara messageEventDetails
@@ -391,6 +503,7 @@ export class ChatGateway {
 
     console.log("convmsg:", response);
   }
+  */
   /*
   ** ChatService events handle
   */
@@ -411,77 +524,211 @@ export class ChatGateway {
     return true;
   }
 
-  @ChatManagerSubscribe('onUserChallengeRequest')
-  onUserChallengeRequest(event: any): void {
-    event.targetUser.socket.emit('challengerequest', event.sourceUser.uuid, event.gameMode);
+  @ChatManagerSubscribe('onUserMessageSended')
+  onUserMessageSended(event: any): void {
+    const { sourceUser, targetUser, message } = event;
+
+    targetUser.socket?.emit('privMessage', JSON.stringify({
+      sourceUserId: sourceUser.id,
+      sourceUserNickname: sourceUser.nickname,
+      message,
+    }));
+  }
+ 
+  @ChatManagerSubscribe('onUserChallengeSpectated')
+  onUserChallengeSpectated(event: any): void {
+    const { sourceUser, targetUser, gameMode } = event;
+
+    sourceUser.socket?.emit('challengeSpectated', JSON.stringify({ sourceUserId: sourceUser.id, gameMode }));
+  }
+
+  @ChatManagerSubscribe('onUserChallengeRequested')
+  onUserChallengeRequested(event: any): void {
+    const { sourceUser, targetUser, gameMode } = event;
+
+    targetUser.socket?.emit('challengeRequested', JSON.stringify({ sourceUserId: sourceUser.id, gameMode }));
   }
 
   @ChatManagerSubscribe('onUserChallengeAccepted')
   onUserChallengeAccepted(event: any): void {
-    event.sourceUser.socket.emit('challengeaccepted', event.targetUser.uuid, event.gameMode);
+    const { sourceUser, targetUser, gameMode } = event;
+
+    targetUser.socket?.emit('challengeAccepted', JSON.stringify({ sourceUserId: sourceUser.id, gameMode }));
+    sourceUser.socket?.emit('challengeAccepted', JSON.stringify({ sourceUserId: targetUser.id, gameMode }));
   }
 
   @ChatManagerSubscribe('onUserChallengeRejected')
   onUserChallengeRejected(event: any): void {
-    event.sourceUser.socket.emit('challengerejected', event.targetUser.uuid, event.gameMode);
+    const { sourceUser, targetUser, gameMode } = event;
+
+    targetUser.socket?.emit('challengeRejected', JSON.stringify({ sourceUserId: sourceUser.id, gameMode }));
+  }
+
+  @ChatManagerSubscribe('onUserChannelsSummarized')
+  onUserChannelsSummarized(event: any): void {
+    const { sourceUser, channelsSummaryDTO } = event;
+
+    sourceUser.socket.emit('list', JSON.stringify(channelsSummaryDTO)); 
+  }
+
+  @ChatManagerSubscribe('onUserAdminData')
+  onUserAdminChannels(event: any): void {
+    const { sourceUser, channelsDTO, usersDTO } = event;
+
+    sourceUser.socket.emit('adminData', JSON.stringify([ channelsDTO, usersDTO ]));
   }
 
 
-  @ChatManagerSubscribe('onUserNickChanged')
-  onUserNickChanged(event: any): void {
-    const users = event.sourceUser.getWatchers();
-    const response = {
-      userUUID: event.sourceUser.uuid,
-      name: event.sourceUser.name,
-      status: event.sourceUser.status,
-      siteRole: event.sourceUser.siteRole,
-    };
-    const responseJSON = JSON.stringify(response);
+  @ChatManagerSubscribe('onUserWatchUser')
+  onUserWatchUser(event: any): void {
+    const { sourceUser, targetUser } = event;
 
-    for (const user of users) {
-      user.socket.emit('update', responseJSON);
-    }
-  }
-
-  @ChatManagerSubscribe('onUserJoined')
-  onUserJoined(event: any): void {
-    const userList = event.channel.getUsersExcept(event.sourceUser);
-    const userView = event.sourceUser.getViewModel();
-    const channelView = event.channel.getViewModel();
-    // const channelInfo = {
-    //   channel: channelDetails,
-    //   users: [] as UserDetails[],
-    // }
-    const response = {
-        channel: { uuid: event.channel.uuid },
-        user: userView,
-    }
-    response.user.isMuted = event.channel.hasMuted(event.sourceUser);
-    const responseJSON = JSON.stringify(response);
-
-    for (const user of userList) {
-        user.socket.emit("join", responseJSON);
-    //channelInfo.users.push(item.getDTO());
-    }
-    //channelInfo.users.push(userDetails);
-    //user.socket.emit("join", JSON.stringify(channelInfo))
-    this.logger_.debug(`onUserJoined: channel: ${event.channel.name} user: ${event.sourceUser.name}`);
+    sourceUser.socket.emit('watch', JSON.stringify([ targetUser.DTO ]));
   }
 
   @ChatManagerSubscribe('onUserConnected')
   onUserConnected(event: any): void {
     const { sourceUser } = event;
     const sourceUserDTO = sourceUser.DTO;
+
     sourceUserDTO.channels = sourceUser.getChannels().map((channel: Channel) => channel.DTO);
 
     console.log("onUserConnected:", sourceUserDTO);
-    sourceUser.socket.emit('register', JSON.stringify(sourceUserDTO));
+    sourceUser.socket.emit('registered', JSON.stringify(sourceUserDTO));
 
     //this.logger_.debug(`onUserConnected: user ${event.sourceUser.name}`);
   }
 
-  @ChatManagerSubscribe('onUserBlocking')
-  onUserBlocking(event: any): void {
-    this.logger_.debug(`onUserBlocking: user: ${event.user.name} blocked user: ${event.targetUser.name}`);
+  @ChatManagerSubscribe('onUserCreated')
+  onUserCreated(data: any): void {
+    const { sourceUser, targetUsers } = data;
+    const createJSON = JSON.stringify(sourceUser);
+
+    for (const targetUser of targetUsers) {
+      targetUser.socket?.emit('userCreated', createJSON);
+    }
+  }
+
+  @ChatManagerSubscribe('onUserUpdated')
+  onUserUpdated(data: any): void {
+    const { sourceUser, targetUsers, changes } = data;
+
+    const changesJSON = JSON.stringify({
+      sourceUserId: sourceUser.id,
+      changes,
+    });
+    console.log("ChatGateway: onUserUpdated", changesJSON);
+    for (const targetUser of targetUsers) {
+      targetUser.socket?.emit('userUpdated', changesJSON);
+    }
+  }
+
+  @ChatManagerSubscribe('onUserDeleted')
+  onUserDeleted(data: any): void {
+    const { sourceUser, targetUsers } = data;
+    const deleteJSON = JSON.stringify(sourceUser.id);
+
+    for (const targetUser of targetUsers) {
+      targetUser.socket?.emit('userDeleted', deleteJSON);
+    }
+  }
+
+  @ChatManagerSubscribe('onUserJoined')
+  onUserJoined(data: any): void {
+    const { channel, sourceUser, targetUsers } = data;
+    const joinedJSON = JSON.stringify({
+      channelId: channel.id,
+      sourceChannelUserDTO: channel.channelUserDTO(sourceUser),
+    });
+
+    for (const targetUser of targetUsers) {
+      targetUser.socket?.emit('userJoined', joinedJSON);
+    }
+  }
+
+  @ChatManagerSubscribe('onUserParted')
+  onUserParted(data: any): void {
+    const { channel, sourceUser, targetUsers } = data;
+    const partedJSON = JSON.stringify({
+      channelId: channel.id,
+      sourceUserId: sourceUser.id,
+    });
+
+    for (const targetUser of targetUsers) {
+      targetUser.socket?.emit('userParted', partedJSON);
+    }
+  }
+
+
+  @ChatManagerSubscribe('onChannelCreated')
+  onChannelCreated(data: any): void {
+    const { channel, targetUsers } = data;
+    const createJSON = JSON.stringify(channel.DTO);
+
+    for (const targetUser of targetUsers) {
+      targetUser.socket?.emit('channelCreated', createJSON);
+    }
+  }
+
+  @ChatManagerSubscribe('onChannelUpdated')
+  onChannelUpdated(data: any): void {
+    const { channel, targetUsers, changes } = data;
+    const changesJSON = JSON.stringify({
+      channelId: channel.id,
+      ...changes,
+    });
+
+    console.log("Channel UPDATE:", changes);
+    for (const targetUser of targetUsers) {
+      targetUser.socket?.emit('channelUpdated', changesJSON);
+    }
+  }
+
+  @ChatManagerSubscribe('onChannelDeleted')
+  onChannelDeleted(data: any): void {
+    const { channel, targetUsers } = data;
+    const deleteJSON = JSON.stringify(channel.id);
+
+    for (const targetUser of targetUsers) {
+      targetUser.socket?.emit('channelDeleted', deleteJSON);
+    }
+  }
+
+  @ChatManagerSubscribe('onEventCreated')
+  onEventCreated(data: any): void {
+    const { event, targetUsers } = data;
+    const createJSON = JSON.stringify(event)
+
+    for (const targetUser of targetUsers) {
+      targetUser.socket?.emit('eventCreated', createJSON);
+    }
+  }
+
+  @ChatManagerSubscribe('onEventUpdated')
+  onEventUpdated(data: any): void {
+    const { event, targetUsers, changes } = data;
+
+    changes.id = event.id;
+    changes.channelId = event.channel.id;
+    const changesJSON = JSON.stringify(changes);
+
+    for (const targetUser of targetUsers) {
+      targetUser.socket?.emit('eventUpdated', changesJSON);
+    }
+  }
+
+  @ChatManagerSubscribe('onChannelEventCreated')
+  onChannelEventCreated(data: any): void {
+    const { channel, event, targetUsers } = data;
+
+    const changesJSON = JSON.stringify({
+      channelId: channel.id,
+      eventDTO: event.DTO,
+    });
+
+    for (const targetUser of targetUsers) {
+      console.log("onChannelEventCreated", changesJSON);
+      targetUser.socket?.emit('channelEventCreated', changesJSON);
+    }
   }
 }

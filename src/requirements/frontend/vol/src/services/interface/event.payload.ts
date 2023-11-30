@@ -7,10 +7,12 @@ import {
 } from '../enum';
 
 export interface EventPayload {
-    uuid: string,
+    id: string,
     type: EventTypeEnum,
-    sourceUser: User,
-    targetUser? User,
+    sourceId: string,
+    targetId?: string,
+    sourceNickname: string,
+    targetNickname?: string,
     timestamp: Date,
     modified: boolean,
     value?: string,

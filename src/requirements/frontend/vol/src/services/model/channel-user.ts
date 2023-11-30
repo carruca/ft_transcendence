@@ -11,6 +11,10 @@ import {
     ChannelUserPayload,
 } from '../interface';
 
+import {
+    reactive,
+} from 'vue';
+
 export class ChannelUser {
     public readonly user: User;
     public isAdmin: boolean;
@@ -26,12 +30,12 @@ export class ChannelUser {
         this.isMuted = channelUserPayload.muted;
     }
 
-    get uuid(): string {
-        return this.user.uuid;
+    get id(): string {
+        return this.user.id;
     }
 
-    get name(): string {
-        return this.user.name;
+    get nickname(): string {
+        return this.user.nickname;
     }
 
     get siteRole(): UserSiteRoleEnum {

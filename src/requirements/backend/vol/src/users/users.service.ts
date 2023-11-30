@@ -1,21 +1,26 @@
 import {
   Inject,
-	Injectable,
-	HttpException,
-	HttpStatus,
-	forwardRef,
+  Injectable,
+  HttpException,
+  HttpStatus,
+  forwardRef,
 } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { CreateBlockDto } from './dto/create-block.dto';
+import { ReturnBlockDto } from './dto/return-block.dto';
+import { CreateBanDto } from './dto/create-ban.dto';
+import { ReturnBanDto } from './dto/return-ban.dto';
 
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User, UserMode } from './entities/user.entity';
 import { Block } from './entities/block.entity';
+import { Ban } from './entities/ban.entity';
 import * as fs from 'fs';
 import * as path from 'path';
 import { AchievementUser } from '../achievements/entities/achievement-user.entity';
+import { Channel } from '../channels/entities/channel.entity';
 import { ChannelUser } from '../channels/entities/channel-user.entity';
 import { RatingUserDto } from './dto/rating-user.dto';
 import { Friend, FriendStatus } from '../friends/entities/friend.entity';
@@ -28,6 +33,10 @@ export class UsersService {
     private usersRepository: Repository<User>,
     @InjectRepository(Block)
     private blocksRepository: Repository<Block>,
+    @InjectRepository(Ban)
+    private bansRepository: Repository<Ban>,
+    @InjectRepository(Channel)
+    private channelsRepository: Repository<Channel>,
     @Inject(forwardRef(() => ChatManager))
     private chatManager: ChatManager,
   ) { }
@@ -42,11 +51,19 @@ export class UsersService {
     newUser.channels = [];
     newUser.friends = [];
     newUser.matches = [];
+    newUser.blocks = [];
+    newUser.bans = [];
     return this.usersRepository.save(newUser);
   }
 
   findAll(): Promise<User[]> {
     return this.usersRepository.find();
+  }
+
+  async	findAllWithFriendsAndBlocks(): Promise<User[]> {
+    return this.usersRepository.find({
+      relations: ['friends', 'blocks'],
+    })
   }
 
   findAllWithChannels(): Promise<User[]> {
@@ -88,11 +105,11 @@ export class UsersService {
     }
 
     user.nickname = nick;
-    this.chatManager.changeNickUserUUID(user.id, nick);
+    this.chatManager.changeNickUserId(user.id, nick);
     return this.usersRepository.save(user);
   }
 
-	async setMode(id: string, mode: UserMode) {
+  async setMode(id: string, mode: UserMode) {
     const user = await this.findOne(id);
     if (!user) {
       throw new HttpException('User not found', HttpStatus.NOT_FOUND);
@@ -100,7 +117,7 @@ export class UsersService {
 
     user.mode = mode;
     return this.usersRepository.save(user);
-	}
+  }
 
   async setDisabled(id: string, value: boolean) {
     const user = await this.findOne(id);
@@ -122,31 +139,135 @@ export class UsersService {
     return this.usersRepository.save(user);
   }
 
-  async createBlock(createBlockDto: CreateBlockDto) : Promise<Block> {
-    const newBlock = new Block(
-      createBlockDto.userId,
-      createBlockDto.blockId
-    );
-    return this.blocksRepository.save(newBlock);
-  }
-
-  async getBlockIds(userId: string) : Promise<Block[]> {
-    const blocks = await this.blocksRepository.find({
+  async createBan(createBanDto: CreateBanDto) : Promise<ReturnBanDto> {
+    const user = await this.usersRepository.findOne({
+      relations: ['bans'],
       where: {
-        userId: userId
+        id: createBanDto.userId,
       },
     });
-    if (!blocks) {
+    if (!user) {
+      throw new HttpException('User not found', HttpStatus.NOT_FOUND);
+    }
+
+    const channel = await this.channelsRepository.findOne({
+      relations: ['bans'],
+      where: {
+        id: createBanDto.channelId,
+      },
+    });
+    if (!channel) {
+      throw new HttpException('Channel not found', HttpStatus.NOT_FOUND);
+    }
+
+    const newBan = new Ban(
+      user,
+      channel,
+    );
+    await this.bansRepository.save(newBan);
+    user.bans.push(newBan);
+    await this.usersRepository.save(user);
+    channel.bans.push(newBan);
+    await this.channelsRepository.save(channel);
+    return {
+      id: newBan.id,
+      userId: createBanDto.userId,
+      channelId: createBanDto.channelId
+    };
+  }
+/*
+  async getBansByUser(userId: string) {
+    const user = await this.usersRepository.findOne({
+      relations: ['bans', 'bans.channel'],
+      where: {
+        id: userId,
+      },
+    });
+    if (!user) {
+      throw new HttpException('User not found', HttpStatus.NOT_FOUND);
+    }
+
+//    console.log(user.bans);
+    const result = user.bans.map((ban) => ({
+      channelId: ban.channel.id,
+    }));
+    console.log(result);
+  }
+*/
+  async removeBan(userId: string, channelId: string) {
+    const ban = await this.bansRepository.findOne({
+      where: {
+        user: {
+          id: userId
+        },
+        channel: {
+          id: channelId
+        },
+      }
+    });
+    if (!ban) {
+      throw new HttpException('Ban not found', HttpStatus.NOT_FOUND);
+    }
+
+    await this.bansRepository.remove(ban);
+  }
+
+  async createBlock(createBlockDto: CreateBlockDto) : Promise<ReturnBlockDto> {
+    const user = await this.usersRepository.findOne({
+      relations: ['blocks'],
+      where: {
+        id: createBlockDto.userId,
+      },
+    });
+    if (!user) {
+      throw new HttpException('User not found', HttpStatus.NOT_FOUND);
+    }
+
+    const newBlock = new Block(
+      user,
+      createBlockDto.blockId
+    );
+
+    await this.blocksRepository.save(newBlock);
+    user.blocks.push(newBlock);
+    await this.usersRepository.save(user);
+    return {
+      id: newBlock.id,
+      userId: createBlockDto.userId,
+      blockId: createBlockDto.blockId
+    };
+  }
+
+  async getBlocks(userId: string) : Promise<Block[]> {
+    const user = await this.usersRepository.findOne({
+      relations: ['blocks'],
+      where: {
+        id: userId
+      },
+    });
+    if (!user) {
+      throw new HttpException('User not found', HttpStatus.NOT_FOUND);
+    }
+
+    return user.blocks;
+  }
+
+  async removeBlock(userId: string, blockId: string) {
+    const block = await this.blocksRepository.findOne({
+      where: {
+        user: {
+          id: userId
+        },
+        blockId: blockId
+      }
+    });
+    if (!block) {
       throw new HttpException('Block not found', HttpStatus.NOT_FOUND);
     }
 
-    return blocks;
+    return this.blocksRepository.remove(block);
   }
 
-  async removeBlock(id: string) {
-    return this.blocksRepository.delete(id);
-  }
-  
   async update(id: string, updateUserDto?: UpdateUserDto, avatar?: Express.Multer.File): Promise<User> {
     const user = await this.usersRepository.findOneBy({ id });
     if (!user) {

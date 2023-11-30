@@ -1,5 +1,5 @@
 import {
-    ChannelPayload
+    Channel
 } from '.';
 
 import {
@@ -8,11 +8,13 @@ import {
 } from '../enum';
 
 export interface UserPayload {
-    uuid: string,
-    name: string,
+    id: string,
+    nickname: string,
     status?: UserStatusEnum,
     siteRole?: UserSiteRoleEnum,
+    siteDisabled: boolean,
+    siteBanned: boolean,
     blocked?: boolean,
     friend?: boolean,
-    channels: ChannelPayload[],
+    channels: Channel[],
 }

@@ -12,6 +12,7 @@ import Settings from '@/components/Settings.vue';
 import _2FA from '@/components/2FA.vue';
 import ChatView from '../views/ChatView.vue';
 import AdminView from '../views/AdminView.vue';
+import FriendsView from '../views/FriendsView.vue';
 
 const routes = [
   {
@@ -51,7 +52,7 @@ const routes = [
       {
         path: 'friends',
         name: 'Friends',
-        component: undefined,
+        component: FriendsView,
       },
       {
         path: '/:username',

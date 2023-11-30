@@ -37,11 +37,6 @@
         </div>
       </div>
       <div class="overlay-text" :class="{ 'active': button1Pressed || button2Pressed }">{{ overlayText }}</div>
-      <!-- FIXME remove -->
-      <input v-model="inputText" type="text" placeholder="Enter id here" />
-      <br/>
-      <button @click="spectate(inputText)">Spectate</button>
-      <!-- .FIXME remove -->
     </div>
     <div v-if="showBottomButton" class="bottom-button-wrapper" :style="bottomButtonWrapperStyle">
       <button
@@ -63,9 +58,6 @@ import {
 } from 'vue';
 
 import socket from "../services/ws.ts";
-
-// FIXME remove
-const inputText = ref("");
 
 /** VAR  --------------------------------------- */
 
@@ -393,6 +385,7 @@ socket.on('error_queue', () => {
     button2Text.value = button2DefText;
     button2Pressed.value = !button2Pressed.value;
   }
+  console.log("Error: already in queue");
 });
 
 socket.on('score', (p1: number, p2: number) => {
@@ -442,6 +435,8 @@ socket.on('stop', (winText: string) => {
     Engine.drawMenu();
     displayMenu();
     game.changeStatus(Status.MENU);
+    // notify backed that we are on the menu
+    socket.emit("menu");
   };
 
   game.changeStatus(Status.NONE);
@@ -464,15 +459,6 @@ socket.on('update', (id: number, pos_x: number, pos_y: number, scale_x: number, 
 });
 socket.on('delete', (id: number) => {
   es.remove(id);
-});
-
-// TODO this is rnavarre42 part hardcoded
-const spectate = (id: string) => {
-  socket.emit('get-room', id);
-};
-socket.on('room', (code: string) => {
-  console.log("got room: " + code + ", joining...");
-  socket.emit('join-room', code);
 });
 
 /** EVENTS ------------------------------------- */
@@ -519,6 +505,8 @@ onMounted(() => {
     // game loop
     displayMenu();
     game.changeStatus(Status.MENU);
+    // tell backend to check for queued events
+    socket.emit("events");
   });
 });
 
@@ -557,6 +545,8 @@ const handleButton2Click = () => {
 };
 const handleBottomButton = () => {
   showBottomButton.value = false;
+  // emit leave
+  socket.emit("leave_game");
   // return to menu
   Engine.reset();
   displayMenu();

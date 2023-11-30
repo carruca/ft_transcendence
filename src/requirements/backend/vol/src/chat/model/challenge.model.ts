@@ -1,5 +1,5 @@
 import {
-  UserModel as User,
+  User,
 } from '../model';
 
 import {
@@ -10,7 +10,7 @@ import {
   v4 as uuidv4,
 } from 'uuid';
 
-export class ChallengeModel {
+export class Challenge {
   private readonly uuid_;
   private readonly numPlayers_: number;
   private readonly gameMode_: number;

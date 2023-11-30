@@ -1,4 +1,5 @@
 export enum EventTypeEnum {
+  NONE,
   MESSAGE,
   CREATE,
   CLOSE,

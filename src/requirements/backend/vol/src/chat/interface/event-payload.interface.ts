@@ -1,5 +1,5 @@
 import {
-  UserModel as User,
+  User,
 } from '../model';
 
 import {

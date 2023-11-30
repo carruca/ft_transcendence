@@ -1,15 +1,15 @@
 import {
-  ConversationModel as Conversation,
+  Conversation,
 } from '../model';
 
 export class ConversationDTO {
-  uuid: string;
-  user1UUID: string
-  user2UUID: string;
+  id: string;
+  user1id: string
+  user2id: string;
   
   constructor(conversation: Conversation) {
-    this.uuid = conversation.uuid;
-    this.user1UUID = conversation.user1.uuid;
-    this.user2UUID = conversation.user2.uuid;
+    this.id = conversation.id;
+    this.user1id = conversation.user1.id;
+    this.user2id = conversation.user2.id;
   }
 };

@@ -12,5 +12,6 @@ export interface ChannelUserPayload {
   admin: boolean,
   owner: boolean,
   muted: boolean,
-  banned: boolean
+  banned: boolean,
+  channelId: string,
 }

@@ -1,13 +1,33 @@
 import socket from './ws';
 import { client } from './chat-client';
 
-class Client {
+export class Client {
+    static instance: Client;
+
+    constructor() {
+        if (typeof Client.instance === 'object') {
+            return Client.instance;
+        }
+        Client.instance = this;
+        return Client.instance;
+    }
+
+    static getInstance(): Client {
+        if (!Client.instance) {
+            Client.instance = new Client();
+        }
+        return Client.instance;
+    }
+
     get me() {
         return client.me;
     }
 
     get channels() {
-        return client.channels;
+        for (const channel of client.channels.values()) {
+            console.log(channel);
+        }
+        //return client.channels;
     }
 
     get users() {
@@ -36,6 +56,14 @@ class Client {
 
     public close(channelUUID: string, message?: string) {
         this.send_('close', [ channelUUID, message ]);
+    }
+
+    public mute(channelUUID: string, targetUserUUID: string) {
+        this.send_('mute', [ channelUUID, targetUserUUID ]);
+    }
+
+    public unmute(channelUUID: string, targetUserUUID: string) {
+        this.send_('unmute', [ channelUUID, targetUserUUID ]);
     }
 
     public ban(channelUUID: string, targetUserUUID: string) {
@@ -97,6 +125,14 @@ class Client {
     public privmsg(targetUserUUID: string, message: string) {
         this.send_('privmsg', [ targetUserUUID, message ]);
     }
+
+    public watch() {
+        this.send_('adminwatch');
+    }
+
+    public unwatch() {
+        this.send_('adminunwatch');
+    }
 }
 
-window.c = new Client();
+window.c = Client.getInstance();

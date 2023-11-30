@@ -5,9 +5,16 @@ const emit = defineEmits(["closemodal"]);
 
 const props = defineProps({
     title: String,
-    text: String,
     onAccept: Function,
     onReject: Function,
+    acceptText: {
+        type: String,
+        default: "Accept"
+    },
+    rejectText: {
+        type: String,
+        default: "Reject"
+    }
 });
 
 </script>
@@ -18,11 +25,11 @@ const props = defineProps({
         <main>
             <div>
                 <h2>{{ props.title }}</h2>
-                <p>{{ props.text }}</p>
+                <slot></slot>
             </div>
             <div class="response__buttons">
-                <button @click="props.onAccept">Accept</button>
-                <button @click="props.onReject">Reject</button>
+                <button @click="props.onReject">{{ props.rejectText }}</button>
+                <button @click="props.onAccept">{{ props.acceptText }}</button>
             </div>
         </main>
     </section>
@@ -42,6 +49,7 @@ section {
     justify-content: center;
     align-items: center;
     z-index: 100;
+    border-radius: 15x;
 }
 
 section>main {
@@ -49,8 +57,8 @@ section>main {
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    width: 50em !important;
-    height: 30em !important;
+    width: 25em !important;
+    height: 15em !important;
     border-radius: 10px;
     padding: 20px;
     box-sizing: border-box;
@@ -75,7 +83,7 @@ p, h2 {
     flex-direction: row;
     align-items: center;
     margin: 0 1rem;
-    height: 100%;
+    height: 50%;
     flex: 2;
 }
 
@@ -83,21 +91,23 @@ button {
     flex: 1;
     margin: 0 1rem;
     height: 2rem;
-    background: #ff3232;
+    background: #8ac926;
     border: none;
-    color: var(--color-text);
+    color: #0f0f0f;
+    border-radius: 5px;
 }
 
 button:hover {
-    background: #ff0000;
+    cursor: pointer;
+    background: #90d324;
 }
 
 button:first-child {
-    background: #00cc00;
+    background: #ff595e;
 }
 
 button:first-child:hover {
-    background: #00ff00;
+    background: #f64d53;
 }
 
 </style>

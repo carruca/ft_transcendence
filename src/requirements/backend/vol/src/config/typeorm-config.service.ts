@@ -1,13 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import {
-	TypeOrmOptionsFactory,
-	TypeOrmModuleOptions,
+  TypeOrmOptionsFactory,
+  TypeOrmModuleOptions,
 } from '@nestjs/typeorm';
 import { createConnection } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
 
 import { User } from '../users/entities/user.entity';
 import { Block } from '../users/entities/block.entity';
+import { Ban } from '../users/entities/ban.entity';
 import { Match } from '../matches/entities/match.entity';
 import { MatchUser } from '../matches/entities/match-user.entity';
 import { Achievement } from '../achievements/entities/achievement.entity';
@@ -38,6 +39,7 @@ export class TypeOrmConfigService implements TypeOrmOptionsFactory {
         ChannelUser,
         Friend,
         Block,
+        Ban,
       ],
       migrationsRun: true,
       synchronize: true,
@@ -60,6 +62,7 @@ export class TypeOrmConfigService implements TypeOrmOptionsFactory {
         ChannelUser,
         Friend,
         Block,
+        Ban,
       ],
       migrationsRun: true,
       synchronize: true,

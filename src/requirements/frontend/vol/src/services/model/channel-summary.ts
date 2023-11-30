@@ -1,8 +1,8 @@
 export class ChannelSummary {
     constructor(
-        public readonly uuid: string,
+        public readonly id: string,
         public readonly name: string,
         public membership: number,
-        public hasPassword: boolean = false,
+        public password: boolean = false,
     ) {}
 }

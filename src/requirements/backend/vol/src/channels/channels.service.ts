@@ -14,6 +14,7 @@ import { CreateChannelUserDto } from './dto/create-channel-user.dto';
 import { ChannelUserModeDto } from './dto/channel-user-mode.dto';
 
 import { User } from '../users/entities/user.entity';
+import { Ban } from '../users/entities/ban.entity';
 import * as bcrypt from 'bcrypt';
 
 @Injectable()
@@ -32,7 +33,16 @@ export class ChannelsService {
   ) {}
 
   async create(createChannelDto: CreateChannelDto): Promise<Channel> {
-    const newChannel = new Channel(createChannelDto);
+    if (createChannelDto.password != undefined) {
+      createChannelDto.password = await this.encryptPassword(createChannelDto.password);
+    }
+    const newChannel = new Channel(
+      createChannelDto.name,
+      createChannelDto.ownerId,
+      createChannelDto.id,
+      createChannelDto.topic,
+      createChannelDto.password
+    );
     await this.channelsRepository.save(newChannel);
 
     newChannel.users = [
@@ -42,6 +52,7 @@ export class ChannelsService {
         admin: false
       })
     ];
+    newChannel.bans = [];
     return newChannel;
   }
 
@@ -59,14 +70,34 @@ export class ChannelsService {
 
   async	findAllWithUsers(): Promise<Channel[]> {
     return await this.channelsRepository.find({
-      relations: ['users', 'users.channel', 'users.user'],
+      relations: ['users', 'users.user'],
+    })
+  }
+
+  async	findAllWithUsersAndBans(): Promise<Channel[]> {
+    return await this.channelsRepository.find({
+      relations: ['users', 'users.user', 'bans.user'],
     })
   }
 
   async remove(id: string) {
     await this.channelsRepository.delete(id);
   }
+/*
+  async getBansByChannel(channelId: string) {
+    const channel = await this.channelsRepository.findOne({
+      relations: ['bans'],
+      where: {
+        id: channelId,
+      },
+    });
+    if (!channel) {
+      throw new HttpException('Channel not found', HttpStatus.NOT_FOUND);
+    }
 
+    return channel.bans;
+  }
+*/
   async createChannelUser(createChannelUserDto: CreateChannelUserDto): Promise<ChannelUser> {
     const channel = await this.channelsRepository.findOne({
       relations: ['users'],
@@ -85,6 +116,7 @@ export class ChannelsService {
       }
     });
     if (!user) {
+      console.log(createChannelUserDto);
       throw new HttpException('User not found', HttpStatus.NOT_FOUND);
     }
 
@@ -105,7 +137,16 @@ export class ChannelsService {
   }
 
   async removeChannelUser(channelId: string, userId: string): Promise<Channel> {
-    const channel = await this.findOneById(channelId);
+    const channel = await this.channelsRepository.findOne({
+      relations: ['users'],
+      where: {
+        id: channelId,
+      }
+    });
+    if (!channel) {
+      throw new HttpException('Channel not found', HttpStatus.NOT_FOUND);
+    }
+
     const channelUser = await this.findChannelUser(channelId, userId);
 
     await this.channelUsersRepository.delete(channelUser);
@@ -169,12 +210,16 @@ export class ChannelsService {
     return this.channelsRepository.save(channel);
   }
 
+  async encryptPassword(password: string) : Promise<string> {
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
+    return hashedPassword;
+  }
+
   async setChannelPassword(channelId: string, password: string): Promise<Channel> {
     const channel = await this.findOneById(channelId);
 
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
-    channel.password = hashedPassword;
+    channel.password = await this.encryptPassword(password);
     return this.channelsRepository.save(channel);
   }
 
@@ -201,16 +246,6 @@ export class ChannelsService {
     );
 
     channelUser.admin = channelUserModeDto.mode;
-    return this.channelUsersRepository.save(channelUser);
-  }
-
-  async setBannedToChannelUser(channelUserModeDto: ChannelUserModeDto): Promise<ChannelUser> {
-    const channelUser = await this.findChannelUser(
-      channelUserModeDto.channelId,
-      channelUserModeDto.userId
-    );
-
-    channelUser.banned = channelUserModeDto.mode;
     return this.channelUsersRepository.save(channelUser);
   }
 

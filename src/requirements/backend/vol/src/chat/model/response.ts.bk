@@ -1,0 +1,165 @@
+import {
+  UserModel as User,
+} from '.';
+
+enum ErrorCode {
+  SUCCESS,
+  DENIED,
+  USER_NOT_EXISTS,
+  USER_NOT_CONNECTED,
+  USER_IN_GAME,
+  USER_AWAY,
+  YOURE_IN_GAME,
+  CHANNEL_NOT_EXISTS,
+  CHANNEL_EXISTS,
+  NOT_IN_CHANNEL,
+  ALREADY_IN_CHANNEL,
+  PENDING_CHALLENGE,
+  BAD_CHANNEL_NAME,
+  BAD_CHANNEL_PASSWORD,
+  CANNOT_SEND_TO_CHANNEL,
+  INVALID_PASSWORD,
+  INSUFFICIENT_PRIVILEGES,
+  BANNED_FROM_CHANNEL,
+}
+
+export enum ActionType {
+  NONE,
+  ADD,
+  UPDATE,
+  DELETE,
+}
+
+export enum ObjectType {
+  USER,
+  CHANNEL,
+  EVENT,
+}
+
+export class Response {
+  private event: string;
+  private error: string = 'reterr';
+  private sourceUser: User;
+  private targetUsers: User[];
+  private targetActionType?: ActionType;
+  private targetData?: any;
+  private actionType?: ActionType;
+  private objectType?: ObjectType;
+
+  constructor(
+    private code: ErrorCode = ErrorCode.SUCCESS,
+    private message: string = 'Success',
+    private actionData?: any,
+  ) {}
+
+  setActionType(type: ActionType): Response {
+    this.actionType = type;
+    return this;
+  }
+
+  setCode(code: ErrorCode): Response {
+    this.code = code;
+    return this;
+  }
+
+  setMessage(message: string): Response {
+    this.message = message;
+    return this;
+  }
+
+  setEvent(event: string): Response {
+    this.event = event;
+    return this;
+  }
+
+  setError(error: string): Response {
+    this.error = error;
+    return this;
+  }
+
+  setObjectType(objectType: ObjectType): Response {
+    this.objectType = objectType;
+    return this;
+  }
+
+  setSourceUser(user: User): Response {
+    this.sourceUser = user;
+    return this;
+  }
+
+  setTargetUsers(users: User[]): Response {
+    this.targetUsers = users;
+    return this;
+  }
+
+  setTargetData(actionType: ActionType, data?: any): Response {
+    this.targetActionType = actionType;
+    this.targetData = data;
+    return this;
+  }
+
+  get sourceJSON(): string {
+    return JSON.stringify({
+      code: this.code,
+      message: this.message,
+      actionType: this.actionType,
+      objectType: this.objectType,
+      actionDetails: this.actionData,
+    });
+  }
+
+
+  get targetJSON(): string {
+    return JSON.stringify({
+      actionType: this.targetActionType,
+      objectType: this.objectType,
+      actionDetails: this.targetData,
+    });
+  }
+
+  send() {
+    const dataJSON = this.targetJSON;
+
+    if (this.code === ErrorCode.SUCCESS) {
+      this.sourceUser.socket.emit(this.event, this.sourceJSON);
+
+      for (const user of this.targetUsers) {
+        user.socket.emit(this.event, dataJSON);
+      }
+    } else {
+      this.sourceUser.socket.emit(this.error, this.sourceJSON);
+    }
+  }
+
+  static Denied(): Response {
+    return new Response(ErrorCode.DENIED, "Denied");
+  }
+
+  static AlreadyInChannel(): Response {
+    return new Response(ErrorCode.ALREADY_IN_CHANNEL, "Already in channel");
+  }
+
+  static BannedFromChannel(): Response {
+    return new Response(ErrorCode.BANNED_FROM_CHANNEL, "You are banned from channel");
+  }
+
+  static InvalidPassword(): Response {
+    return new Response(ErrorCode.INVALID_PASSWORD, "Invalid password");
+  }
+
+  static Success(actionType: ActionType, objectType: ObjectType, data?: any): Response {
+    return (new Response(ErrorCode.SUCCESS, "Success", data)).setActionType(actionType).setObjectType(objectType);
+  }
+
+  static BadChannelName(): Response {
+    return new Response(ErrorCode.BAD_CHANNEL_NAME, "Bad channel name");
+  }
+
+  static ChannelExists(): Response {
+    return new Response(ErrorCode.CHANNEL_EXISTS, "Channel exists");
+  }
+
+  static ChannelNotExists(): Response {
+    return new Response(ErrorCode.CHANNEL_NOT_EXISTS, "Channel not exists");
+  }
+}

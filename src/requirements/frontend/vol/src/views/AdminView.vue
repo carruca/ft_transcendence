@@ -8,98 +8,133 @@
       <!-- CHAT ADMIN PANEL -->
       <div class="section channels" v-if="currentPanel === 'Chat'">
         <h2>Channels</h2>
-        <ul class="list">
-          <li
-            v-for="channel in channelList"
-            :key="channel.uuid"
-            @click="selectChannel(channel)"
-            :class="[ channelClass(channel), { selected: selectedChannelUUID === channel.uuid }]">
-            {{ channel.name }}
-          </li>
-        </ul>
+        <div class="scrollable-content">
+          <ul class="list">
+            <li
+              v-for="channel in adminChannelList"
+              :key="channel.id"
+              @click="selectChannel(channel)"
+              :class="[ channelClass(channel), { selected: selectedChannelUUID === channel.id }]">
+              {{ channel.name }}
+            </li>
+          </ul>
+        </div>
       </div>
       <div class="section users" v-if="currentPanel === 'Chat'">
         <h2>Users</h2>
-        <ul class="list" v-if="selectedChannel">
-          <li 
-            v-for="user in selectedChannel.users.values()"
-            :key="user.uuid"
-            @click="selectUser(user)"
-            :class="[userClass(user), { selected: selectedUserUUID === user.uuid }]">
-            {{ user.name }}
-          </li>
-        </ul>
-        <p v-else>No channel selected</p>
+        <div class="scrollable-content">
+          <ul class="list" v-if="selectedChannel">
+            <li 
+              v-for="user in selectedChannel.users.values()"
+              :key="user.id"
+              @click="selectUser(user)"
+              :class="{ selected: selectedUserUUID === user.id }">
+              <span :class="userStatus(user.user.status)">
+                &#x2B24;
+              </span>
+              &nbsp;
+              <span :class="userClass(user)">
+                {{ user.nickname }}
+                {{ user.isOwner ? '(owner)' : '' }}
+                {{ user.isAdmin && !user.isOwner ? '(admin)' : '' }}
+                {{ user.isMuted ? '(muted)' : '' }}
+                {{ user.isBanned ? '(banned)' : '' }}
+                {{ user.friend ? '(friend)' : '' }}
+              </span>
+            </li>
+          </ul>
+          <p v-else>No channel selected</p>
+        </div>
       </div>
       <!-- .CHAT ADMIN PANEL -->
       <!-- WEB ADMIN PANEL -->
       <div class="section users" v-if="currentPanel === 'Web'">
         <h2>All Users</h2>
-        <ul class="list">
-          <li
-            v-for="user in allUsers"
-            :key="user.uuid"
-            @click="selectWebUser(user)"
-            :class="[userClass(user), { selected: selectedUserUUID === user.uuid }]">
-            {{ user.name }}
-          </li>
-        </ul>
+        <div class="scrollable-content">
+          <ul class="list">
+            <li
+              v-for="user in allUsers"
+              :key="user.id"
+              @click="selectWebUser(user)"
+              :class="{ selected: selectedUserUUID === user.id }">
+              <span :class="userStatus(user.status)">
+                &#x2B24;
+              </span>
+              &nbsp;
+              <span :class="webuserClass(user)">
+                {{ user.nickname }}
+                {{ user.siteRole === UserSiteRoleEnum.OWNER ? '(owner)' : '' }}
+                {{ user.siteRole === UserSiteRoleEnum.MODERATOR ? '(mod)' : '' }}
+                {{ user.siteBanned ? '(banned)' : '' }}
+              </span>
+            </li>
+          </ul>
+        </div>
       </div>
       <div class="section users" v-if="currentPanel === 'Web'">
         <h2>Banned Users</h2>
-        <ul class="list">
-          <li
-            v-for="user in bannedUsers"
-            :key="user.uuid"
-            @click="selectWebUser(user)"
-            :class="[userClass(user), { selected: selectedUserUUID === user.uuid }]">
-            {{ user.name }}
-          </li>
-        </ul>
+        <div class="scrollable-content">
+          <ul class="list">
+            <li
+              v-for="user in bannedUsers"
+              :key="user.id"
+              @click="selectWebUser(user)"
+              :class="{ selected: selectedUserUUID === user.id }">
+              <span :class="userStatus(user.status)">
+                &#x2B24;
+              </span>
+              &nbsp;
+              <span :class="webuserClass(user)">
+                {{ user.nickname }}
+                {{ user.siteRole === UserSiteRoleEnum.OWNER ? '(owner)' : '' }}
+                {{ user.siteRole === UserSiteRoleEnum.MODERATOR ? '(mod)' : '' }}
+                {{ user.siteBanned ? '(banned)' : '' }}
+              </span>
+            </li>
+          </ul>
+        </div>
       </div>
       <!-- .WEB ADMIN PANEL -->
       <!-- CHAT ADMIN PANEL -->
       <div class="section actions" v-if="currentPanel === 'Chat'">
-        <h2>Channel Actions</h2>
-        <div class="action-buttons">
-          <button v-if="canShowAction('destroy')" @click="destroy">Destroy</button>
-          <button v-if="canShowAction('setpasswd')" @click="showPasswdModal = true">{{ passwdButtonText }}</button>
-          <button v-if="canShowAction('delpasswd')" @click="delpasswd">Delete password</button>
-        </div>
-        <h2>User Actions</h2>
-        <div class="action-buttons">
-          <button v-if="canShowAction('promote')" @click="promote">{{ promoteButtonText }}</button>
-          <button v-if="canShowAction('mute')" @click="mute">{{ muteButtonText }}</button>
-          <button v-if="canShowAction('ban')" @click="ban">{{ banButtonText }}</button>
-          <button v-if="canShowAction('kick')" @click="kick">Kick</button>
+        <div class="scrollable-content">
+          <h2>Channel Actions</h2>
+          <div class="action-buttons">
+            <button v-if="canShowAction('destroy')" @click="destroy">Destroy</button>
+            <button v-if="canShowAction('edit')" @click="edit">{{ editButtonText }}</button>
+          </div>
+          <h2>User Actions</h2>
+          <div class="action-buttons">
+            <button v-if="canShowAction('promote')" @click="promote">{{ promoteButtonText }}</button>
+            <button v-if="canShowAction('mute')" @click="mute">{{ muteButtonText }}</button>
+            <button v-if="canShowAction('ban')" @click="ban">{{ banButtonText }}</button>
+            <button v-if="canShowAction('kick')" @click="kick">Kick</button>
+          </div>
         </div>
       </div>
       <!-- .CHAT ADMIN PANEL -->
       <!-- WEB ADMIN PANEL -->
       <div class="section actions" v-if="currentPanel === 'Web'">
-        <h2>Actions</h2>
-        <div class="action-buttons">
-          <button v-if="canShowAction('webban')" @click="webban">{{ webbanButtonText }}</button>
-          <button v-if="canShowAction('webpromote')" @click="webpromote">{{ webpromoteButtonText }}</button>
+        <div class="scrollable-content">
+          <h2>Actions</h2>
+          <div class="action-buttons">
+            <button v-if="canShowAction('webban')" @click="webban">{{ webbanButtonText }}</button>
+            <button v-if="canShowAction('webpromote')" @click="webpromote">{{ webpromoteButtonText }}</button>
+          </div>
         </div>
       </div>
       <!-- .WEB ADMIN PANEL -->
     </div>
-    <div v-if="showPasswdModal" class="passwd-modal">
-      <div class="passwd-modal-content">
-        <h2>Enter password</h2>
-        <input type="passwd" v-model="newPasswd" placeholder="Password (empty for none)" />
-        <div class="action-buttons">
-          <button @click="showPasswdModal = false">Cancel</button>
-          <button @click="setpasswd">Confirm</button>
-        </div>
-      </div>
-    </div>
+    <editChannelModal
+      :visible="showEditModal"
+      @save="handleEditModalSave"
+      @close="handleEditModalClose"
+    />
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, watch, computed } from 'vue';
+import { ref, onMounted, onUnmounted, watch, computed } from 'vue';
 import { client } from '@/services/chat-client';
 
 const selectedChannel = ref(null);
@@ -108,40 +143,40 @@ const selectedUser = ref(null);
 const selectedUserUUID = ref(null);
 const currentPanel = ref('Chat');
 
-const newPasswd = ref('');
-const showPasswdModal = ref(false);
+// Modals
+const showEditModal = ref(false);
 
 // Destructure the properties and methods from the client you want to use
-const { channelList } = client;
+const { adminChannelList, adminUserList } = client;
 import {
     UserSiteRoleEnum,
     UserStatusEnum,
 } from '@/services/enum';
 import { User } from '@/services/model';
-const users = ref([
-  new User('uuid1', 'Alice', UserSiteRoleEnum.ADMIN, UserStatusEnum.ONLINE, true, false, false),
-  new User('uuid2', 'Bob', UserSiteRoleEnum.USER, UserStatusEnum.ONLINE, false, true, false),
-  new User('uuid3', 'Charlie', UserSiteRoleEnum.USER, UserStatusEnum.OFFLINE, false, false, true),
-]);
+import editChannelModal from '@/components/EditChannelModal.vue';
 
 // Computed users and banned users array
-const allUsers = computed(() => users.value.filter(u => !u.isBanned));
-const bannedUsers = computed(() => users.value.filter(u => u.isBanned));
+const allUsers = computed(() => adminUserList.value.filter(u => !u.isBanned));
+const bannedUsers = computed(() => adminUserList.value.filter(u => u.isBanned));
 
 onMounted(() => {
-  client.playAdminSim(); // FIXME only for testing
-  selectChannel.value = null;
+  selectedChannel.value = null;
   selectedChannelUUID.value = null;
   selectedUser.value = null;
   selectedUserUUID.value = null;
+  client.adminWatch();
 });
 
-// Watch the channelList for changes
-watch(channelList, (newChannelList) => {
-  // Check if selectedChannel still exists in the updated channelList
+onUnmounted(() => {
+  client.adminUnwatch();
+})
+
+// Watch the adminChannelList for changes
+watch(adminChannelList, (newChannelList) => {
+  // Check if selectedChannel still exists in the updated adminChannelList
   if (currentPanel.value != 'Chat')
     return;
-  if (selectedChannel.value && !newChannelList.some(channel => channel.uuid === selectedChannel.value.uuid)) {
+  if (selectedChannel.value && !newChannelList.some(channel => channel.id === selectedChannel.value.id)) {
     selectedChannel.value = null;
     selectedChannelUUID.value = null;
     selectedUser.value = null;
@@ -155,7 +190,7 @@ watch(
     // Check if selectedUser still exists in the updated users of selectedChannel
     if (currentPanel.value != 'Chat')
       return;
-    if (selectedUser.value && !newUsersArray.some(user => user.uuid === selectedUser.value.uuid)) {
+    if (selectedUser.value && !newUsersArray.some(user => user.id === selectedUser.value.id)) {
       selectedUser.value = null;
       selectedUserUUID.value = null;
     }
@@ -163,11 +198,11 @@ watch(
   { deep: true }
 );
 // Watch the selectedUser for changes to the global user list
-watch(users, (newUsers) => {
+watch(adminUserList, (newUsers) => {
   // Check if selectedUser still exists in the updated users array
   if (currentPanel.value != 'Web')
     return;
-  if (selectedUser.value && !newUsers.some(user => user.uuid === selectedUser.value.uuid)) {
+  if (selectedUser.value && !newUsers.some(user => user.id === selectedUser.value.id)) {
     selectedUser.value = null;
     selectedUserUUID.value = null;
   }
@@ -183,8 +218,8 @@ const muteButtonText = computed(() => {
 const promoteButtonText = computed(() => {
   return selectedUser.value && selectedUser.value.isAdmin ? 'Demote' : 'Promote';
 });
-const passwdButtonText = computed(() => {
-  return selectedChannel.value && selectedChannel.value.hasPassword ? 'Change password' : 'Set password';
+const editButtonText = computed(() => {
+  return 'Edit';
 });
 // Computed propertion for Web Admin button
 const webbanButtonText = computed(() => {
@@ -199,19 +234,19 @@ const webpromoteButtonText = computed(() => {
 // Functions to select channel and user
 const selectChannel = (channel) => {
   selectedChannel.value = channel;
-  selectedChannelUUID.value = channel.uuid;
+  selectedChannelUUID.value = channel.id;
   selectedUser.value = null;
   selectedUserUUID.value = null;
 };
 const selectUser = (user) => {
   selectedUser.value = user;
-  selectedUserUUID.value = user.uuid;
+  selectedUserUUID.value = user.id;
 }
 
 // Function to select web user
 const selectWebUser = (user) => {
   selectedUser.value = user;
-  selectedUserUUID.value = user.uuid;
+  selectedUserUUID.value = user.id;
 }
 
 // Computed property for toggle button text
@@ -224,6 +259,24 @@ function togglePanel() {
   currentPanel.value = currentPanel.value === 'Chat' ? 'Web' : 'Chat';
 }
 
+// Modals
+const handleEditModalClick = () => {
+  showEditModal.value = true;
+};
+
+const handleEditModalSave = (channelOptions) => {
+  console.log(`Editing channel ${selectedChannel.value.name} with options: ${JSON.stringify(channelOptions)}`);
+  if (channelOptions.hasPassword)
+    client.password(selectedChannelUUID.value, channelOptions.password);
+  else
+    client.password(selectedChannelUUID.value, '');
+  showEditModal.value = false;
+};
+
+const handleEditModalClose = () => {
+  showEditModal.value = false;
+};
+
 // User color
 function channelClass(channel) {
   if (channel.hasPassword)
@@ -231,17 +284,26 @@ function channelClass(channel) {
   return '';
 }
 function userClass(user) {
-  if (user.isBanned) {
+  if (user.isBanned)
     return 'user-banned';
-  /*} else if (user.isOwner) { TODO
+  /*if (user.isOwner) TODO
     return 'user-owner';*/
-  } else if (user.isAdmin) {
+  if (user.isAdmin)
     return 'user-admin';
-  } else if (user.isMuted) {
+  if (user.isMuted)
     return 'user-muted';
-  }
   return '';
 }
+function userStatus(status) {
+  if (status === UserStatusEnum.ONLINE)
+    return 'status-online';
+  if (status === UserStatusEnum.INGAME)
+    return 'status-dnd';
+  if (status === UserStatusEnum.AWAY)
+    return 'status-away';
+  return 'status-offline';
+}
+
 
 // Web user color
 function webuserClass(user) {
@@ -262,10 +324,8 @@ function webuserClass(user) {
 function canShowAction(action) {
   if (currentPanel.value === 'Chat') {
     if (selectedChannel.value) {
-      if (action === 'destroy' || action === 'setpasswd')
+      if (action === 'destroy' || action === 'edit')
         return true;
-      if (action === 'delpasswd')
-        return selectedChannel.value.hasPassword ? true : false;
       if (selectedUser.value) {
         if (selectedUser.value.isBanned)
           return action === 'ban';
@@ -287,15 +347,8 @@ function canShowAction(action) {
 function destroy() {
   client.close(selectedChannelUUID.value);
 }
-function setpasswd() {
-  if (newPasswd.value) {
-    client.password(selectedChannelUUID.value, newPasswd.value);
-    newPasswd.value = ''; // Clear the password field
-  }
-  showPasswdModal.value = false; // Hide modal
-}
-function delpasswd() {
-  client.password(selectedChannelUUID.value, "");
+function edit() {
+  handleEditModalClick();
 }
 // User actions
 // TODO change function to working ones
@@ -348,10 +401,9 @@ html, body {
 .admin-panel {
   display: flex;
   flex-direction: column;
-  height: 80vh; /* Full viewport height */
-  width: 100vw; /* Full viewport width */
+  height: 100%; /* Full viewport height */
+  width: 100%; /* Full viewport width */
   justify-content: center; /* Center content vertically */
-  margin: 20px;
   color: white;
   background-color: #131313;
   box-sizing: border-box;  /* Include padding and border in the element's total width and height */
@@ -391,16 +443,27 @@ html, body {
   flex-direction: column;
   flex: 1; /* Each section takes equal width */
   border-right: 2px solid #444; /* Maintain a border for separation */
-  overflow-y: auto; /* Enable scrolling for each section */
-  margin-left: 10px;
+  overflow: hidden;
 }
 .section:last-child {
   border-right: none; /* No border for the last section */
 }
 
+.section h2 {
+  padding-left: 10px;
+}
+.section p {
+  padding-left: 10px;
+}
+
+.scrollable-content {
+  flex-grow: 1; /* Take up remaining space */
+  overflow-y: auto; /* Enable vertical scrolling */
+  overflow-x: hidden; /* Disable horizontal scrolling */
+}
+
 .list {
   flex-grow: 1;
-  overflow-y: auto; /* Enables vertical scrolling */
   list-style-type: none;
   padding: 0;
   margin: 0;
@@ -440,29 +503,8 @@ html, body {
   background-color: #555;
 }
 
-.passwd-modal {
-  position: fixed;
-  left: 0;
-  top: 0;
-  width: 100vw;
-  height: 100vh;
-  background-color: rgba(0, 0, 0, 0.5); /* Dimmed background */
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-.passwd-modal-content {
-  background: #272727;
-  padding: 20px;
-  border-radius: 5px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px; /* Spacing between elements */
-}
-
 .channel-passwd {
-  color: #ffca3a;
+  color: #ff595e;
 }
 
 .user-muted {
@@ -476,6 +518,19 @@ html, body {
 }
 .user-owner {
   color: #8ac926;
+}
+
+.status-online {
+  color: #8ac926;
+}
+.status-dnd {
+  color: #ff595e;
+}
+.status-away {
+  color: #ffca3a;
+}
+.status-offline {
+  color: #707070;
 }
 /* #ff595e #ffca3a #8ac926 #1982c4 #6a4c93 palette */
 </style>

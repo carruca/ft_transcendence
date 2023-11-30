@@ -9,23 +9,26 @@ import {
 import { ChannelUser } from './channel-user.entity';
 import { User } from '../../users/entities/user.entity';
 import { CreateChannelDto } from '../dto/create-channel.dto';
+import { Ban } from '../../users/entities/ban.entity';
 
 @Entity()
 export class Channel {
   constructor(
-    createChannelDto: CreateChannelDto,
+    name: string,
+    ownerId: string,
+    id?: string | undefined,
+    topic?: string | undefined,
+    password?: string | undefined,
   ) {
-    if (createChannelDto) {
-	    if (createChannelDto.id !== undefined) {
-        this.id = createChannelDto.id;
-      }
-      this.name = createChannelDto.name;
-      this.ownerId = createChannelDto.ownerId;
-      this.topic = createChannelDto.topic;
-      if (createChannelDto.password !== undefined) {
-        this.password = createChannelDto.password;
-      }
-		}
+	  if (id !== undefined) {
+      this.id = id;
+    }
+    this.name = name;
+    this.ownerId = ownerId;
+    this.topic = topic;
+    if (password !== undefined) {
+      this.password = password;
+    }
   }
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -51,6 +54,9 @@ export class Channel {
   @Column({ nullable: true })
   password?: string;
 
-  @OneToMany(() => ChannelUser, (channelUser) => channelUser.channel)
+  @OneToMany(() => ChannelUser, (channelUser) => channelUser.channel) 
   users: ChannelUser[];
+
+  @OneToMany(() => Ban, (ban) => ban.channel) 
+  bans: Ban[];
 }

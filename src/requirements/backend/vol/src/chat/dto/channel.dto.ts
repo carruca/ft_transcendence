@@ -1,32 +1,35 @@
 import {
-  ChannelModel as Channel,
+  Channel,
 } from '../model';
 
 import {
   UserDTO,
   EventDTO,
   ChannelUserDTO,
-  ChannelTopicDTO,
 } from '.';
 
 export class ChannelDTO {
-  uuid: string;
+  id: string;
   name: string;
-  creationDate: Date;
-  ownerUserDTO: UserDTO;
-  topic?: ChannelTopicDTO;
-  hasPassword: boolean;
-  users: ChannelUserDTO[];
-  events: EventDTO[];
+  ownerDTO: UserDTO;
+  createdDate: Date;
+  topic?: string;
+  topicSetDate?: Date;
+  topicUserDTO?: UserDTO;
+  password: boolean;
+  channelUsersDTO: ChannelUserDTO[];
+  eventsDTO: EventDTO[];
 
   constructor (channel: Channel) {
-    this.uuid = channel.uuid;
+    this.id = channel.id;
     this.name = channel.name;
-    this.creationDate = channel.creationDate;
-    this.ownerUserDTO = channel.ownerUser.DTO;
-    this.topic = channel.topic && channel.topic.value !== "" ? new ChannelTopicDTO(channel.topic) : undefined;
-    this.hasPassword = (channel.password !== null);
-    this.users = channel.getUsers().map((user) => new ChannelUserDTO(channel, user));
-    this.events = channel.getEvents().map((event) => event.DTO);
+    this.createdDate = channel.createdDate;
+    this.ownerDTO = channel.owner.DTO;
+    this.topic = channel.topic;
+    this.topicSetDate = channel.topicSetDate,
+    this.topicUserDTO = channel.topicUser?.DTO;
+    this.password = (channel.password !== null);
+    this.channelUsersDTO = channel.getUsers().map((user) => new ChannelUserDTO(channel, user));
+    this.eventsDTO = channel.getEvents().map((event) => event.DTO);
   }
 }

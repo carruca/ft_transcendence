@@ -7,23 +7,25 @@ import GameCard from './GameCard.vue';
 import AchivementsCard from './achivementsCard.vue';
 import EditProfile from './EditProfile.vue';
 import friendsBotton from './friendsBotton.vue';
+import { client } from '@/services/chat-client';
+import { User } from '@/services/model';
 
 type ConnectionStatus = {
-  [key: number] : string;
+	[key: number] : string;
 };
 
 const connectionStatus : ConnectionStatus = {
-  0: 'Offline 🔴',
-  1: 'Online 🟢',
-  2: 'In game 🎮'
-};//TODO: check connection status
+	0: 'Offline 🔴',
+	1: 'Online 🟢',
+	2: 'Checking... 🟡',
+};
 
 const props = defineProps({
-  user: {
-    type: Object,
-    required: true
-  }
-})
+	user: {
+		type: Object,
+		required: true
+	}
+});
 
 const ID = ref<[string, string]>(['none', 'none']);
 const usernameRef = ref()
@@ -32,8 +34,9 @@ const rating = ref();
 const wins = ref<number>();
 const losses = ref<number>();
 
+const userStatus = ref<number>(2);
+
 const editPage = ref(false);
-const state = ref(1);
 const itsMe = ref(true);
 
 const route = useRouter();
@@ -95,34 +98,47 @@ async function loadProfile() {
   wins.value = userInfo.wins;
   losses.value = userInfo.losses;
 
+  
   if (itsMe.value)
   {
     ID.value = [userInfo.id, 'none'];
-  }
-  else {
+	}
+	else {
     ID.value = [user.id, userInfo.id];
-  }
+	}
   loadedProfile.value = true;
 };
+
+// Watch user status
+watch(client.isConnected, (connected: boolean) => {
+  if (connected) {
+    client.userWatch(ID.value[1], (watchedUser: User) => {
+      userStatus.value = watchedUser.status;
+    });
+  }
+});
 
 const stopWatch = watch(
   () => router.currentRoute.value.params.username,
   () => {
     setTimeout(() => {
       if (unmounted.value) return;
+      loadedProfile.value = false;
       loadProfile();
     }, 10);
+    if (!itsMe.value) client.userUnwatch(ID.value[1]);
   }
-);
-
-onMounted(async () => {
-  await route.isReady();
-  loadProfile();
-});
-
-onBeforeUnmount(() => {
-  unmounted.value = true;
-  stopWatch();
+  );
+  
+  onMounted(async () => {
+    await route.isReady();
+    loadProfile();
+  });
+  
+  onBeforeUnmount(() => {
+    unmounted.value = true;
+    if (!itsMe.value) client.userUnwatch(ID.value[1]);
+    stopWatch();
 });
 
 const launchEditPage = () => {
@@ -136,13 +152,12 @@ const closeEditPage = async () => {
 </script>
 
 <template>
-
 <div v-if="loadedProfile" class="profile">
   <div class="profile-container">
     <div>
-      <div class="profile-picture"></div>
-      <div>
-        <div class="state">{{ connectionStatus[state] }}</div>
+      <img class="profile-picture" :src="profilePictureRef" alt="Profile Picture">
+      <div v-if="!itsMe">
+        <div class="state">{{ connectionStatus[userStatus] }}</div>
       </div>
     </div>
     <div class="profile-info">
@@ -171,7 +186,7 @@ const closeEditPage = async () => {
     </div>
   </div>
 
-  <div class="profile-cards" v-if="ID[0] !== 'none'">
+  <div class="profile-cards">
     <GameCard :user="ID[itsMe ? 0 : 1]"/>
     <AchivementsCard :user="ID[itsMe ? 0 : 1]"/>
   </div>
@@ -179,8 +194,6 @@ const closeEditPage = async () => {
 <div v-else>
   <h1>Loading...</h1>
 </div>
-
-
 </template>
 
 <style scoped>

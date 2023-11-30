@@ -1,17 +1,18 @@
 import {
-  ChannelModel as Channel,
+  Channel,
 } from '../model';
 
 export class ChannelSummaryDTO {
-  uuid: string;
+  id: string;
   name: string;
-  topic: string;
-  hasPassword: boolean;
+  topic?: string;
+  password: boolean;
 
   constructor(channel: Channel) {
-    this.uuid = channel.uuid;
+    this.id = channel.id;
     this.name = channel.name;
-    this.topic = channel.topic && channel.topic.value !== "" ? channel.topic.value : "";
-    this.hasPassword = channel.password?.length != 0 ?? false;
+    this.topic = channel.topic;
+    this.password = channel.password !== null;
+    console.log("ChannelSummaryDTO", this.password, channel.password);
   }
 }

@@ -1,8 +1,8 @@
 import {
-  UserModel as User,
+  User,
 } from '.';
 
-enum ErrorCode {
+enum ResponseCode {
   SUCCESS,
   DENIED,
   USER_NOT_EXISTS,
@@ -21,32 +21,31 @@ enum ErrorCode {
   INVALID_PASSWORD,
   INSUFFICIENT_PRIVILEGES,
   BANNED_FROM_CHANNEL,
+  BANNED_FROM_SITE,
+  ACCOUNT_DISABLED,
+  CONVERSATION_NOT_EXISTS,
+  USER_ALREADY_BANNED,
+  USER_NOT_BANNED,
 }
 
 export class Response {
   private event: string;
-  private error: string = 'reterr';
-  private users: User[];
+  private error: string = 'reterror';
+  private success: string = 'retsuccess';
   private sourceUser: User;
 
   constructor(
-    private code: ErrorCode = ErrorCode.SUCCESS,
+    private code_: ResponseCode = ResponseCode.SUCCESS,
     private message: string = 'Success',
-    private data: any,
   ) {}
 
-  setCode(code: ErrorCode): Response {
-    this.code = code;
+  setCode(code: ResponseCode): Response {
+    this.code_ = code;
     return this;
   }
 
   setMessage(message: string): Response {
     this.message = message;
-    return this;
-  }
-
-  setData(data: any): Response {
-    this.data = data;
     return this;
   }
 
@@ -64,65 +63,113 @@ export class Response {
     this.sourceUser = user;
     return this;
   }
-
-  usersToSend(users: User[]): Response {
-    this.users = users;
-    return this;
+  
+  get code(): ResponseCode {
+    return this.code_;
   }
 
   get JSON(): string {
     return JSON.stringify({
-      code: this.code,
+      event: this.event,
+      code: this.code_,
       message: this.message,
-      data: this.data,
-    })
+    });
   }
 
   send() {
-    const dataJSON = this.JSON;
-
-    if (this.code !== ErrorCode.SUCCESS) {
-      this.sourceUser.socket.emit(this.error, dataJSON);
-    } else {
-      if (this.users) {
-        for (const user of this.users) {
-          user.socket.emit(this.event, dataJSON);
-        }
-      } else {
-         this.sourceUser.socket.emit(this.event, dataJSON);
-      }
+    if (this.code === ResponseCode.SUCCESS) {
+      this.sourceUser.socket.emit(this.success, this.JSON);
+    }
+    else {
+      this.sourceUser.socket.emit(this.error, this.JSON);
     }
   }
 
-  static Denied(data?: any): Response {
-    return new Response(ErrorCode.DENIED, "Denied", data);
+  static PendingChallenge(): Response {
+    return new Response(ResponseCode.PENDING_CHALLENGE, "Pending Challenge");
   }
 
-  static AlreadyInChannel(data?: any): Response {
-    return new Response(ErrorCode.ALREADY_IN_CHANNEL, "Already in channel", data);
+  static Denied(): Response {
+    return new Response(ResponseCode.DENIED, "Denied");
   }
 
-  static BannedFromChannel(data?: any): Response {
-    return new Response(ErrorCode.BANNED_FROM_CHANNEL, "You are banned from channel", data);
+  static UserAway(): Response {
+    return new Response(ResponseCode.USER_AWAY, "User away");
   }
 
-  static InvalidPassword(data?: any): Response {
-    return new Response(ErrorCode.INVALID_PASSWORD, "Invalid password", data);
+  static UserNotConnected(): Response {
+    return new Response(ResponseCode.USER_NOT_CONNECTED, "User not connected");
   }
 
-  static Success(data?: any): Response {
-    return new Response(ErrorCode.SUCCESS, "Success", data);
+  static NotInChannel(): Response {
+    return new Response(ResponseCode.NOT_IN_CHANNEL, "You are not in that channel")
   }
 
-  static BadChannelName(data?: any): Response {
-    return new Response(ErrorCode.BAD_CHANNEL_NAME, "Bad channel name", data);
+  static AlreadyInChannel(): Response {
+    return new Response(ResponseCode.ALREADY_IN_CHANNEL, "Already in channel");
   }
 
-  static ChannelExists(data?: any): Response {
-    return new Response(ErrorCode.CHANNEL_EXISTS, "Channel exists", data);
+  static BannedFromChannel(): Response {
+    return new Response(ResponseCode.BANNED_FROM_CHANNEL, "You are banned from channel");
   }
 
-  static ChannelNotExists(data?: any): Response {
-    return new Response(ErrorCode.CHANNEL_NOT_EXISTS, "Channel not exists", data);
+  static InvalidPassword(): Response {
+    return new Response(ResponseCode.INVALID_PASSWORD, "Invalid password");
+  }
+
+  static Success(): Response {
+    return new Response();
+  }
+
+  static BadChannelName(): Response {
+    return new Response(ResponseCode.BAD_CHANNEL_NAME, "Bad channel name");
+  }
+
+  static ChannelExists(): Response {
+    return new Response(ResponseCode.CHANNEL_EXISTS, "Channel exists");
+  }
+
+  static ChannelNotExists(): Response {
+    return new Response(ResponseCode.CHANNEL_NOT_EXISTS, "Channel not exists");
+  }
+
+  static InsufficientPrivileges(): Response {
+    return new Response(ResponseCode.INSUFFICIENT_PRIVILEGES, "Insufficient privileges");
+  }
+
+  static UserNotExists(): Response {
+    return new Response(ResponseCode.USER_NOT_EXISTS, "User not exists");
+  }
+
+  static BannedFromSite(): Response {
+    return new Response(ResponseCode.BANNED_FROM_SITE, "You're banned from this site");
+  }
+
+  static AccountDisabled(): Response {
+    return new Response(ResponseCode.ACCOUNT_DISABLED, "Your account are disabled");
+  }
+
+  static YoureInGame(): Response {
+    return new Response(ResponseCode.YOURE_IN_GAME, "You are in game");
+  }
+
+  static UserInGame(): Response {
+    return new Response(ResponseCode.USER_IN_GAME, "user in game");
+  }
+
+  static CannotSendToChannel(): Response {
+    return new Response(ResponseCode.CANNOT_SEND_TO_CHANNEL, "Cannot send to channel");
+  }
+
+  static ConversationNotExists(): Response {
+    return new Response(ResponseCode.CONVERSATION_NOT_EXISTS, "Conversation not exists");
+  }
+
+  static UserAlreadyBanned(): Response {
+    return new Response(ResponseCode.USER_ALREADY_BANNED, "User already banned");
+  }
+
+  static UserNotBanned(): Response {
+    return new Response(ResponseCode.USER_NOT_BANNED, "User not banned");
   }
 }

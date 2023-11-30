@@ -1,0 +1,79 @@
+import {
+    User,
+    Channel,
+} from '.';
+
+import {
+    ChannelUserDTO,
+} from '../dto';
+
+import {
+    ChannelUserPayload,
+} from '../interface';
+
+export class ChannelUser {
+    private readonly id_: string;
+    private active_: boolean;
+    private admin_: boolean;
+    private banned_: boolean;
+    private muted_: boolean;
+    private user_: User;
+    private channel_: Channel;
+
+    constructor(channelUserPayload: ChannelUserPayload) {
+        this.id_ = channelUserPayload.id;
+        this.active_ = channelUserPayload.active;
+        this.admin_ = channelUserPayload.admin;
+        this.banned_ = channelUserPayload.banned;
+        this.muted_ = channelUserPayload.muted;
+        this.user_ = channelUserPayload.user;
+        this.channel_ = channelUserPayload.channel;
+    }
+
+    get id(): string {
+        return this.id_;
+    }
+
+    set active(value: boolean) {
+        this.active_ = value;
+    }
+
+    get active(): boolean {
+        return this.active_;
+    }
+
+    set admin(value: boolean) {
+        this.admin_ = value;
+    }
+
+    get admin(): boolean {
+        return this.admin_;
+    }
+
+    set banned(value: boolean) {
+        this.banned_ = value;
+    }
+
+    get banned(): boolean {
+        return this.banned_;
+    }
+
+    set muted(value: boolean) {
+        this.muted_ = value;
+    }
+    get muted(): boolean {
+        return this.muted_;
+    }
+
+    get user(): User {
+        return this.user_;
+    }
+
+    get channel(): Channel {
+        return this.channel_;
+    }
+
+    get DTO(): ChannelUserDTO {
+        return new ChannelUserDTO(this);
+    }
+}

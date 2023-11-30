@@ -18,7 +18,7 @@ const emit = defineEmits(['close']);
 let selectedImage : File;
 const profilePicture = ref<String>(props.profileImage);
 
-const imageSet : boolean = ref(false);
+const imageSet = ref(false);
 
 function sendChanges() {
   // Add condition if new image has been put or new nickname

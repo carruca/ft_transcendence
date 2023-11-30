@@ -1,8 +1,9 @@
 import { IsString } from 'class-validator';
+
 export class CreateBlockDto {
-	@IsString()
+  @IsString()
   userId: string;
 
-	@IsString()
+  @IsString()
   blockId: string;
 }

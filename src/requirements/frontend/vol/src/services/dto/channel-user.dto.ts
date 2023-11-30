@@ -6,11 +6,8 @@ import {
 
 export interface ChannelUserDTO {
     uuid: string,
-    name: string,
+    nickname: string,
     status: UserStatusEnum,
-    siteRole: UserSiteRoleEnum,
-    blocked: boolean,
-    friend: boolean,
     admin: boolean,
     owner: boolean,
     muted: boolean,

@@ -2,21 +2,10 @@
 import NavBar from './NavBar.vue';
 import TopBar from './TopBar.vue';
 import Modal from './Modal.vue';
-import { onMounted } from 'vue';
-
-interface APIResponseFriends {
-  senderId: string;
-  receiverId: string;
-  status: number;
-  id: string;
-};
-
-enum FriendStatus {
-  requested,
-  accepted,
-  rejected,
-  add,
-};
+import { onMounted, defineProps, watch, ref } from 'vue';
+import { UserSiteRoleEnum } from '@/services/enum/user-site-role.enum'
+import { ChatClient } from '@/services/chat-client'
+import Toast, { DEFAULT_TIMEOUT } from './Toast.vue'
 
 const props = defineProps({
   user: {
@@ -24,81 +13,62 @@ const props = defineProps({
     required: true,
     default: undefined
   }
-});
+})
 
-// TODO: Get current user image pic
-// TODO: Separate this into components
+const me = ref(undefined)
+const showPopup = ref(false)
+const modalProps = ref({
+  title: undefined,
+  onAccept: undefined,
+  onReject: undefined,
+  acceptText: undefined,
+  rejectText: undefined,
+  content: undefined
+})
+const toastError = ref(undefined)
 
-let friends : APIResponseFriends[] = [];
-let friendPetition : APIResponseFriends[] = [];
-
-async function takeFriendStatus() {
-  try {
-    const response = await fetch(
-      `${import.meta.env.VITE_BACKEND_URL}/friends`,
-      {
-        method: "GET",
-        headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
-        },
-        credentials: "include",
-      });
-    if (!response.ok)
-    {
-      throw new Error("Could not get friends");
+onMounted(() => {
+  const client = ChatClient.getInstance()
+  const stopMe = watch(client.me, (newVal, oldVal) => {
+    if (newVal && !oldVal) {
+      me.value = newVal
     }
-    friends = await response.json();
-    friendPetition = friends.filter(friend => friend.receiverId === props.user.id && friend.status === 0);
-    console.log(friendPetition)
-  } catch (error) {
-    console.error(error);
-  }
-};
-
-async function handlePetition(friend : APIResponseFriends, accepted : FriendStatus) {
-  try {
-    const response = await fetch(
-      `${import.meta.env.VITE_BACKEND_URL}/friends`,
-      {
-        method: "PUT",
-        headers: {
-        "Content-Type": "application/json",
-        },
-        credentials: "include",
-        body: JSON.stringify({
-          "friendId": friend.id,
-          "status": accepted,
-        }),
-      });
-    if (!response.ok)
-    {
-      throw new Error("Could not get friends");
+  })
+  watch(client.toastMessage, (newVal, _oldVal) => {
+    if (newVal) {
+      toastError.value = newVal
     }
-    friends = await response.json();
-    friendPetition = friends.filter(friend => friend.receiverId === props.user.id && friend.status === 0);
-  } catch (error) {
-    console.error(error);
-  }
-};
+  })
+  watch(client.showModal, (newVal, _oldVal) => {
+    showPopup.value = newVal
+  })
+  watch(client.modalProps, (newVal, _oldVal) => {
+    modalProps.value = newVal
+  })
+  setTimeout(() => {
+    stopMe()
+  }, 5000)
+})
 
-async function acceptPetition(friend : APIResponseFriends) {
-  handlePetition(friend, 1);
+const clearError = () => {
+  toastError.value = undefined
 };
-
-async function rejectPetition(friend : APIResponseFriends) {
-  handlePetition(friend, 2);
-};
-
-onMounted(async () => {
-  await takeFriendStatus();
-});
 
 </script>
 
 <template>
   <div class="main_content">
+    <Toast v-if="toastError != undefined" :error-message="toastError" @closeToast="clearError">
+      <i class="material-icons">error</i>
+    </Toast>
     <TopBar :user="props.user" />
-    <NavBar :admin="props.user.admin || true"/>  <!-- TODO: get props.user.admin-->
+    <NavBar :admin="me?.siteRole == UserSiteRoleEnum.MODERATOR
+      || me?.siteRole == UserSiteRoleEnum.OWNER"/>
+    <Modal v-if="showPopup" :title="modalProps.title" :onAccept="modalProps.onAccept"
+      :onReject="modalProps.onReject" :acceptText="modalProps.acceptText"
+      :rejectText="modalProps.rejectText">
+      <p>{{ modalProps.content }}</p>
+    </Modal>
     <main>
       <router-view :user="props.user" />
     </main>
@@ -132,4 +102,9 @@ main {
   align-items: center;
   overflow: hidden;
 }
+
+.material-icons {
+  color: #fafafa;
+}
+
 </style>
