@@ -529,7 +529,8 @@ const handleCreateModalCreate = (channelOptions) => {
 };
 const handleEditModalSave = (channelOptions) => {
   console.log(`Editing channel: has password? '${channelOptions.hasPassword}', password: '${channelOptions.password}'`);
-  client.password(selectedChannelUUID, channeloptions.hasPassword ? channelOptions.password : undefined);
+  console.log("selectedChannelUUID", selectedChannelUUID.value);
+  client.password(selectedChannelUUID.value, channelOptions.hasPassword ? channelOptions.password : undefined);
   showEditModal.value = false;
 };
 

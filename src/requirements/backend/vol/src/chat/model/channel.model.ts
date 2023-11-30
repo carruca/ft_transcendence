@@ -316,7 +316,7 @@ export class Channel {
     if (this.password_ !== value) {
       this.password_ = value;
       this.notify_(NotifyEventTypeEnum.UPDATE, {
-        password: value,
+        password: this.password != undefined,
       });
     }
   }
