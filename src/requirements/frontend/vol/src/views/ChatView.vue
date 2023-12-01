@@ -386,12 +386,27 @@ const onClick = (selected, item) => {
 };
 const onRightClick = (selected, item, event) => {
   event.preventDefault(); // Prevent the default context menu
-  contextMenuItem.value = item;
 
   contextChannelUUID.value = null;
   contextEventUUID.value = null;
   contextUserUUID.value = null;
 
+  // Protect in case user is no longer on the channel (item/ChannelUser is undefined)
+  if (selected instanceof ChatEvent && !item) {
+    if (selected.isTargetEvent())
+      item = new EventUser(selected.target.id, selected.target.name);
+    else
+      item = new EventUser(selected.source.id, selected.source.name);
+  }
+  getAvailableOptions(selected, item);
+
+  contextMenuItem.value = item;
+  contextMenuPosition.value = { x: event.clientX, y: event.clientY };
+  showContextMenu.value = true;
+};
+
+// Context menu
+const getAvailableOptions = (selected, item) => {
   const myUser = client.me.value;
   const myChannelUser = client.getChannelUserById(selectedChannelUUID.value, myUser.id);
 
@@ -403,8 +418,15 @@ const onRightClick = (selected, item, event) => {
     else
       contextUserUUID.value = selected.id;
 
+    // User actions
     contextMenuOptions.value.push('Profile');
 
+    // Protect in case user no longer in channel 
+    // (item is EventUser instead of ChannelUser)
+    if (item instanceof EventUser)
+      return;
+
+    // Channel user actions
     if (item.user.status === UserStatusEnum.ONLINE)
       contextMenuOptions.value.push('Challenge');
     else if (item.user.status === UserStatusEnum.IN_GAME)
@@ -445,12 +467,7 @@ const onRightClick = (selected, item, event) => {
   } else {
     console.log(`ERROR: Right click on item '${item}' not handled`);
   }
-
-  contextMenuPosition.value = { x: event.clientX, y: event.clientY };
-  showContextMenu.value = true;
-};
-
-// Context menu
+}
 const handleContextMenuSelect = ({ option, item }) => {
   if (['Block',
        'Unblock',
@@ -489,13 +506,16 @@ const executeContextAction = ( option, item ) => {
       console.log(`Leaving channel '${item.name}'`);
       client.part(item.id);
     }
+  } else if (item instanceof EventUser) {
+    if (option === 'Profile') {
+      // FIXME fix user route
+      router.push(`/${item.name}`);
+    }
   } else if (item instanceof ChannelUser) {
     let userUUID = item.user.id;
     if (option === 'Profile') {
-      console.log(`Showing profile for user '${item.user.name}'`);
-      // FIXME
+      // FIXME fix user route
       router.push(`/${item.user.nickname}`);
-      //router.push(`/profile/${item.user.nickname}`);
     } else if (option === 'Challenge') {
       console.log(`Challenging user '${item.user.name}'`);
       client.challengeRequest(item.user.id);
@@ -691,7 +711,7 @@ const getUserRoles = (channelUser) => {
 }
 const getUserTitle = (channelUser) => {
   if (!channelUser)
-    return '(user not in channel)';
+    return '(user no longer in channel)';
 
   const roles = getUserRoles(channelUser);
   if (roles.length === 0)
@@ -700,7 +720,7 @@ const getUserTitle = (channelUser) => {
 }
 const getUserInfo = (channelUser) => {
   if (!channelUser)
-    return '(user not in channel)';
+    return '(user no longer in channel)';
 
   const roles = getUserRoles(channelUser);
   if (roles.length === 0)
