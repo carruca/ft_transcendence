@@ -384,14 +384,22 @@ const onClick = (selected, item) => {
       item = selected.target;
     else
       item = selected.source;
+    // Ourself?
+    if (item.id === client.me.value.id)
+      return;
     setCurrentPrivate(item.id);
     console.log(`Clicked on user '${item.name}'`);
     console.log(`private list: ${privateList.value}`);
+    console.log(`private list: ${JSON.stringify(privateList.value)}`);
     console.log(`current private: ${currentPrivate.value}`);
   } else if (selected instanceof ChatEvent || selected instanceof ChannelUser) {
+    // Ourself?
+    if (item.user.id === client.me.value.id)
+      return;
     setCurrentPrivate(item.user.id);
     console.log(`Clicked on user '${item.user.name}'`);
     console.log(`private list: ${privateList.value}`);
+    console.log(`private list: ${JSON.stringify(privateList.value)}`);
     console.log(`current private: ${currentPrivate.value}`);
   } else {
     console.log(`ERROR: Clicked on item '${item}' not handled`);
@@ -437,6 +445,9 @@ const getAvailableOptions = (selected, item) => {
     // Protect in case user no longer in channel 
     // (item is EventUser instead of ChannelUser)
     if (item instanceof EventUser)
+      return;
+    // in case we clicked on ourself!
+    if (item.user.id === myUser.id)
       return;
 
     // Channel user actions
@@ -634,6 +645,8 @@ const handleEditModalUnban = (user) => {
 // Resize functions
 const MIN_WIDTH = 100;
 const handleResize = (leftSection, middleSection, rightSection, contentSection) => {
+  if (!leftSection || !middleSection || !rightSection || !contentSection)
+    return;
   const totalWidth = contentSection.offsetWidth;
   let newLeftWidth = leftSection.offsetWidth;
   let newMiddleWidth = middleSection.offsetWidth;
@@ -648,6 +661,8 @@ const handleResize = (leftSection, middleSection, rightSection, contentSection) 
 }
 const initDrag = (e, leftSection, middleSection, rightSection, contentSection, isLeftResizer) => {
   e.preventDefault();
+  if (!leftSection || !middleSection || !rightSection || !contentSection)
+    return;
   const startX = e.clientX;
   const startLeftWidth = leftSection.offsetWidth;
   const startMiddleWidth = middleSection.offsetWidth;

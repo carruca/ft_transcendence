@@ -81,7 +81,7 @@ export class ChatClient {
   private userCurrentChannel_ = ref<Channel | null>(null);
   public userCurrentChannel = readonly(this.userCurrentChannel_);
 
-  private userCurrentChannelBanList_ = reactive(new Map<User>);
+  private userCurrentChannelBanList_ = reactive(new Map<string, User>);
   public userCurrentChannelBanList = readonly(this.userCurrentChannelBanList_);
 
   private privateList_ = ref<Private[] | null>([]);
