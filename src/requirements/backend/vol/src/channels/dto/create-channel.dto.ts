@@ -15,5 +15,5 @@ export class CreateChannelDto {
   topic?: string;
 
   @IsString()
-  password?: string;
+  password: string;
 }

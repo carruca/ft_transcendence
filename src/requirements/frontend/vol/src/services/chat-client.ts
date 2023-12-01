@@ -10,6 +10,7 @@ import {
   ChannelUser,
   User,
   Event,
+  Private,
 } from './model';
 
 import {
@@ -60,8 +61,13 @@ export class ChatClient {
   }
 
   private me_ = ref<User>(undefined);
-  private channels_: Map<string, Channel> = reactive(new Map());
+
   private users_: Map<string, User> = reactive(new Map());
+  private channels_: Map<string, Channel> = reactive(new Map());
+  private privates_: Map<string, User> = reactive(new Map());
+
+  private adminUsers_: Map<string, User> = reactive(new Map());
+  private adminChannels_: Map<string, Channel> = reactive(new Map());
 
   private userWatchCallback_?: Function;
   
@@ -76,6 +82,15 @@ export class ChatClient {
 
   private userCurrentChannel_ = ref<Channel | null>(null);
   public userCurrentChannel = readonly(this.userCurrentChannel_);
+
+  private userCurrentChannelBanList_ = ref<User[] | null>(null);
+  public userCurrentChannelBanList = readonly(this.userCurrentChannelBanList_);
+
+  private privateList_ = ref<Private[] | null>(null);
+  public privateList = readonly(this.privateList_);
+
+  private currentPrivate_ = ref<Private | null>(null);
+  public currentPrivate = readonly(this.currentPrivate_);
 
   private adminChannelList_ = ref<Channel[]>([]);
   public adminChannelList = readonly(this.adminChannelList_);
@@ -105,6 +120,8 @@ export class ChatClient {
   });
   public modalProps = readonly(this.modalProps_);
 
+  private admin_: boolean;
+
   private getChannelById_(channelId: string): Channel {
     return this.channels_.get(channelId); 
   }
@@ -121,6 +138,10 @@ export class ChatClient {
     if (!user) return undefined;
   
     return channel?.user(user);
+  }
+
+  public getPrivateById(userId: string): Private | undefined {
+    return this.privates_.get(userId);
   }
 
   get me() {
@@ -151,6 +172,7 @@ export class ChatClient {
     socket.on('challengeAccepted', this.onChallengeAccepted.bind(this));
     socket.on('challengeSpectated', this.onChallengeSpectated.bind(this));
 
+    socket.on('channelBanList', this.onChannelBanList.bind(this));
     socket.on('channelCreated', this.onChannelCreated.bind(this));
     socket.on('channelUpdated', this.onChannelUpdated.bind(this));
     socket.on('channelDeleted', this.onChannelDeleted.bind(this));
@@ -181,13 +203,44 @@ export class ChatClient {
     console.log("userChannelsDTO", this.channelsSummary_.value);
   }
 
+  private onChannelBanList(responseJSON: string): void {
+    const [ channelId, banUsers ] = JSON.parse(responseJSON);
+
+    this.userCurrentChannelBanList.value = banUsers;
+    console.log("banUsers", banUsers);
+  }
+
   private onAdminData(responseJSON: string): void {
     const [ channelsDTO, usersDTO ] = JSON.parse(responseJSON);
 
-    this.adminChannelList_.value = channelsDTO;
-    this.adminUserList_.value = usersDTO;
+    for (const userDTO of usersDTO) {
+      const user = this.userFromDTO_(userDTO);
+      this.adminUsers_.set(user.id, user);
+    }
+
+    for (const channelDTO of channelsDTO) {
+      const channel = this.channelFromDTO_(channelDTO);
+      const ownerUser = this.adminUsers_.get(channel.owner.id);
+
+      if (ownerUser) {
+        channel.owner = ownerUser;
+      }
+      this.adminChannels_.set(channel.id, channel);
+      for (const channelUserDTO of channelDTO.channelUsersDTO) {
+        const user = this.adminUsers_.get(channelUserDTO.id);
+       
+        if (user) {
+          channel.addUser(user);
+        }
+      }
+    }
+
+    this.adminChannelList_.value = Array.from(this.adminChannels_.values());
+    this.adminUserList_.value = Array.from(this.adminUsers_.values());
+
     console.log("onAdminData channels", this.adminChannelList_.value);
     console.log("onAdminData users", this.adminUserList_.value);
+    this.admin_ = true;
   }
 
   private onChallengeSpectated(responseJSON: string): void {
@@ -249,15 +302,20 @@ export class ChatClient {
   }
 
   private onPrivMessage(responseJSON: string): void {
-    const { sourceUserId, sourceUserNickname, message } = event;
+    const [ event ] = event;
 
-    this.privs_.set(sourceUserId, sourceUserNickname)
+    this.addPrivateEvent_(event);
   }
 
   private onUserJoined(responseJSON: string): void {
     const { channelId, sourceChannelUserDTO } = JSON.parse(responseJSON);
     const channel = this.getChannelById_(channelId);
-    const sourceChannelUser = this.channelUserFromDTO_(sourceChannelUserDTO);
+    let user = this.getUserById(sourceChannelUserDTO.userDTO.id);
+    if (!user) {
+      user = this.userFromDTO(sourceChannelUserDTO.userDTO);
+      this.addUser(user);
+    }
+    const sourceChannelUser = this.channelUserFromDTO_(sourceChannelUserDTO, user);
 
     this.addChannelUserToChannel_(channel, sourceChannelUser);
   }
@@ -310,11 +368,10 @@ export class ChatClient {
   }
 
   private manageDestroyedChannelSelection_(channel: Channel) {
-    if (this.userCurrentChannel_.value === channel) {
-      if (this.userChannelList.value.length)
-        this.userCurrentChannel_.value = this.userChannelList.value[0];
-      else
-        this.userCurrentChannel_.value = undefined;
+    if (this.userChannelList.value.length === 0) {
+      this.userCurrentChannel_.value = undefined;
+    } else if (this.userCurrentChannel_.value === channel) {
+      this.userCurrentChannel_.value = this.userChannelList.value[0];
     }
   }
 
@@ -355,13 +412,21 @@ export class ChatClient {
 
   private onUserUpdated(dataJSON: string) {
     const { sourceUserId, changes } = JSON.parse(dataJSON);
-    const sourceUser = this.getUserById(sourceUserId);
+    let sourceUser = this.getUserById(sourceUserId);
    
     console.log('onUserUpdated', sourceUserId, changes, sourceUser);
     if (sourceUser) {
       sourceUser.update(changes);
     }
+    
     console.log(sourceUser);
+  }
+
+  private userUpdate_(userId: string, chanes: UserDTO) {
+    let user;
+
+    if (this.admin)
+      user = this.adminUserList
   }
 
   private onUserDeleted(dataJSON: string) {
@@ -411,6 +476,7 @@ export class ChatClient {
   }
 
   private addUserFromDTO_(userDTO: UserDTO): User {
+    console.log("addUserFromDTO_", userDTO);
     let user = this.getUserById(userDTO.id);
     let channel: Channel;
     let channelUser: ChannelUser[];
@@ -429,12 +495,12 @@ export class ChatClient {
   }
 
   private channelFromDTO_(channelDTO: ChannelDTO): Channel {
-    let ownerUser = this.getUserById(channelDTO.ownerDTO.id);
+    //let ownerUser = this.getUserById(channelDTO.ownerDTO.id);
 
-    if (!ownerUser) {
-      ownerUser = this.userFromDTO_(channelDTO.ownerDTO);
-      this.addUser_(ownerUser);
-    }
+    //if (!ownerUser) {
+      const ownerUser = this.userFromDTO_(channelDTO.ownerDTO);
+      //this.addUser_(ownerUser);
+    //}
 
     return new Channel({
       id: channelDTO.id,
@@ -456,13 +522,13 @@ export class ChatClient {
     });
   }
 
-  private channelUserFromDTO_(channelUserDTO: ChannelUserDTO): ChannelUser {
-    let user = this.getUserById(channelUserDTO.userDTO.id);
+  private channelUserFromDTO_(channelUserDTO: ChannelUserDTO, user: User): ChannelUser {
+    //let user = this.getUserById(channelUserDTO.userDTO.id);
     
-    if (!user) {
-      user = this.userFromDTO_(channelUserDTO.userDTO);
-      this.addUser_(user);
-    }
+    //if (!user) {
+    //  user = this.userFromDTO_(channelUserDTO.userDTO);
+    //  this.addUser_(user);
+    //}
 
     return new ChannelUser({
       user: user,
@@ -490,19 +556,62 @@ export class ChatClient {
     }); 
   }
 
+  private addPrivateEvent_(event: Event): Private {
+    let remoteId: string;
+    let remoteNickname: string;
+
+    if (event.sourceId == this.me_.id) {
+      remoteId = event.targetId;
+      remoteNickname = event.targetNickname;
+    } else if (event.targetId == this.me_.id) {
+      remoteId = event.sourceId;
+      remoteNickname = event.sourceNickname;
+    }
+    let priv = this.getPrivateById(remoteId); 
+
+    if (!priv)
+      priv = this.openPrivate(remoteId, remoteNickname);
+    
+    priv.addEvent(event);
+  }
+
+  private openPrivate(userId: string, userNickname: string): Private {
+    const priv = new Private(userNickname);
+
+    this.privates_.set(userId, priv);
+    return priv;
+  }
+
+  private closePrivate(userId) {
+    this.privates_.delete(userId);
+  }
+
   private addChannelFromDTO_(channelDTO: ChannelDTO): Channel {
     const channelUsers: ChannelUser[] = [];
     const events: Event[] = [];
     let channel = this.getChannelById_(channelDTO.id);
 
     for (const channelUserDTO of channelDTO.channelUsersDTO) {
-      channelUsers.push(this.channelUserFromDTO_(channelUserDTO));
+      let user = this.getUserById(channelUserDTO.userDTO.id);
+
+      if (!user) {
+        user = this.userFromDTO_(channelUserDTO.userDTO);
+        this.addUser_(user);
+      }
+      channelUsers.push(this.channelUserFromDTO_(channelUserDTO, user));
     }
     for (const eventDTO of channelDTO.eventsDTO) {
       events.push(this.eventFromDTO_(eventDTO));
     }
     if (!channel) {
       channel = this.channelFromDTO_(channelDTO);
+      const ownerUser = this.getUserById(channel.owner.id);
+
+      if (ownerUser) {
+        channel.owner = ownerUser;
+      } else {
+        this.addUser_(channel.owner);
+      }
       this.addChannel_(channel);
     }
  
@@ -556,6 +665,22 @@ export class ChatClient {
     socket.emit('demote', JSON.stringify([ channelId, userId ]));
   }
 
+  public siteBan(userId: string) {
+    socket.emit('siteban', JSON.stringify([ userId ]));
+  }
+
+  public siteUnban(userId: string) {
+    socket.emit('siteunban', JSON.stringify([ userId ]));
+  }
+
+  public sitePromote(userId: string) {
+    socket.emit('sitepromote', JSON.stringify([ userId ]));
+  }
+
+  public siteDemote(userId: string) {
+    socket.emit('sitedemote', JSON.stringify([ userId ]));
+  }
+
   public password(channelId: string, password?: string) {
     socket.emit('password', JSON.stringify([ channelId, password ]));
   }
@@ -604,10 +729,15 @@ export class ChatClient {
     socket.emit('adminwatch');
   }
 
+  public banList(channelUUID: string) {
+    socket.emit('channelbanlist', JSON.stringify([ channelUUID ]));
+  }
+
   public adminUnwatch() {
     socket.emit('adminunwatch');
     this.adminChannelList_.value = [];
     this.adminUserList_.value = [];
+    this.admin_ = false;
   }
 
   public userWatch(userId: string, callback?: Function) {
@@ -622,6 +752,12 @@ export class ChatClient {
   public setUserCurrentChannel = (channelId: string): void => {
     if (this.channels_.has(channelId)) {
       this.userCurrentChannel_.value = this.me_.value.channels.get(channelId) || undefined;
+    }
+  }
+
+  private setCurrentPrivate = (userId: string): void => {
+    if (this.privates_.has(userId)) {
+      this.currentPrivate_.value = this.privates_.get(userId);
     }
   }
 

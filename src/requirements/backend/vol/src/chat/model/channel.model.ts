@@ -52,7 +52,7 @@ export class Channel {
 
   private readonly users_ = new Set<User>;
   private readonly admins_ = new Set<User>;
-  private readonly bans_ = new Set<User>;
+  private readonly bans_: Set<User>;
   private readonly mutes_ = new Set<User>;
   private readonly events_ = new RollingLogger<Event>(EVENTS_MAX);
 
@@ -74,6 +74,7 @@ export class Channel {
     this.topicUser_ = channelPayload.topicUser;
     this.password_ = channelPayload.password;
     this.notifyCallback_ = notifyCallback;
+    this.bans_ = new Set<User>(channelPayload.bans);
   }
 
   public delete(): void {
@@ -150,6 +151,10 @@ export class Channel {
     return this.owner == user;
   }
 
+  public getBans(): User[] {
+    return Array.from(this.bans_.values());
+  }
+
   public getUsers(): User[] {
     return Array.from(this.users_.values());
   }
@@ -163,7 +168,6 @@ export class Channel {
   }
 
   public getEvents(): Event[] {
-    console.log("channel::getEvents -> ", this.events_.values());
     return this.events_.values();
   }
 
@@ -217,10 +221,10 @@ export class Channel {
   unbanUser(user: User) {
     if (this.isBanned(user)) {
       this.bans_.delete(user);
-      this.notify_(NotifyEventTypeEnum.UPDATE, {
-        userId: user.id,
-        banned: false,
-      });
+  //    this.notify_(NotifyEventTypeEnum.UPDATE, {
+  //      userId: user.id,
+  //      banned: false,
+  //    });
     }
   }
 
@@ -311,7 +315,7 @@ export class Channel {
     if (this.password_ !== value) {
       this.password_ = value;
       this.notify_(NotifyEventTypeEnum.UPDATE, {
-        password: this.password,
+        password: this.password_,
       });
     }
   }
@@ -324,8 +328,8 @@ export class Channel {
     return new ChannelUserDTO(this, user);
   }
 
-  get DTO(): ChannelDTO {
-    return new ChannelDTO(this);
+  DTO(targetUser?: User): ChannelDTO {
+    return new ChannelDTO(this, targetUser);
   }
 
   get summaryDTO(): ChannelSummaryDTO {

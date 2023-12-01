@@ -96,7 +96,6 @@ export class Channel {
             channelUser.isMuted = changes.muted;
         if (changes.banned !== undefined)
             channelUser.isBanned = changes.banned;
-        console.log("channel.update", channelUser);
     }
 
     get events(): Map<string, Event> {

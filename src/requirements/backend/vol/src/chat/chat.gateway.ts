@@ -310,6 +310,58 @@ export class ChatGateway {
             .send();
   }
 
+  @SubscribeMessage('siteban')
+  async handleClientSiteBan(client: Socket, dataJSON: string): Promise<void> {
+    if (!client.data.user) return;
+
+    const [ userId ] = JSON.parse(dataJSON);
+    const sourceUser = client.data.user;
+    const response = await this.chat_.siteBanUserId(sourceUser, userId);
+
+    response.setSourceUser(sourceUser)
+            .setEvent('siteban')
+            .send();
+  }
+
+
+  @SubscribeMessage('siteunban')
+  async handleClientSiteUnban(client: Socket, dataJSON: string): Promise<void> {
+    if (!client.data.user) return;
+
+    const [ userId ] = JSON.parse(dataJSON);
+    const sourceUser = client.data.user;
+    const response = await this.chat_.siteUnbanUserId(sourceUser, userId);
+
+    response.setSourceUser(sourceUser)
+            .setEvent('siteunban')
+            .send();
+  }
+
+  @SubscribeMessage('sitepromote')
+  async handleClientSitePromote(client: Socket, dataJSON: string): Promise<void> {
+    if (!client.data.user) return;
+
+    const [ userId ] = JSON.parse(dataJSON);
+    const sourceUser = client.data.user;
+    const response = await this.chat_.sitePromoteUserId(sourceUser, userId);
+
+    response.setSourceUser(sourceUser)
+            .setEvent('sitepromote')
+            .send();
+  }
+
+  @SubscribeMessage('sitedemote')
+  async handleClientSiteDemote(client: Socket, dataJSON: string): Promise<void> {
+    if (!client.data.user) return;
+
+    const [ userId ] = JSON.parse(dataJSON);
+    const sourceUser = client.data.user;
+    const response = await this.chat_.siteDemoteUserId(sourceUser, userId);
+
+    response.setSourceUser(sourceUser)
+            .setEvent('sitedemote')
+            .send();
+  }
 
   @SubscribeMessage('topic')
   async handleClientTopic(client: Socket, dataJSON: string): Promise<void> {
@@ -483,6 +535,19 @@ export class ChatGateway {
             .send();
   }
 
+  @SubscribeMessage('channelbanlist')
+  async onClientChannelBanList(client: Socket, dataJSON: string): Promise<void> {
+    if (!client.data.user) return;
+
+    const sourceUser = client.data.user;
+    const [ channelId ] = JSON.parse(dataJSON);
+    const response = await this.chat_.banListChannelId(sourceUser, channelId);
+
+    response.setSourceUser(sourceUser)
+            .setEvent('channelbanlist')
+            .send();
+  }
+
   /*
   @SubscribeMessage('convmsg')
   async onClientConversationMessage(client: Socket, dataJSON: string): Promise<void> {
@@ -526,13 +591,9 @@ export class ChatGateway {
 
   @ChatManagerSubscribe('onUserMessageSended')
   onUserMessageSended(event: any): void {
-    const { sourceUser, targetUser, message } = event;
+    const { targetUser, message } = event;
 
-    targetUser.socket?.emit('privMessage', JSON.stringify({
-      sourceUserId: sourceUser.id,
-      sourceUserNickname: sourceUser.nickname,
-      message,
-    }));
+    targetUser.socket?.emit('privMessage', JSON.stringify([ event ]));
   }
  
   @ChatManagerSubscribe('onUserChallengeSpectated')
@@ -571,6 +632,18 @@ export class ChatGateway {
     sourceUser.socket.emit('list', JSON.stringify(channelsSummaryDTO)); 
   }
 
+  @ChatManagerSubscribe('onUserChannelBanListed')
+  onUserChannelBanListed(event: any): void {
+    const { sourceUser, channel } = event;
+    const banUsers: User[] = [];
+    
+    for (const user of channel.getBans()) {
+      banUsers.push(user.DTO());
+    }
+
+    sourceUser.socket.emit('channelBanList', JSON.stringify([ channel.id, banUsers ]));
+  }
+
   @ChatManagerSubscribe('onUserAdminData')
   onUserAdminChannels(event: any): void {
     const { sourceUser, channelsDTO, usersDTO } = event;
@@ -583,15 +656,15 @@ export class ChatGateway {
   onUserWatchUser(event: any): void {
     const { sourceUser, targetUser } = event;
 
-    sourceUser.socket.emit('watch', JSON.stringify([ targetUser.DTO ]));
+    sourceUser.socket.emit('watch', JSON.stringify([ targetUser.DTO() ]));
   }
 
   @ChatManagerSubscribe('onUserConnected')
   onUserConnected(event: any): void {
     const { sourceUser } = event;
-    const sourceUserDTO = sourceUser.DTO;
+    const sourceUserDTO = sourceUser.DTO();
 
-    sourceUserDTO.channels = sourceUser.getChannels().map((channel: Channel) => channel.DTO);
+    sourceUserDTO.channels = sourceUser.getChannels().map((channel: Channel) => channel.DTO(sourceUser));
 
     console.log("onUserConnected:", sourceUserDTO);
     sourceUser.socket.emit('registered', JSON.stringify(sourceUserDTO));
@@ -663,10 +736,9 @@ export class ChatGateway {
   @ChatManagerSubscribe('onChannelCreated')
   onChannelCreated(data: any): void {
     const { channel, targetUsers } = data;
-    const createJSON = JSON.stringify(channel.DTO);
 
     for (const targetUser of targetUsers) {
-      targetUser.socket?.emit('channelCreated', createJSON);
+      targetUser.socket?.emit('channelCreated', JSON.stringify(channel.DTO(targetUser)));
     }
   }
 
@@ -723,7 +795,7 @@ export class ChatGateway {
 
     const changesJSON = JSON.stringify({
       channelId: channel.id,
-      eventDTO: event.DTO,
+      eventDTO: event.DTO(),
     });
 
     for (const targetUser of targetUsers) {

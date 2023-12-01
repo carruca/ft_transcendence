@@ -114,6 +114,10 @@ export class Client {
         this.send_('userobserve', [ targetUserUUID ]);
     }
 
+    public banList(ChannelUUID: string) {
+        this.send_('channelbanlist', [ targetChannelUUID ]);
+    }
+
     public list() {
         this.send_('list');
     }

@@ -25,13 +25,20 @@ export class UserDTO {
 
   //TODO: hay que hacer que ciertos campos sean completados según quien haga la solicitud de información
   //para eso, este constructor debe aceptar otro usuario para construir la información a partir del anterior
-  constructor(user: User) {
+  constructor(user: User, targetUser?: User) {
     this.id = user.id;
     this.name = user.name;
     this.nickname = user.nickname;
     this.status = user.status;
     this.siteRole = user.siteRole;
-  //  this.siteDisabled = user.siteDisabled;
-  //  this.siteBanned = user.siteBanned;
+    if (targetUser) {
+      this.blocked = targetUser.hasBlocked(user);
+      this.friend = targetUser.hasFriend(user);
+      console.log("UserDTO::constructor: from:", this.nickname, this.blocked, this.friend, targetUser.nickname);
+      if (targetUser.siteRole === UserSiteRoleEnum.OWNER || targetUser.siteRole === UserSiteRoleEnum.MODERATOR) {
+        this.siteDisabled = user.siteDisabled;
+        this.siteBanned = user.siteBanned;
+      }
+    }
   }
 }

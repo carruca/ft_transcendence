@@ -42,8 +42,8 @@ export class User {
 
   private readonly channels_ = new Set<Channel>; // Array para almacenar los canales a los que pertenece el nick
   private readonly conversations_ = new Set<Conversation>;
-  private readonly blockUsers_ = new Set<User>;
-  private readonly friendUsers_ = new Set<User>;
+  private readonly blockUsers_: Set<User>;
+  private readonly friendUsers_: Set<User>;
   private readonly watchUsers_ = new Set<User>;
   //private watchers_ = new Set<User>;
   //
@@ -66,6 +66,8 @@ export class User {
     this.siteBanned_ = userPayload.siteBanned ?? false;
     this.siteDisabled_ = userPayload.siteDisabled ?? false;
     this.notifyCallback_ = notifyCallback;
+    this.blockUsers_ = new Set<User>(userPayload.blocks);
+    this.friendUsers_ = new Set<User>(userPayload.friends);
     this.notify_(NotifyEventTypeEnum.CREATE);
     //TODO: blockUsers y friendUsers
     //this.blockUsers_ = ....
@@ -299,8 +301,10 @@ export class User {
     return this === user;
   }
 
-  get DTO(): UserDTO {
-    return new UserDTO(this);
+  DTO(targetUser?: User): UserDTO {
+    if (targetUser)
+      console.log("DTO from User. list blocks", targetUser.blockUsers_);
+    return new UserDTO(this, targetUser);
   }
 
   // Otros métodos relacionados con el nick y los canales

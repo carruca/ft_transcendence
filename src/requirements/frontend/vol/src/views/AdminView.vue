@@ -378,10 +378,13 @@ function kick() {
 // TODO change function to working ones
 // TODO maybe more actions ?
 function webban() {
-  if (selectedUser.value && selectedUser.value.isBanned)
+  if (selectedUser.value && selectedUser.value.isBanned) {
+    client.siteBan(selectedUser.value.id);
     alert('unban!');
-  else
+  } else {
+    client.siteUnban(selectedUser.value.id);
     alert('ban!');
+  }
 }
 function webpromote() {
   // TODO isModerator does not exist

@@ -114,7 +114,7 @@ export class Event {
     return false;
   }
 
-  get DTO(): EventDTO {
+  DTO(): EventDTO {
     return new EventDTO(this);
   }
 }

@@ -446,6 +446,7 @@ const executeContextAction = ( option, item ) => {
     let channelUUID = item.id;
     if (option === 'Edit') {
       console.log(`Editing channel '${item.name}'`);
+      client.banList(item.id);
       handleEditClick();
     } else if (option === 'Destroy') {
       console.log(`Destroying channel '${item.name}'`);
@@ -554,8 +555,7 @@ const handleResize = (leftSection, middleSection, rightSection, contentSection) 
 
   newRightWidth = Math.max(totalWidth - newLeftWidth - newMiddleWidth, MIN_WIDTH);
   newLeftWidth = Math.max(totalWidth - newMiddleWidth - newRightWidth, MIN_WIDTH);
-  newMiddleWidth = totalWidth - newLeftWidth - newRightWidth - (resizerWidth.value * 2);
-
+  newMiddleWidth =  -totalWidth - newLeftWidth - newRightWidth - (resizerWidth.value * 2);
   leftSection.style.width = `${newLeftWidth}px`;
   middleSection.style.width = `${newMiddleWidth}px`;
   rightSection.style.width = `${newRightWidth}px`;

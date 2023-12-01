@@ -33,7 +33,7 @@ export class ChannelsService {
   ) {}
 
   async create(createChannelDto: CreateChannelDto): Promise<Channel> {
-    if (createChannelDto.password != undefined) {
+    if (createChannelDto.password !== "") {
       createChannelDto.password = await this.encryptPassword(createChannelDto.password);
     }
     const newChannel = new Channel(
@@ -116,7 +116,6 @@ export class ChannelsService {
       }
     });
     if (!user) {
-      console.log(createChannelUserDto);
       throw new HttpException('User not found', HttpStatus.NOT_FOUND);
     }
 
@@ -245,7 +244,7 @@ export class ChannelsService {
   async verifyChannelPassword(channelId: string, password: string): Promise<boolean> {
     const channel = await this.findOneById(channelId);
 
-    if (!channel.password) return false;
+    //if (!channel.password) return false;
     if (channel.password === '' && password === '') return true;
     return await bcrypt.compare(password, channel.password);
   }

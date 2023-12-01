@@ -14,4 +14,5 @@ export interface ChannelPayload {
     topicSetDate?: Date;
     topicUser?: User;
     password: boolean;
+    bans: User[];
 }

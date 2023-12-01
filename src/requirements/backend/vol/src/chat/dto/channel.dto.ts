@@ -1,4 +1,5 @@
 import {
+  User,
   Channel,
 } from '../model';
 
@@ -20,16 +21,16 @@ export class ChannelDTO {
   channelUsersDTO: ChannelUserDTO[];
   eventsDTO: EventDTO[];
 
-  constructor (channel: Channel) {
+  constructor (channel: Channel, targetUser?: User) {
     this.id = channel.id;
     this.name = channel.name;
     this.createdDate = channel.createdDate;
-    this.ownerDTO = channel.owner.DTO;
+    this.ownerDTO = channel.owner.DTO();
     this.topic = channel.topic;
     this.topicSetDate = channel.topicSetDate,
-    this.topicUserDTO = channel.topicUser?.DTO;
+    this.topicUserDTO = channel.topicUser?.DTO();
     this.password = channel.password;
-    this.channelUsersDTO = channel.getUsers().map((user) => new ChannelUserDTO(channel, user));
-    this.eventsDTO = channel.getEvents().map((event) => event.DTO);
+    this.channelUsersDTO = channel.getUsers().map((user) => new ChannelUserDTO(channel, user, targetUser));
+    this.eventsDTO = channel.getEvents().map((event) => event.DTO());
   }
 }
