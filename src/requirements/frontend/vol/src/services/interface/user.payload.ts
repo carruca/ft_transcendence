@@ -1,6 +1,6 @@
 import {
     Channel
-} from '.';
+} from '../model';
 
 import {
     UserSiteRoleEnum,
@@ -12,9 +12,9 @@ export interface UserPayload {
     nickname: string,
     status?: UserStatusEnum,
     siteRole?: UserSiteRoleEnum,
-    siteDisabled: boolean,
-    siteBanned: boolean,
+    siteDisabled?: boolean,
+    siteBanned?: boolean,
     blocked?: boolean,
     friend?: boolean,
-    channels: Channel[],
+    channels?: Channel[],
 }

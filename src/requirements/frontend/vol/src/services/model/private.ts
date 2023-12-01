@@ -3,7 +3,12 @@ import {
   reactive,
 } from 'vue';
 
+import {
+	Event,
+} from '../model';
+
 export class Private {
+  private readonly maxEvents_: number = 100;
   public readonly nickname: string;
   public readonly events_ = reactive(new Map<string, Event>());
 

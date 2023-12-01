@@ -1042,19 +1042,19 @@ export class ChatManager {
   }
   */
 
-  private getObserversOf(object: any): Set<any> {
+  private getObserversOf_(object: any): Set<any> {
     if (object instanceof User) {
-      return new Set([...object.getCommonUsersOnline(), ...this.adminWatchers_]);
+      return new Set([...object.getCommonUsersOnline()]);
     }
     else if (object instanceof Channel) {
-      return new Set([...object.getUsersOnline(), ...this.adminWatchers_]);
+      return new Set([...object.getUsersOnline()]);
     }
     return new Set();
   }
 
   private notifyUser_(objects: any[], type: NotifyEventTypeEnum, changes: {}) {
     const [ sourceUser ] = objects;
-	  const targetUsers = this.getObserversOf(sourceUser);
+	  const targetUsers = this.getObserversOf_(sourceUser);
 	  console.log(`notifyUser ${type}: ${sourceUser.name} ${changes}`);
 
     if (type === NotifyEventTypeEnum.UPDATE) {
@@ -1072,7 +1072,8 @@ export class ChatManager {
 
   private notifyChannel_(objects: any[], type: NotifyEventTypeEnum, changes: {}) {
     const [ channel ] = objects;
-	  const targetUsers = this.getObserversOf(channel);
+	  const targetUsers = this.getObserversOf_(channel);
+	  //const targetAdmins = this.
 	  console.log(`notifyChannel ${type}: ${channel.name} ${changes}`);
 
     if (type === NotifyEventTypeEnum.UPDATE) {

@@ -19,8 +19,10 @@ import {
 } from './enum';
 
 import {
-  //UserDTO,
+  UserDTO,
+  EventDTO,
   ChannelDTO,
+  ChannelUserDTO,
   ChannelSummaryDTO,
 } from './dto';
 
@@ -28,10 +30,6 @@ import {
   UserPayload,
   ChannelPayload,
 } from './interface';
-
-import {
-  v4 as uuidv4,
-} from 'uuid';
 
 import socket from './ws';
 
@@ -64,13 +62,13 @@ export class ChatClient {
 
   private users_: Map<string, User> = reactive(new Map());
   private channels_: Map<string, Channel> = reactive(new Map());
-  private privates_: Map<string, User> = reactive(new Map());
+  private privates_: Map<string, Private> = reactive(new Map());
 
   private adminUsers_: Map<string, User> = reactive(new Map());
   private adminChannels_: Map<string, Channel> = reactive(new Map());
 
   private userWatchCallback_?: Function;
-  
+
   private isConnected_ = ref<boolean>(false);
   public isConnected = readonly(this.isConnected_);
 
@@ -122,21 +120,21 @@ export class ChatClient {
 
   private admin_: boolean;
 
-  private getChannelById_(channelId: string): Channel {
-    return this.channels_.get(channelId); 
+  private getChannelById_(channelId: string): Channel | undefined {
+    return this.channels_.get(channelId);
   }
 
-  public getUserById(userId: string): User {
+  public getUserById(userId: string): User | undefined {
     return this.users_.get(userId);
   }
 
   public getChannelUserById(channelId: string, userId: string): ChannelUser | undefined {
     const channel = this.getChannelById_(channelId);
     if (!channel) return undefined;
-  
+
     const user = this.getUserById(userId);
     if (!user) return undefined;
-  
+
     return channel?.user(user);
   }
 
@@ -228,9 +226,9 @@ export class ChatClient {
       this.adminChannels_.set(channel.id, channel);
       for (const channelUserDTO of channelDTO.channelUsersDTO) {
         const user = this.adminUsers_.get(channelUserDTO.id);
-       
         if (user) {
-          channel.addUser(user);
+          const channelUser = this.channelUserFromDTO_(channelUserDTO, user);
+          channel.addUser(channelUser);
         }
       }
     }
@@ -246,7 +244,7 @@ export class ChatClient {
   private onChallengeSpectated(responseJSON: string): void {
     const { sourceUserId, gameMode } = JSON.parse(responseJSON);
     const sourceUser = this.getUserById(sourceUserId);
-  
+
     router.push('/game');
   }
 
@@ -268,6 +266,9 @@ export class ChatClient {
     const { sourceUserId, gameMode } = JSON.parse(responseJSON);
     const sourceUser = this.getUserById(sourceUserId);
     this.showModal_.value = true;
+
+	if (!sourceUser)
+	  return;
 
     this.modalProps_.value = {
       title: 'Challenge Requested',
@@ -302,7 +303,7 @@ export class ChatClient {
   }
 
   private onPrivMessage(responseJSON: string): void {
-    const [ event ] = event;
+    const [ event ] = JSON.parse(responseJSON);
 
     this.addPrivateEvent_(event);
   }
@@ -311,9 +312,11 @@ export class ChatClient {
     const { channelId, sourceChannelUserDTO } = JSON.parse(responseJSON);
     const channel = this.getChannelById_(channelId);
     let user = this.getUserById(sourceChannelUserDTO.userDTO.id);
+	if (!channel)
+		throw new Error(`Channel ${channelId} not found`);
     if (!user) {
-      user = this.userFromDTO(sourceChannelUserDTO.userDTO);
-      this.addUser(user);
+      user = this.userFromDTO_(sourceChannelUserDTO.userDTO);
+      this.addUser_(user);
     }
     const sourceChannelUser = this.channelUserFromDTO_(sourceChannelUserDTO, user);
 
@@ -325,6 +328,10 @@ export class ChatClient {
     const channel = this.getChannelById_(channelId);
     const sourceUser = this.getUserById(sourceUserId);
 
+	if (!channel)
+	  throw new Error(`Channel ${channelId} not found`);
+	if (!sourceUser)
+	  throw new Error(`User ${sourceUserId} not found`);
     this.delUserFromChannel_(channel, sourceUser);
   }
 
@@ -362,18 +369,19 @@ export class ChatClient {
     this.isConnected_.value = true;
   }
 
-  updateUserChannelList_(): void {
-    if (this.me_.value)
-      this.userChannelList_.value = Array.from(this.me_.value.channels.values()).sort((a, b) => a.name.localeCompare(b.name));
-  }
+updateUserChannelList_(): void {
+	if (this.me_.value)
+		this.userChannelList_.value = Array.from(this.me_.value.channels.values())
+			.sort((a, b) => (a as Channel).name.localeCompare((b as Channel).name));
+}
 
-  private manageDestroyedChannelSelection_(channel: Channel) {
-    if (this.userChannelList.value.length === 0) {
-      this.userCurrentChannel_.value = undefined;
-    } else if (this.userCurrentChannel_.value === channel) {
-      this.userCurrentChannel_.value = this.userChannelList.value[0];
-    }
-  }
+private manageDestroyedChannelSelection_(channel: Channel) {
+	if (this.userChannelList.value.length === 0) {
+		this.userCurrentChannel_.value = undefined;
+	} else if (this.userCurrentChannel_.value === channel) {
+		this.userCurrentChannel_.value = this.userChannelList.value[0];
+	}
+}
 
   private onChannelCreated(dataJSON: string) {
     const channelDTO = JSON.parse(dataJSON);
@@ -389,14 +397,23 @@ export class ChatClient {
     const user = this.getUserById(userId);
     const channelUser = this.getChannelUserById(channelId, userId);
 
+	if (!channel)
+	  throw new Error(`Channel ${channelId} not found`);
+	if (!user)
+	  throw new Error(`User ${userId} not found`);
+	if (!channelUser)
+	  throw new Error(`ChannelUser ${userId} not found`);
 
-    console.log('onChannelUpdated', channelId, userId, changes); 
+    console.log('onChannelUpdated', channelId, userId, changes);
     channel.update(channelUser, changes);
   }
 
   private onChannelDeleted(dataJSON: string) {
     const channelId = JSON.parse(dataJSON);
     const channel = this.getChannelById_(channelId);
+
+	if (!channel)
+	  throw new Error(`Channel ${channelId} not found`);
 
     console.log('onChannelDeleted', channelId);
     this.deleteChannel_(channel);
@@ -413,19 +430,19 @@ export class ChatClient {
   private onUserUpdated(dataJSON: string) {
     const { sourceUserId, changes } = JSON.parse(dataJSON);
     let sourceUser = this.getUserById(sourceUserId);
-   
+
     console.log('onUserUpdated', sourceUserId, changes, sourceUser);
     if (sourceUser) {
       sourceUser.update(changes);
     }
-    
+
     console.log(sourceUser);
   }
 
   private userUpdate_(userId: string, chanes: UserDTO) {
     let user;
 
-    if (this.admin)
+    if (this.admin_)
       user = this.adminUserList
   }
 
@@ -472,7 +489,7 @@ export class ChatClient {
     const channel = this.getChannelById_(channelId);
 
     if (channel)
-      channel.addEvent(event); 
+      channel.addEvent(event);
   }
 
   private addUserFromDTO_(userDTO: UserDTO): User {
@@ -486,8 +503,8 @@ export class ChatClient {
       this.addUser_(user);
     }
 
-    if (userDTO.channels) {
-      for (const channelDTO of userDTO.channels) {
+    if (userDTO.channelsDTO) {
+      for (const channelDTO of userDTO.channelsDTO) {
         this.addChannelFromDTO_(channelDTO);
       }
     }
@@ -524,7 +541,7 @@ export class ChatClient {
 
   private channelUserFromDTO_(channelUserDTO: ChannelUserDTO, user: User): ChannelUser {
     //let user = this.getUserById(channelUserDTO.userDTO.id);
-    
+
     //if (!user) {
     //  user = this.userFromDTO_(channelUserDTO.userDTO);
     //  this.addUser_(user);
@@ -548,31 +565,42 @@ export class ChatClient {
       type: eventDTO.type,
       timestamp: eventDTO.timestamp,
       modified: eventDTO.modified,
-      sourceId: eventDTO.sourceId,
-      targetId: eventDTO.targetId,
-      sourceNickname: eventDTO.sourceNickname,
-      targetNickname: eventDTO.targetNickname,
+	  sourceId: eventDTO.sourceId,
+	  sourceNickname: eventDTO.sourceNickname,
+	  targetId: eventDTO.targetId,
+	  targetNickname: eventDTO.targetNickname,
       value: eventDTO.value,
-    }); 
+    });
   }
 
-  private addPrivateEvent_(event: Event): Private {
-    let remoteId: string;
-    let remoteNickname: string;
+  private addPrivateEvent_(event: Event): Private | undefined {
+    let remoteId: string | undefined;
+    let remoteNickname: string | undefined;
+	let priv: Private | undefined;
 
-    if (event.sourceId == this.me_.id) {
-      remoteId = event.targetId;
-      remoteNickname = event.targetNickname;
-    } else if (event.targetId == this.me_.id) {
-      remoteId = event.sourceId;
-      remoteNickname = event.sourceNickname;
+    if (event.source.id == this.me_.id) {
+	  if (event.target?.id)
+	  	remoteId = event.target?.id;
+	  if (event.target?.name)
+      	remoteNickname = event.target?.name;
+    } else if (event.target?.id == this.me_.id) {
+        remoteId = event.source.id;
+	  if (event.source.name) {
+      	remoteNickname = event.source.name;
+	  }
     }
-    let priv = this.getPrivateById(remoteId); 
+	if (remoteId) {
+  	  priv = this.getPrivateById(remoteId);
 
-    if (!priv)
+    if (!priv && remoteNickname)
       priv = this.openPrivate(remoteId, remoteNickname);
-    
-    priv.addEvent(event);
+	}
+
+	if (priv) {
+      priv.addEvent(event);
+	  return priv;
+	}
+	return undefined;
   }
 
   private openPrivate(userId: string, userNickname: string): Private {
@@ -614,7 +642,7 @@ export class ChatClient {
       }
       this.addChannel_(channel);
     }
- 
+
     channel.addUsers(channelUsers);
     channel.addEvents(events);
     this.userCurrentChannel_.value = channel;
@@ -769,7 +797,7 @@ export class ChatClient {
     }
   }
 
-  public addChannelUserToChannel_(channel: Channel, channelUser: User) {
+  public addChannelUserToChannel_(channel: Channel, channelUser: ChannelUser) {
     channel.addUser(channelUser);
   }
 

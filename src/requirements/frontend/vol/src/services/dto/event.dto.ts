@@ -3,11 +3,13 @@ import {
 } from '../enum';
 
 export interface EventDTO {
-    uuid: string,
-    type: EventTypeEnum,
-    sourceUUID: string,
-    targetUUID?: string,
+    id: string;
+    type: EventTypeEnum;
+    sourceId: string;
+	sourceNickname: string;
+    targetId?: string;
+	targetNickname?: string;
     timestamp: Date;
-    modified: boolean,
-    value?: string,
+    modified: boolean;
+    value?: string;
 }
