@@ -783,7 +783,7 @@ private manageDestroyedChannelSelection_(channel: Channel) {
     }
   }
 
-  private setCurrentPrivate = (userId: string): void => {
+  public setCurrentPrivate = (userId: string): void => {
     if (this.privates_.has(userId)) {
       this.currentPrivate_.value = this.privates_.get(userId);
     }
