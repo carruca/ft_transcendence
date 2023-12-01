@@ -27,6 +27,7 @@ import {
 
 import {
   EventTypeEnum,
+  UserStatusEnum,
   ReturnCodeEnum,
 } from './enum';
 
@@ -582,11 +583,20 @@ export class ChatGateway {
     return true;
   }
 
+  @ChatManagerSubscribe('onUserUnbanned')
+  onUseUnbanned(data: any): void {
+    const { channel, sourceUser, targetUser } = data;
+
+    if (sourceUser.status === UserStatusEnum.OFFLINE)
+      sourceUser.socket.emit('unBan', JSON.stringify([ channel.id, targetUser.id ]));
+  }
+
   @ChatManagerSubscribe('onUserMessageSended')
   onUserMessageSended(data: any): void {
     const { targetUser, event } = data;
 
-    targetUser.socket?.emit('privMessage', JSON.stringify([ event.DTO() ]));
+    if (targetUser.status !== UserStatusEnum.OFFLINE)
+      targetUser.socket?.emit('privMessage', JSON.stringify([ event.DTO() ]));
   }
  
   @ChatManagerSubscribe('onUserChallengeSpectated')

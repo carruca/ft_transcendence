@@ -517,7 +517,7 @@ const executeContextAction = ( option, item ) => {
     if (option === 'Edit') {
       console.log(`Editing channel '${item.name}'`);
       client.banList(item.id);
-      console.log(`userCurrentChannelBanList: ${userCurrentChannelBanList.value}`);
+      console.log(`userCurrentChannelBanList: ${userCurrentChannelBanList}`);
       handleEditClick();
     } else if (option === 'Destroy') {
       console.log(`Destroying channel '${item.name}'`);

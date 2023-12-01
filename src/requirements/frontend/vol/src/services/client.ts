@@ -31,7 +31,8 @@ export class Client {
     }
 
     get privs() {
-        return client.privs;
+        for (const priv of client.privs)
+            console.log(priv);
     }
 
     get users() {

@@ -81,7 +81,7 @@ export class ChatClient {
   private userCurrentChannel_ = ref<Channel | null>(null);
   public userCurrentChannel = readonly(this.userCurrentChannel_);
 
-  private userCurrentChannelBanList_ = ref<User[]>([]);
+  private userCurrentChannelBanList_ = reactive(new Map<User>);
   public userCurrentChannelBanList = readonly(this.userCurrentChannelBanList_);
 
   private privateList_ = ref<Private[] | null>([]);
@@ -168,6 +168,7 @@ export class ChatClient {
     socket.on('adminData', this.onAdminData.bind(this));
     socket.on('watch', this.onWatch.bind(this));
     socket.on('privMessage', this.onPrivMessage.bind(this));
+    socket.on('unban', this.onUnban.bind(this));
 
     socket.on('challengeRequested', this.onChallengeRequested.bind(this));
     socket.on('challengeRejected', this.onChallengeRejected.bind(this));
@@ -207,14 +208,26 @@ export class ChatClient {
 
   private onChannelBanList(responseJSON: string): void {
     const [ channelId, banUsers ] = JSON.parse(responseJSON);
-    const users: User[] = [];
 
     for (const userDTO of banUsers) {
-      users.push(new User(userDTO));
+      this.userCurrentChannelBanList_.set(userDTO.id, new User(userDTO));
     }
+  }
 
-//    console.log("banusers", users);
-    this.userCurrentChannelBanList_.value = users;
+  private onUnban(responseJSON: string): void {
+    const [ channelId, targetUserId ] = JSON.parse(responseJSON);
+    const channel = this.getChannelById_(channelId);
+
+    if (!channel) return;
+      this.currentChannelBanList_.value.delete(targetUserId);
+/*
+    this.currentChannelBanList_.value.fi(user => user.id === targetUserId);
+
+		
+		this.userChannelList_.value = Array.from(this.me_.value.channels.values())
+			.sort((a, b) => (a as Channel).name.localeCompare((b as Channel).name));
+*/  
+
   }
 
   private onAdminData(responseJSON: string): void {
@@ -568,53 +581,39 @@ private manageDestroyedChannelSelection_(channel: Channel) {
   }
 
   private eventFromDTO_(eventDTO: EventDTO): Event {
-    //let sourceUser = this.getUserById_(eventDTO.sourceId);
-    //let targetUser = this.getUserById_(eventDTO.targetId);
-
     return new Event({
       id: eventDTO.id,
       type: eventDTO.type,
       timestamp: eventDTO.timestamp,
       modified: eventDTO.modified,
-	  sourceId: eventDTO.sourceId,
-	  sourceNickname: eventDTO.sourceNickname,
-	  targetId: eventDTO.targetId,
-	  targetNickname: eventDTO.targetNickname,
+	    sourceId: eventDTO.sourceId,
+	    sourceNickname: eventDTO.sourceNickname,
+	    targetId: eventDTO.targetId,
+	    targetNickname: eventDTO.targetNickname,
       value: eventDTO.value,
     });
   }
 
-  private addPrivateEvent_(event: Event): Private | undefined {
-    let remoteId: string | undefined;
-    let remoteNickname: string | undefined;
+  private addPrivateEvent_(event: Event): Private {
+    let remoteId: string;
+    let remoteNickname: string;
 	  let priv: Private | undefined;
 
-	  console.log(event.source.id);
-	  console.log(this.me_.id);
-
     if (event.source.id == this.me_.id) {
-	  if (event.target?.id)
-	  	remoteId = event.target?.id;
-	  if (event.target?.name)
-      	remoteNickname = event.target?.name;
-    } else if (event.target?.id == this.me_.id) {
-        remoteId = event.source.id;
-	  if (event.source.name) {
-      	remoteNickname = event.source.name;
-	  }
+      remoteId = event.target.id;
+      remoteNickname = event.target.name;
+    } else {
+      remoteId = event.source.id;
+      remoteNickname = event.source.name;
     }
-	if (remoteId) {
-  	  priv = this.getPrivateById(remoteId);
+  	priv = this.getPrivateById(remoteId);
 
-    if (!priv && remoteNickname)
+    if (!priv) {
       priv = this.openPrivate(remoteId, remoteNickname);
-	}
+  	}
 
-	if (priv) {
-      priv.addEvent(event);
+    priv.addEvent(event);
 	  return priv;
-	}
-	return undefined;
   }
 
   private openPrivate(userId: string, userNickname: string): Private {
@@ -698,6 +697,7 @@ private manageDestroyedChannelSelection_(channel: Channel) {
   }
 
   public ban(channelId: string, userId: string) {
+    this.userCurrentChannelBanList_.clear();
     socket.emit('ban', JSON.stringify([ channelId, userId ]));
   }
 
