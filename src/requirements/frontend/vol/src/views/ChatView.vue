@@ -387,11 +387,13 @@ const onClick = (selected, item) => {
     setCurrentPrivate(item.id);
     console.log(`Clicked on user '${item.name}'`);
     console.log(`private list: ${privateList.value}`);
+    console.log(`private list: ${JSON.stringify(privateList.value)}`);
     console.log(`current private: ${currentPrivate.value}`);
   } else if (selected instanceof ChatEvent || selected instanceof ChannelUser) {
     setCurrentPrivate(item.user.id);
     console.log(`Clicked on user '${item.user.name}'`);
     console.log(`private list: ${privateList.value}`);
+    console.log(`private list: ${JSON.stringify(privateList.value)}`);
     console.log(`current private: ${currentPrivate.value}`);
   } else {
     console.log(`ERROR: Clicked on item '${item}' not handled`);
