@@ -48,7 +48,7 @@
         <!-- .CHANNEL BANNED USERS -->
       </div>
       <div class="buttons">
-        <button @click="closeModal">Cancel</button>
+        <button @click="closeModal">Close</button>
         <button @click="confirmEdit">Confirm</button>
       </div>
     </div>
