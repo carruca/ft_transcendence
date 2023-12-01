@@ -2,21 +2,52 @@
   <div v-if="visible" class="modal" @click="handleBackgroundClick">
     <div class="modal-content" @click.stop>
       <h2>Edit a Channel</h2>
-      <!-- CHANNEL PASSWORD -->
-      <label for="channelPassword">Password:</label>
-      <div class="checkbox-group">
-        <input type="checkbox" id="hasPassword" v-model="hasPassword">
-        <label for="hasPassword">Has password?</label>
-      </div>
-      <div v-if="hasPassword && passwordError" class="error-message">{{ passwordError }}</div>
-      <div v-if="hasPassword" class="input-group">
-        <input type="password" id="channelPassword" v-model="channelPassword" placeholder="Enter password">
+      <div class="content">
+        <!-- CHANNEL PASSWORD -->
+        <div class="section section-password">
+          <h3>Channel properties</h3>
+          <label for="channelPassword">Password:</label>
+          <div class="checkbox-group">
+            <input type="checkbox" id="hasPassword" v-model="hasPassword">
+            <label for="hasPassword">Has password?</label>
+          </div>
+          <div v-if="hasPassword && passwordError" class="error-message">{{ passwordError }}</div>
+          <div v-if="hasPassword" class="input-group">
+            <input type="password" id="channelPassword" v-model="channelPassword" placeholder="Enter password">
+          </div>
+        </div>
+        <!-- .CHANNEL PASSWORD -->
+        <!-- CHANNEL BANNED USERS -->
+        <div class="section section-bannedlist">
+          <h3>Banned users</h3>
+          <div class="scrollable-content">
+            <div v-if="users && users.length" class="user-list">
+              <div
+                  v-for="user in users"
+                  :key="user.id"
+                  @click="attemptJoinChannel(user)"
+                  :class="userClass(user)"
+              >
+                <span>
+                  {{ user.name }}
+                </span>
+                <div class="buttons">
+                  <button @click="viewProfile(user)">Profile</button>
+                  <button @click="unbanUser(user)">Unban</button>
+                </div>
+              </div>
+            </div>
+            <div v-else>
+              <p>No banned users</p>
+            </div>
+          </div>
+        </div>
+        <!-- .CHANNEL BANNED USERS -->
       </div>
       <div class="buttons">
         <button @click="closeModal">Cancel</button>
         <button @click="confirmEdit">Confirm</button>
       </div>
-      <!-- .CHANNEL PASSWORD -->
     </div>
   </div>
 </template>
@@ -26,6 +57,7 @@ import { ref, defineProps, defineEmits, onMounted, onBeforeUnmount } from 'vue';
 
 const props = defineProps({
   visible: Boolean,
+  users: Array
 });
 
 const emit = defineEmits(['save', 'close']);
@@ -106,7 +138,22 @@ const closeModal = () => {
   padding: 20px 20px 0 20px;
   border-radius: 5px;
   max-height: 80vh;
-  width: 25vw;
+  width: 50vw;
+}
+
+.content {
+  display: flex;
+  flex-grow: 1;
+  box-sizing: border-box;
+  overflow: hidden;
+  justify-content: space-around;
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  flex: none;
+  overflow: hidden;
 }
 
 .error-message {

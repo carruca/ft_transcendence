@@ -3,7 +3,7 @@
     <div ref="modalContent" class="modal-content" @click.stop>
       <h2>Join a Channel</h2>
       <div class="scrollable-content">
-        <ul v-if="channels.length" class="channel-list">
+        <ul v-if="channels && channels.length" class="channel-list">
           <li
               v-for="channel in channels"
               :key="channel.id"

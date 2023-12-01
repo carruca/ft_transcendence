@@ -58,13 +58,13 @@
               <span>
                 {{ event.message }}
               </span>
+              <span v-if="event.isTargetEvent()">&nbsp;</span>
               <span
                   v-if="event.isTargetEvent()"
                   class="event-user"
                   :title="getUserTitle(event.targetChannelUser)"
                   @click="onClick(event, event.targetChannelUser)"
                   @contextmenu="onRightClick(event, event.targetChannelUser, $event)">
-                &nbsp;
                 {{ event.target.name }}
               </span>
             </div>
@@ -137,6 +137,7 @@
   />
   <editChannelModal
       :visible="showEditModal"
+      :users="userCurrentChannelBanList"
       @save="handleEditModalSave"
       @close="handleEditModalClose"
   />
@@ -185,6 +186,7 @@ const {
   userChannelList,
   userCurrentChannel,
   setUserCurrentChannel,
+  userCurrentChannelBanList,
   privateList,
   currentPrivate,
   setCurrentPrivate,
@@ -478,6 +480,7 @@ const executeContextAction = ( option, item ) => {
     if (option === 'Edit') {
       console.log(`Editing channel '${item.name}'`);
       client.banList(item.id);
+      console.log(`userCurrentChannelBanList: ${userCurrentChannelBanList.value}`);
       handleEditClick();
     } else if (option === 'Destroy') {
       console.log(`Destroying channel '${item.name}'`);
