@@ -150,7 +150,14 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onBeforeUnmount, watch, computed, nextTick } from 'vue';
+import {
+  ref,
+  onMounted,
+  onBeforeUnmount,
+  watch,
+  computed,
+  nextTick,
+} from 'vue';
 import router from '@/router';
 
 import contextMenu from '@/components/ContextMenu.vue';
@@ -159,10 +166,29 @@ import createChannelModal from '@/components/CreateChannelModal.vue';
 import editChannelModal from '@/components/EditChannelModal.vue';
 import confirmModal from '@/components/ConfirmModal.vue';
 // FIXME real client
-import { Channel, ChannelUser, User, Event, EventUser, ChatEvent } from '@/services/model';
+import {
+  Channel,
+  ChannelUser,
+  User,
+  Event,
+  EventUser,
+  ChatEvent,
+} from '@/services/model';
 import { client } from '@/services/chat-client';
-import { EventTypeEnum, UserSiteRoleEnum, UserStatusEnum } from '@/services/enum';
-const { channelsSummary, userChannelList, userCurrentChannel, setUserCurrentChannel } = client;
+import {
+  EventTypeEnum,
+  UserSiteRoleEnum,
+  UserStatusEnum,
+} from '@/services/enum';
+const {
+  channelsSummary,
+  userChannelList,
+  userCurrentChannel,
+  setUserCurrentChannel,
+  privateList,
+  currentPrivate,
+  setCurrentPrivate,
+} = client;
 
 const selectedChannelUUID = ref(null);
 
@@ -349,6 +375,9 @@ const sendMessage = () => {
 const onClick = (selected, item) => {
   if (selected instanceof ChatEvent || selected instanceof ChannelUser) {
     console.log(`Clicked on user '${item.user.name}'`);
+    setCurrentPrivate(item.user.id);
+    console.log(`private list: ${privateList.value}`);
+    console.log(`current private: ${currentPrivate.value}`);
   } else {
     console.log(`ERROR: Clicked on item '${item}' not handled`);
   }
