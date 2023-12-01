@@ -21,15 +21,15 @@
         <div class="section section-bannedlist">
           <h3>Banned users</h3>
           <div class="scrollable-content">
-            <div v-if="users && users.length" class="user-list">
+            <div v-if="users && users.size" class="user-list">
               <div
-                  v-for="user in users"
+                  v-for="user in Array.from(users.values())"
                   :key="user.id"
                   class="user"
               >
                 <div class="user-info">
                   <span @click="userPm(user)">
-                    {{ user.name }}
+                    {{ user.nickname }}
                   </span>
                 </div>
                 <div class="user-actions">
@@ -61,7 +61,7 @@ import router from '@/router';
 
 const props = defineProps({
   visible: Boolean,
-  users: Array
+  users: Map
 });
 
 const emit = defineEmits(['save', 'close']);
@@ -105,7 +105,7 @@ const userPm = (user) => {
 };
 const userView = (user) => {
   // FIXME fix user route
-  router.push(`/${user.name}`);
+  router.push(`/${user.nickname}`);
 };
 const userUnban = (user) => {
   emit('unban', user);
