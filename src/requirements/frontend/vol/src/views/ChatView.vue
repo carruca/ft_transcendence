@@ -384,12 +384,18 @@ const onClick = (selected, item) => {
       item = selected.target;
     else
       item = selected.source;
+    // Ourself?
+    if (item.id === client.me.value.id)
+      return;
     setCurrentPrivate(item.id);
     console.log(`Clicked on user '${item.name}'`);
     console.log(`private list: ${privateList.value}`);
     console.log(`private list: ${JSON.stringify(privateList.value)}`);
     console.log(`current private: ${currentPrivate.value}`);
   } else if (selected instanceof ChatEvent || selected instanceof ChannelUser) {
+    // Ourself?
+    if (item.user.id === client.me.value.id)
+      return;
     setCurrentPrivate(item.user.id);
     console.log(`Clicked on user '${item.user.name}'`);
     console.log(`private list: ${privateList.value}`);
@@ -439,6 +445,9 @@ const getAvailableOptions = (selected, item) => {
     // Protect in case user no longer in channel 
     // (item is EventUser instead of ChannelUser)
     if (item instanceof EventUser)
+      return;
+    // in case we clicked on ourself!
+    if (item.user.id === myUser.id)
       return;
 
     // Channel user actions
