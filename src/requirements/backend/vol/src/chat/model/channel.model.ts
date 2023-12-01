@@ -94,7 +94,7 @@ export class Channel {
   }
 
   public createEvent(eventPayload: EventPayload): Event {
-    const event = new Event(this.childNotify_.bind(this), eventPayload);
+    const event = new Event(eventPayload, this.childNotify_.bind(this));
 
     this.events_.add(event);
     this.childNotify_([ event ], NotifyEventTypeEnum.CREATE);

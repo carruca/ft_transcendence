@@ -899,16 +899,12 @@ export class ChatManager {
 
     if (!targetUser) return Response.UserNotExists();
 
-    const event = {
-      id: uuidv4(),
+    const event = new Event({
       type: EventTypeEnum.MESSAGE,
-      timestamp: new Date(),
-      sourceId: sourceUser.id,
-      sourceNickname: sourceUser.nickname,
-      targetId: targetUser.id,
-      targetNickname: targetUser.nickname,
+      sourceUser: sourceUser,
+      targetUser: targetUser,
       value: message,
-    };
+    });
 
     this.raise_<void>("onUserMessageSended", { targetUser: sourceUser, event });
 
