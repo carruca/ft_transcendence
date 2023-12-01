@@ -877,7 +877,7 @@ export class ChatManager {
     return Response.Success();
   }
 
-  public async messageChannelId(sourceUser: User, channelId: string, message: string): Promise<Response> {
+  public async sendMessageChannelId(sourceUser: User, channelId: string, message: string): Promise<Response> {
     const channel = this.getChannelById(channelId);
 
     if (!channel) return Response.ChannelNotExists();

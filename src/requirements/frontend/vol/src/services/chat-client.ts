@@ -203,9 +203,14 @@ export class ChatClient {
 
   private onChannelBanList(responseJSON: string): void {
     const [ channelId, banUsers ] = JSON.parse(responseJSON);
+    const users: User[] = [];
 
-    this.userCurrentChannelBanList.value = banUsers;
-    console.log("banUsers", banUsers);
+    for (const userDTO of banUsers) {
+      users.push(new User(userDTO));
+    }
+
+//    console.log("banusers", users);
+    this.userCurrentChannelBanList_.value = users;
   }
 
   private onAdminData(responseJSON: string): void {
@@ -505,6 +510,7 @@ private manageDestroyedChannelSelection_(channel: Channel) {
 
     if (userDTO.channelsDTO) {
       for (const channelDTO of userDTO.channelsDTO) {
+        console.log("hay canales");
         this.addChannelFromDTO_(channelDTO);
       }
     }

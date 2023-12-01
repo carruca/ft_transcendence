@@ -26,6 +26,7 @@ import {
 } from './util';
 
 import {
+  EventTypeEnum,
   ReturnCodeEnum,
 } from './enum';
 
@@ -499,7 +500,7 @@ export class ChatGateway {
 
     const [ channelId, message ] = JSON.parse(dataJSON);
     const sourceUser = client.data.user;
-    const response = await this.chat_.messageChannelId(sourceUser, channelId, message);
+    const response = await this.chat_.sendMessageChannelId(sourceUser, channelId, message);
 
 
     response.setSourceUser(sourceUser)
@@ -664,7 +665,7 @@ export class ChatGateway {
     const { sourceUser } = event;
     const sourceUserDTO = sourceUser.DTO();
 
-    sourceUserDTO.channels = sourceUser.getChannels().map((channel: Channel) => channel.DTO(sourceUser));
+    sourceUserDTO.channelsDTO = sourceUser.getChannels().map((channel: Channel) => channel.DTO(sourceUser));
 
     console.log("onUserConnected:", sourceUserDTO);
     sourceUser.socket.emit('registered', JSON.stringify(sourceUserDTO));
@@ -799,7 +800,8 @@ export class ChatGateway {
     });
 
     for (const targetUser of targetUsers) {
-      console.log("onChannelEventCreated", changesJSON);
+      //if (targetUser.hasBlocked(event.sourceUser))
+      console.log("target:", targetUser.nickname, "sender:", event.sourceUser.nickname);
       targetUser.socket?.emit('channelEventCreated', changesJSON);
     }
   }
