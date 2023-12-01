@@ -800,9 +800,8 @@ export class ChatGateway {
     });
 
     for (const targetUser of targetUsers) {
-      //if (targetUser.hasBlocked(event.sourceUser))
-      console.log("target:", targetUser.nickname, "sender:", event.sourceUser.nickname);
-      targetUser.socket?.emit('channelEventCreated', changesJSON);
+      if (!targetUser.hasBlocked(event.sourceUser))
+        targetUser.socket?.emit('channelEventCreated', changesJSON);
     }
   }
 }

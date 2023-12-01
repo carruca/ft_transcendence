@@ -21,6 +21,6 @@ export interface UserPayload {
   siteRole?: UserSiteRoleEnum,
   siteBanned?: boolean,
   siteDisabled?: boolean,
-  friends?: User[],
-  blocks?: User[],
+  friends?: string[],
+  blocks?: string[],
 }

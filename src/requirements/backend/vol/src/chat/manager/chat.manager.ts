@@ -1140,29 +1140,22 @@ export class ChatManager {
 
   private userFromDB_(userDB: UserDB): User {
     //console.log("userFromDB_: ", userDB) ;
-    const blockUsers: User[] = [];
+    const blockUsers: string[] = [];
     if (!userDB.nickname)
       throw new PropertyUndefinedError("userFromDB: nickname is not set");
 
-    /*
     if (userDB.blocks) {
       for (const block of userDB.blocks) {
-        const blockUser = this.getUserById(block.blockId);
-
-        if (blockUser)
-          blockUsers.push(blockUser);
-        else
-          throw new UserNotFoundError("channelFromDB: blockUser not found on memory.");
+          blockUsers.push(block.blockId);
       }
     }
-    */
 
     return new User(this.notify_.bind(this), {
       intraId: userDB.intraId,
       id: userDB.id,
       nickname: userDB.nickname,
       siteRole: userDB.mode as number,
-      //blocks: blockUsers,
+      blocks: blockUsers,
     });
   }
 
