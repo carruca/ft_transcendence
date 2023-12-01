@@ -151,6 +151,8 @@
 
 <script setup>
 import { ref, onMounted, onBeforeUnmount, watch, computed, nextTick } from 'vue';
+import router from '@/router';
+
 import contextMenu from '@/components/ContextMenu.vue';
 import joinChannelModal from '@/components/JoinChannelModal.vue';
 import createChannelModal from '@/components/CreateChannelModal.vue';
@@ -459,6 +461,9 @@ const executeContextAction = ( option, item ) => {
     let userUUID = item.user.id;
     if (option === 'Profile') {
       console.log(`Showing profile for user '${item.user.name}'`);
+      // FIXME
+      router.push(`/${item.user.nickname}`);
+      //router.push(`/profile/${item.user.nickname}`);
     } else if (option === 'Challenge') {
       console.log(`Challenging user '${item.user.name}'`);
       client.challengeRequest(item.user.id);
