@@ -375,9 +375,19 @@ const sendMessage = () => {
 
 // Click handlers
 const onClick = (selected, item) => {
-  if (selected instanceof ChatEvent || selected instanceof ChannelUser) {
-    console.log(`Clicked on user '${item.user.name}'`);
+  // Protect in case user is no longer on the channel (item/ChannelUser is undefined)
+  if (selected instanceof ChatEvent && !item) {
+    if (selected.isTargetEvent())
+      item = selected.target;
+    else
+      item = selected.source;
+    setCurrentPrivate(item.id);
+    console.log(`Clicked on user '${item.name}'`);
+    console.log(`private list: ${privateList.value}`);
+    console.log(`current private: ${currentPrivate.value}`);
+  } else if (selected instanceof ChatEvent || selected instanceof ChannelUser) {
     setCurrentPrivate(item.user.id);
+    console.log(`Clicked on user '${item.user.name}'`);
     console.log(`private list: ${privateList.value}`);
     console.log(`current private: ${currentPrivate.value}`);
   } else {
@@ -394,9 +404,9 @@ const onRightClick = (selected, item, event) => {
   // Protect in case user is no longer on the channel (item/ChannelUser is undefined)
   if (selected instanceof ChatEvent && !item) {
     if (selected.isTargetEvent())
-      item = new EventUser(selected.target.id, selected.target.name);
+      item = selected.target;
     else
-      item = new EventUser(selected.source.id, selected.source.name);
+      item = selected.source;
   }
   getAvailableOptions(selected, item);
 
