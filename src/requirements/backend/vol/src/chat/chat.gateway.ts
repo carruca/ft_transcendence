@@ -549,27 +549,19 @@ export class ChatGateway {
             .send();
   }
 
-  /*
-  @SubscribeMessage('convmsg')
-  async onClientConversationMessage(client: Socket, dataJSON: string): Promise<void> {
+  @SubscribeMessage('privmsg')
+  async onPrivateMessage(client: Socket, dataJSON: string): Promise<void> {
     if (!client.data.user) return
 
     const [ targetUserId, message ] = JSON.parse(dataJSON);
     const sourceUser = client.data.user;
-    const response = await this.chat_.messageConversationId(sourceUser, targetUserId, message);
+    const response = await this.chat_.sendMessageUserId(sourceUser, targetUserId, message);
 
-    //TODO: Si yo mando un mensaje pero la conversación no se ha creado, se me ha de enviar conversationDetails
-    //si ya existe, sólo se enviara messageEventDetails
-
-    response.data.conversationDetails = response.data.conversation.getDTO();
-    response.data.messageDetails = response.data.messageEvent.getDTO();
-
-    delete response.data.conversation;
-    delete response.data.messageEvent;
-
-    console.log("convmsg:", response);
+    response.setSourceUser(sourceUser)
+            .setEvent('privmsg')
+            .send();
   }
-  */
+
   /*
   ** ChatService events handle
   */
@@ -591,10 +583,10 @@ export class ChatGateway {
   }
 
   @ChatManagerSubscribe('onUserMessageSended')
-  onUserMessageSended(event: any): void {
-    const { targetUser, message } = event;
+  onUserMessageSended(data: any): void {
+    const { targetUser, event } = data;
 
-    targetUser.socket?.emit('privMessage', JSON.stringify([ event ]));
+    targetUser.socket?.emit('privMessage', JSON.stringify([ event.DTO() ]));
   }
  
   @ChatManagerSubscribe('onUserChallengeSpectated')

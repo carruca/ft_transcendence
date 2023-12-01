@@ -30,6 +30,10 @@ export class Client {
         //return client.channels;
     }
 
+    get privs() {
+        return client.privs;
+    }
+
     get users() {
         return client.users;
     }

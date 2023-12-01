@@ -84,7 +84,7 @@ export class ChatClient {
   private userCurrentChannelBanList_ = ref<User[] | null>(null);
   public userCurrentChannelBanList = readonly(this.userCurrentChannelBanList_);
 
-  private privateList_ = ref<Private[] | null>(null);
+  private privateList_ = ref<Private[] | null>([]);
   public privateList = readonly(this.privateList_);
 
   private currentPrivate_ = ref<Private | null>(null);
@@ -152,6 +152,10 @@ export class ChatClient {
 
   get users() {
     return Array.from(this.users_.values());
+  }
+
+  get privs() {
+    return Array.from(this.privates_);
   }
 
 
@@ -308,7 +312,8 @@ export class ChatClient {
   }
 
   private onPrivMessage(responseJSON: string): void {
-    const [ event ] = JSON.parse(responseJSON);
+    const [ eventDTO ] = JSON.parse(responseJSON);
+    const event = this.eventFromDTO_(eventDTO);
 
     this.addPrivateEvent_(event);
   }
@@ -582,7 +587,10 @@ private manageDestroyedChannelSelection_(channel: Channel) {
   private addPrivateEvent_(event: Event): Private | undefined {
     let remoteId: string | undefined;
     let remoteNickname: string | undefined;
-	let priv: Private | undefined;
+	  let priv: Private | undefined;
+
+	  console.log(event.source.id);
+	  console.log(this.me_.id);
 
     if (event.source.id == this.me_.id) {
 	  if (event.target?.id)
@@ -613,11 +621,17 @@ private manageDestroyedChannelSelection_(channel: Channel) {
     const priv = new Private(userNickname);
 
     this.privates_.set(userId, priv);
+    this.privateList_.value = this.privates_.values();
+    this.currentPrivate_.value = priv;
     return priv;
   }
 
   private closePrivate(userId) {
     this.privates_.delete(userId);
+    this.privateList_.value = this.privates_.values();
+    if (this.currentPrivate_.value.id == userId) {
+      this.currentPrivate_ = this.privates_.values().next().value;
+    }
   }
 
   private addChannelFromDTO_(channelDTO: ChannelDTO): Channel {
@@ -792,6 +806,8 @@ private manageDestroyedChannelSelection_(channel: Channel) {
   public setCurrentPrivate = (userId: string): void => {
     if (this.privates_.has(userId)) {
       this.currentPrivate_.value = this.privates_.get(userId);
+    } else {
+      this.currentPrivate_.value = undefined;
     }
   }
 
