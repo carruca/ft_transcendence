@@ -79,8 +79,9 @@ async function loadProfile() {
 
   let username : string | string[]; 
   username = route.currentRoute.value.params.username;
+  console.log(username);
   // Check if the route is 'profile'
-  if (route.currentRoute.value.params.username === 'profile') {
+  if (route.currentRoute.value.params.username === undefined) {
     username = user.nickname;
   }
 

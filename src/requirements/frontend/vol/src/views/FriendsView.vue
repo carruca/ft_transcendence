@@ -33,11 +33,10 @@
                     <img :src="user.userProfile" alt="Profile picture" class="friend-image">
                   </div>
                   <div class="user-info">
-                    <h3><router-link :to="`${user.user[0].nickname}`" style="color:aliceblue">{{ user.user[0].nickname }}</router-link></h3>
+                    <h3><router-link :to="`/profile/${user.user[0].nickname}`" style="color:aliceblue">{{ user.user[0].nickname }}</router-link></h3>
                   </div>
                   <div class="user-actions">
                   <!-- Include the friendsButton component for each friend -->
-                  <!-- TODO add view profile button -->
                     <friendsBotton :users="[me.id, user.user[0].id]"></friendsBotton>
                   </div>
             </div>
