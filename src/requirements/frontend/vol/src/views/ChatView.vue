@@ -730,6 +730,7 @@ function userStatus(status) {
 const getUserRoles = (channelUser) => {
   const roles = [];
   if (!channelUser) return roles;
+  if (channelUser.user.id === client.me.value.id) roles.push('me');
   if (channelUser.isOwner) roles.push('owner');
   if (channelUser.isAdmin && !channelUser.isOwner) roles.push('admin');
   if (channelUser.isMuted) roles.push('muted');
