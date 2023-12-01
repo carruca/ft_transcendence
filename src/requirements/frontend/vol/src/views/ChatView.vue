@@ -396,6 +396,7 @@ const onClick = (selected, item) => {
     // Ourself?
     if (item.user.id === client.me.value.id)
       return;
+    client.openPrivate(item.user.id, item.user.name);
     setCurrentPrivate(item.user.id);
     console.log(`Clicked on user '${item.user.name}'`);
     console.log(`private list: ${privateList.value}`);

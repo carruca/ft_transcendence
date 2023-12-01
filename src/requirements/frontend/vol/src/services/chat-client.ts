@@ -221,15 +221,8 @@ export class ChatClient {
 
     console.log('unUnban', channelId, targetUserId);
     if (!channel) return;
+    if (channel.id === this.userCurrentChannel.value.id)
       this.userCurrentChannelBanList_.delete(targetUserId);
-/*
-    this.currentChannelBanList_.value.fi(user => user.id === targetUserId);
-
-		
-		this.userChannelList_.value = Array.from(this.me_.value.channels.values())
-			.sort((a, b) => (a as Channel).name.localeCompare((b as Channel).name));
-*/  
-
   }
 
   private onAdminData(responseJSON: string): void {
@@ -330,6 +323,7 @@ export class ChatClient {
     const [ eventDTO ] = JSON.parse(responseJSON);
     const event = this.eventFromDTO_(eventDTO);
 
+    console.log(responseJSON);
     this.addPrivateEvent_(event);
   }
 
