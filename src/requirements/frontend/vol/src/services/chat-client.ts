@@ -420,12 +420,8 @@ private manageDestroyedChannelSelection_(channel: Channel) {
     const user = this.getUserById(userId);
     const channelUser = this.getChannelUserById(channelId, userId);
 
-	if (!channel)
-	  throw new Error(`Channel ${channelId} not found`);
-	if (!user)
-	  throw new Error(`User ${userId} not found`);
-	if (!channelUser)
-	  throw new Error(`ChannelUser ${userId} not found`);
+    if (!channel)
+      throw new Error(`Channel ${channelId} not found`);
 
     console.log('onChannelUpdated', channelId, userId, changes);
     channel.update(channelUser, changes);

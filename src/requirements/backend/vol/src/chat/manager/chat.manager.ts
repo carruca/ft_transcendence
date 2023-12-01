@@ -644,7 +644,7 @@ export class ChatManager {
     //if (this.raise_<boolean>("onUserUnbanning", { channel, sourceUser, targetUser }).includes(true))
     //    return Response.Denied();
 
-    //this.raise_<void>("onUserUnbanned", { channel, sourceUser, targetUser });
+    this.raise_<void>("onUserUnbanned", { channel, sourceUser, targetUser });
     channel.unbanUser(targetUser);
     channel.createEventAction(EventTypeEnum.UNBAN, sourceUser, targetUser);
     await this.usersService_.removeBan(targetUser.id, channel.id);
