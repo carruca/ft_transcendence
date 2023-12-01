@@ -26,22 +26,21 @@
               <p>{{ getSelectedTabEmptyText() }}</p>
             </div>
             <div v-else class="list">
-              <div
-                  v-for="user in getSelectedTabList()"
-                  :key="user.user[0].id"
-                  class="user">
-                <div class="user-picture">
-                  <img :src="getProfilePictureUrl(user.user[0].nickname)" alt="Profile picture" class="friend-image">
-                </div>
-                <div class="user-info">
-                  <h3>{{ user.user[0].nickname }}</h3>
-                </div>
-                <div class="user-actions">
+              <div v-for="user in getSelectedTabList()"
+                :key="user.user[0].id"
+                class="user">
+                  <div class="user-picture">
+                    <img :src="user.userProfile" alt="Profile picture" class="friend-image">
+                  </div>
+                  <div class="user-info">
+                    <h3><router-link :to="`${user.user[0].nickname}`" style="color:aliceblue">{{ user.user[0].nickname }}</router-link></h3>
+                  </div>
+                  <div class="user-actions">
                   <!-- Include the friendsButton component for each friend -->
                   <!-- TODO add view profile button -->
-                  <friendsBotton :users="[me.id, user.user[0].id]"></friendsBotton>
-                </div>
-              </div>
+                    <friendsBotton :users="[me.id, user.user[0].id]"></friendsBotton>
+                  </div>
+            </div>
             </div>
           </div>
           <!-- TODO if we have time show a blocked users list with unblock option -->
@@ -54,6 +53,7 @@
 <script setup lang="ts">
 
 import { ref, onMounted, computed } from 'vue';
+import md5 from 'md5';
 import friendsBotton from '@/components/Profile/friendsBotton.vue';
 
 const props = defineProps({
@@ -126,8 +126,13 @@ async function fetchFriends() {
     if (!response.ok) {
       throw new Error('Failed to fetch friends');
     }
-
-    const data = await response.json();
+    let data = await response.json();
+    data = await Promise.all(data.map(async (item) => {
+      const userProfile = await getProfilePictureUrl(item.user[0].nickname, item.user[0].login);
+      item.userProfile = userProfile;
+      return item;
+    }));
+    console.log('Friendos:', data);
     return data;
   } catch (error) {
     console.error('Error fetching friends:', error);
@@ -135,9 +140,14 @@ async function fetchFriends() {
 }
 
 // Helper function to get profile picture URL
-function getProfilePictureUrl(username) {
-  // TODO get profile picture from gravatar when no picture on backend
-  return `${import.meta.env.VITE_BACKEND_URL}/public/avatars/${username}.png`;
+async function getProfilePictureUrl(username : string, login : string) {
+  const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/public/avatars/${username}.png`);
+  if (response.ok) {
+    const imageBlob = await response.blob();
+    return URL.createObjectURL(imageBlob);
+  } else {
+    return `https://www.gravatar.com/avatar/${md5(login)}/?d=wavatar`;
+  }
 }
 
 </script>
