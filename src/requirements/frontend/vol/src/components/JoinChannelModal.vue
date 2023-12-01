@@ -65,6 +65,7 @@ onBeforeUnmount(() => {
 });
 
 const handleKeyDown = (event) => {
+  if (!props.visible) return;
   if (event.key === 'Escape') {
     closeModal();
   }
