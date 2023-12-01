@@ -492,7 +492,14 @@ const handleContextMenuSelect = ({ option, item }) => {
        'Destroy',
        'Leave'].includes(option)) {
     confirmModalTitle.value = `Confirm ${option.toLowerCase()}`;
-    confirmModalText.value = `Are you sure you want to ${option.toLowerCase()} '${item.name}'?`;
+
+    let name = '';
+    if (item instanceof Channel)
+        name = item.name;
+    else if (item instanceof ChannelUser)
+        name = item.user.name;
+    confirmModalText.value = `Are you sure you want to ${option.toLowerCase()} '${name}'?`;
+
     showConfirmModal.value = true;
     contextAction.value = option;
   } else {
