@@ -25,15 +25,18 @@
               <div
                   v-for="user in users"
                   :key="user.id"
-                  @click="attemptJoinChannel(user)"
-                  :class="userClass(user)"
+                  class="user"
               >
-                <span>
-                  {{ user.name }}
-                </span>
-                <div class="buttons">
-                  <button @click="viewProfile(user)">Profile</button>
-                  <button @click="unbanUser(user)">Unban</button>
+                <div class="user-info">
+                  <span @click="userPm(user)">
+                    {{ user.name }}
+                  </span>
+                </div>
+                <div class="user-actions">
+                  <div class="buttons">
+                    <button @click="userView(user)">Profile</button>
+                    <button @click="userUnban(user)">Unban</button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -53,7 +56,8 @@
 </template>
 
 <script setup>
-import { ref, defineProps, defineEmits, onMounted, onBeforeUnmount } from 'vue';
+import { ref, defineProps, defineEmits, onMounted, onBeforeUnmount, watch } from 'vue';
+import router from '@/router';
 
 const props = defineProps({
   visible: Boolean,
@@ -66,6 +70,11 @@ const channelPassword = ref('');
 const hasPassword = ref(false);
 
 const passwordError = ref('');
+
+watch(() => props.users, (newUsers) => {
+  // Perform actions with newUsers, if necessary
+  console.log('Users prop updated:', newUsers);
+}, { deep: true });
 
 onMounted(() => {
   window.addEventListener('keydown', handleKeyDown);
@@ -88,6 +97,18 @@ const handleBackgroundClick = (event) => {
   if (event.target.classList.contains('modal')) {
     closeModal();
   }
+};
+
+const userPm = (user) => {
+  emit('pm', user);
+  closeModal();
+};
+const userView = (user) => {
+  // FIXME fix user route
+  router.push(`/${user.name}`);
+};
+const userUnban = (user) => {
+  emit('unban', user);
 };
 
 const confirmEdit = () => {
@@ -138,7 +159,7 @@ const closeModal = () => {
   padding: 20px 20px 0 20px;
   border-radius: 5px;
   max-height: 80vh;
-  width: 50vw;
+  width: auto;
 }
 
 .content {
@@ -146,7 +167,7 @@ const closeModal = () => {
   flex-grow: 1;
   box-sizing: border-box;
   overflow: hidden;
-  justify-content: space-around;
+  justify-content: space-evenly;
 }
 
 .section {
@@ -154,6 +175,7 @@ const closeModal = () => {
   flex-direction: column;
   flex: none;
   overflow: hidden;
+  padding: 0 2.5em 0 2.5em;
 }
 
 .error-message {
@@ -200,6 +222,32 @@ const closeModal = () => {
 .checkbox-group label {
   color: white;
   cursor: pointer;
+}
+
+.user-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.user {
+  display: flex;
+  align-items: center;
+  max-height: 5vh;
+  overflow: hidden;
+  padding: 0.5em;
+  border-bottom: 1px solid #444;
+  background-color: #272727;
+}
+
+.user-info {
+  display: flex;
+  flex-grow: 1;
+  cursor: pointer;
+  display: block;
+  margin: 0 1em 0 1em;
+}
+.user-info:hover {
+  text-decoration: underline;
 }
 
 .buttons {

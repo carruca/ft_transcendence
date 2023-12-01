@@ -81,7 +81,7 @@ export class ChatClient {
   private userCurrentChannel_ = ref<Channel | null>(null);
   public userCurrentChannel = readonly(this.userCurrentChannel_);
 
-  private userCurrentChannelBanList_ = ref<User[] | null>(null);
+  private userCurrentChannelBanList_ = ref<User[]>([]);
   public userCurrentChannelBanList = readonly(this.userCurrentChannelBanList_);
 
   private privateList_ = ref<Private[] | null>(null);
