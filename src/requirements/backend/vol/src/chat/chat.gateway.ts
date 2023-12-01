@@ -587,7 +587,7 @@ export class ChatGateway {
   onUseUnbanned(data: any): void {
     const { channel, sourceUser, targetUser } = data;
 
-    if (sourceUser.status === UserStatusEnum.OFFLINE)
+    if (sourceUser.status !== UserStatusEnum.OFFLINE)
       sourceUser.socket.emit('unBan', JSON.stringify([ channel.id, targetUser.id ]));
   }
 

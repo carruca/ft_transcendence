@@ -168,7 +168,7 @@ export class ChatClient {
     socket.on('adminData', this.onAdminData.bind(this));
     socket.on('watch', this.onWatch.bind(this));
     socket.on('privMessage', this.onPrivMessage.bind(this));
-    socket.on('unban', this.onUnban.bind(this));
+    socket.on('unBan', this.onUnban.bind(this));
 
     socket.on('challengeRequested', this.onChallengeRequested.bind(this));
     socket.on('challengeRejected', this.onChallengeRejected.bind(this));
@@ -208,6 +208,7 @@ export class ChatClient {
 
   private onChannelBanList(responseJSON: string): void {
     const [ channelId, banUsers ] = JSON.parse(responseJSON);
+    this.userCurrentChannelBanList_.clear();
 
     for (const userDTO of banUsers) {
       this.userCurrentChannelBanList_.set(userDTO.id, new User(userDTO));
@@ -218,8 +219,9 @@ export class ChatClient {
     const [ channelId, targetUserId ] = JSON.parse(responseJSON);
     const channel = this.getChannelById_(channelId);
 
+    console.log('unUnban', channelId, targetUserId);
     if (!channel) return;
-      this.currentChannelBanList_.value.delete(targetUserId);
+      this.userCurrentChannelBanList_.delete(targetUserId);
 /*
     this.currentChannelBanList_.value.fi(user => user.id === targetUserId);
 
@@ -693,7 +695,6 @@ private manageDestroyedChannelSelection_(channel: Channel) {
   }
 
   public ban(channelId: string, userId: string) {
-    this.userCurrentChannelBanList_.clear();
     socket.emit('ban', JSON.stringify([ channelId, userId ]));
   }
 
