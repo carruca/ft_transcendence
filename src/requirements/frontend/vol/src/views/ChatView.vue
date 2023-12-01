@@ -138,6 +138,8 @@
   <editChannelModal
       :visible="showEditModal"
       :users="userCurrentChannelBanList"
+      @pm="handleEditModalPm"
+      @unban="handleEditModalUnban"
       @save="handleEditModalSave"
       @close="handleEditModalClose"
   />
@@ -226,6 +228,7 @@ const showConfirmModal = ref(false);
 const confirmModalTitle = ref('');
 const confirmModalText = ref('');
 
+// Assuming userCurrentChannelBanList is a ref
 onMounted(() => {
   window.addEventListener('click', closeContextMenu);
   window.addEventListener('resize', e => handleResize(leftSection.value, middleSection.value, rightSection.value, contentSection.value));
@@ -610,6 +613,15 @@ const handleCreateModalClose = () => {
 };
 const handleEditModalClose = () => {
   showEditModal.value = false;
+};
+
+const handleEditModalPm = (user) => {
+  setCurrentPrivate(user.id);
+  // TODO set pm logic
+};
+const handleEditModalUnban = (user) => {
+  console.log(`Unbanning user '${user.name}'`)
+  client.unban(selectedChannelUUID.value, user.id);
 };
 
 // Resize functions

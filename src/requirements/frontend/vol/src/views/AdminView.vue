@@ -127,6 +127,8 @@
     </div>
     <editChannelModal
       :visible="showEditModal"
+      @pm="handleEditModalPm"
+      @unban="handleEditModalUnban"
       @save="handleEditModalSave"
       @close="handleEditModalClose"
     />
@@ -135,6 +137,8 @@
 
 <script setup>
 import { ref, onMounted, onUnmounted, watch, computed } from 'vue';
+import router from '@/router';
+
 import { client } from '@/services/chat-client';
 
 const selectedChannel = ref(null);
@@ -275,6 +279,16 @@ const handleEditModalSave = (channelOptions) => {
 
 const handleEditModalClose = () => {
   showEditModal.value = false;
+};
+
+const handleEditModalPm = (user) => {
+  setCurrentPrivate(user.id);
+  // TODO set pm logic
+  router.push('/chat');
+};
+const handleEditModalUnban = (user) => {
+  console.log(`Unbanning user '${user.name}'`)
+  client.unban(selectedChannelUUID.value, user.id);
 };
 
 // User color
