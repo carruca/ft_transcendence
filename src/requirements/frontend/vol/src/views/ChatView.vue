@@ -636,6 +636,8 @@ const handleEditModalUnban = (user) => {
 // Resize functions
 const MIN_WIDTH = 100;
 const handleResize = (leftSection, middleSection, rightSection, contentSection) => {
+  if (!leftSection || !middleSection || !rightSection || !contentSection)
+    return;
   const totalWidth = contentSection.offsetWidth;
   let newLeftWidth = leftSection.offsetWidth;
   let newMiddleWidth = middleSection.offsetWidth;
@@ -650,6 +652,8 @@ const handleResize = (leftSection, middleSection, rightSection, contentSection) 
 }
 const initDrag = (e, leftSection, middleSection, rightSection, contentSection, isLeftResizer) => {
   e.preventDefault();
+  if (!leftSection || !middleSection || !rightSection || !contentSection)
+    return;
   const startX = e.clientX;
   const startLeftWidth = leftSection.offsetWidth;
   const startMiddleWidth = middleSection.offsetWidth;
