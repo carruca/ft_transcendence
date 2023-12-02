@@ -669,13 +669,14 @@ export class ChatClient {
     let remoteNickname: string;
 	  let priv: Private | undefined;
 
-    if (event.source.id == this.me_.id) {
+    if (event.source.id == this.me_.value.id) {
       remoteId = event.target.id;
       remoteNickname = event.target.name;
     } else {
       remoteId = event.source.id;
       remoteNickname = event.source.name;
     }
+    console.log("Mensaje en pestaña ", remoteNickname);
   	priv = this.getPrivateById(remoteId);
 
     if (!priv) {
