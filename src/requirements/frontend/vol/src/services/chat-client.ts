@@ -1,3 +1,5 @@
+"use strict";
+
 import {
   ref,
   readonly,
@@ -692,9 +694,7 @@ export class ChatClient {
   public openPrivate(userId: string, nickUsername: string): Private {
     const priv = this.receivePrivate_(userId, nickUsername);
 
-    this.privateList_.value = Array.from(this.privates_.values());
     this.currentPrivate_.value = priv;
-
     return priv;
   }
 
@@ -705,6 +705,8 @@ export class ChatClient {
       priv = new Private(userId, userNickname);
       this.privates_.set(userId, priv);
     }
+
+    this.privateList_.value = Array.from(this.privates_.values());
     return priv;
   }
 
