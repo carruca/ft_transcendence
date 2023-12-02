@@ -13,7 +13,7 @@
           </div>
           <div v-if="hasPassword && passwordError" class="error-message">{{ passwordError }}</div>
           <div v-if="hasPassword" class="input-group">
-            <input type="password" id="channelPassword" v-model="channelPassword" placeholder="Enter password">
+            <input type="password" id="channelPassword" v-model="channelPassword" ref="passwordInput" placeholder="Enter password">
           </div>
         </div>
         <!-- .CHANNEL PASSWORD -->
@@ -56,7 +56,7 @@
 </template>
 
 <script setup>
-import { ref, defineProps, defineEmits, onMounted, onBeforeUnmount, watch } from 'vue';
+import { ref, defineProps, defineEmits, onMounted, onBeforeUnmount, watch, nextTick } from 'vue';
 import router from '@/router';
 
 const props = defineProps({
@@ -71,10 +71,20 @@ const hasPassword = ref(false);
 
 const passwordError = ref('');
 
-watch(() => props.users, (newUsers) => {
+const passwordInput = ref(null);
+
+watch(() => hasPassword.value, (newValue) => {
+  if (newValue) {
+    nextTick(() => {
+      passwordInput.value.focus();
+    });
+  }
+});
+
+/*watch(() => props.users, (newUsers) => {
   // Perform actions with newUsers, if necessary
   console.log('Users prop updated:', newUsers);
-}, { deep: true });
+}, { deep: true });*/
 
 onMounted(() => {
   window.addEventListener('keydown', handleKeyDown);

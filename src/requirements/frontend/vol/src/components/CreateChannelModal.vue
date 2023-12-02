@@ -6,7 +6,7 @@
       <label for="channelName">Name:</label>
       <div v-if="nameError" class="error-message">{{ nameError }}</div>
       <div class="input-group">
-        <input type="text" id="channelName" v-model="channelName" placeholder="Enter channel name">
+        <input type="text" id="channelName" v-model="channelName" ref="channelNameInput" placeholder="Enter channel name">
       </div>
       <!-- .CHANNEL NAME -->
       <!-- CHANNEL PASSWORD -->
@@ -29,7 +29,7 @@
 </template>
 
 <script setup>
-import { ref, defineProps, defineEmits, onMounted, onBeforeUnmount } from 'vue';
+import { ref, defineProps, defineEmits, onMounted, onBeforeUnmount, watch, nextTick } from 'vue';
 
 const props = defineProps({
   visible: Boolean
@@ -44,12 +44,22 @@ const hasPassword = ref(false);
 const nameError = ref('');
 const passwordError = ref('');
 
+const channelNameInput = ref(null);
+
 onMounted(() => {
   window.addEventListener('keydown', handleKeyDown);
 });
 
 onBeforeUnmount(() => {
   window.removeEventListener('keydown', handleKeyDown);
+});
+
+watch(() => props.visible, (newValue) => {
+  if (newValue) {
+    nextTick(() => {
+      channelNameInput.value.focus();
+    });
+  }
 });
 
 const handleKeyDown = (event) => {

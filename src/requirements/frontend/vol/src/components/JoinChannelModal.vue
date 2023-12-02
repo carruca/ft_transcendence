@@ -28,7 +28,7 @@
       <h3>Enter Password</h3>
       <div v-if="nameError" class="error-message">{{ nameError }}</div>
       <div class="input-group">
-        <input type="password" v-model="channelPassword" placeholder="Enten password">
+        <input type="password" v-model="channelPassword" ref="passwordInput" placeholder="Enten password">
       </div>
       <div class="buttons">
         <button @click="cancelPasswordEntry">Cancel</button>
@@ -40,7 +40,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onBeforeUnmount, watch, defineProps, defineEmits } from 'vue';
+import { ref, onMounted, onBeforeUnmount, watch, defineProps, defineEmits, nextTick } from 'vue';
 
 const props = defineProps({
   visible: Boolean,
@@ -56,6 +56,8 @@ const channelPassword = ref('');
 
 const nameError = ref('');
 
+const passwordInput = ref(null);
+
 onMounted(() => {
   window.addEventListener('keydown', handleKeyDown);
 });
@@ -64,10 +66,22 @@ onBeforeUnmount(() => {
   window.removeEventListener('keydown', handleKeyDown);
 });
 
+watch(() => passwordRequired.value, (newValue) => {
+  if (newValue) {
+    nextTick(() => {
+      passwordInput.value.focus();
+    });
+  }
+});
+
 const handleKeyDown = (event) => {
   if (!props.visible) return;
   if (event.key === 'Escape') {
     closeModal();
+  } else if (event.key === 'Enter') {
+    if (passwordRequired.value && channelPassword.value) {
+      joinChannel();
+    }
   }
 };
 

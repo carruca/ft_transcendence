@@ -101,7 +101,7 @@
         </div>
         <!-- message input box -->
         <div v-if="userCurrentChannel || currentPrivate" class="message-input">
-          <input type="text" v-model="newMessage" @keyup.enter="sendMessage" placeholder="Message...">
+          <input type="text" v-model="newMessage" ref="messageInput" @keyup.enter="sendMessage" placeholder="Message...">
           <button @click="sendMessage">Send</button>
         </div>
       </div>
@@ -239,6 +239,8 @@ const rightResizer = ref(null);
 const eventsDisplay = ref(null);
 const newMessage = ref('');
 
+const messageInput = ref(null);
+
 // Context menu
 const contextChannelUUID = ref(null);
 const contextEventUUID = ref(null);
@@ -352,11 +354,17 @@ const selectChannel = (channelUUID) => {
   unselectPrivate();
   selectedChannelUUID.value = channelUUID;
   setUserCurrentChannel(channelUUID);
+  nextTick(() => {
+    messageInput.value.focus();
+  });
 };
 const selectPrivate = (privateUUID) => {
   unselectChannel();
   selectedPrivateUUID.value = privateUUID;
   setCurrentPrivate(privateUUID);
+  nextTick(() => {
+    messageInput.value.focus();
+  });
 };
 
 const getTime = (time) => {
