@@ -349,7 +349,7 @@ export class ChatManager {
 
     if (!targetUser) return Response.UserNotExists();
     //if (targetUser.hasWatcher(sourceUser)) return Response.Success();
-    targetUser.addWatcher(sourceUser);
+    sourceUser.addWatcher(targetUser);
     
     this.raise_<void>('onUserWatchUser', { sourceUser, targetUser });
     return Response.Success();
