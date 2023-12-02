@@ -328,6 +328,10 @@ export class UsersService {
     }));
   }
 
+  async setDefaultStatusToAllUsers() : Promise<void> {
+    await this.usersRepository.update({}, { status: 0 });
+  }
+
   async update(id: string, updateUserDto?: UpdateUserDto, avatar?: Express.Multer.File): Promise<User> {
     const user = await this.usersRepository.findOneBy({ id });
     if (!user) {
