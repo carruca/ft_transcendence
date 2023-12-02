@@ -150,12 +150,12 @@ onMounted(async () => {
           <td class="type-section">{{ match.type }}</td>
           <td v-if="match.type==='special'">
             <ul>
-              <li><router-link :to="`${match.who[0]}`" style="color:rgb(101, 203, 114)">{{ match.who[0] }}</router-link></li>
-              <li><router-link :to="`${match.who[1]}`" style="color:rgb(251, 99, 99)">{{ match.who[1] }}</router-link></li>
-              <li><router-link :to="`${match.who[2]}`" style="color:rgb(251, 99, 99)">{{ match.who[2] }}</router-link></li>
+              <li><router-link :to="`/profile/${match.who[0]}`" style="color:rgb(101, 203, 114)">{{ match.who[0] }}</router-link></li>
+              <li><router-link :to="`/profile/${match.who[1]}`" style="color:rgb(251, 99, 99)">{{ match.who[1] }}</router-link></li>
+              <li><router-link :to="`/profile/${match.who[2]}`" style="color:rgb(251, 99, 99)">{{ match.who[2] }}</router-link></li>
             </ul>
           </td>
-          <td v-else><router-link :to="`${match.who}`" style="color:aliceblue">{{ match.who }}</router-link></td>
+          <td v-else><router-link :to="`/profile/${match.who}`" style="color:aliceblue">{{ match.who }}</router-link></td>
           <td>{{ match.myPoints }}/{{ match.hisPoints }}</td>
           <td>{{ match.duration }}</td>
         </tr>

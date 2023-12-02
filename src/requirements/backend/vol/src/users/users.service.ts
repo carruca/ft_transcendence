@@ -24,6 +24,7 @@ import { Channel } from '../channels/entities/channel.entity';
 import { ChannelUser } from '../channels/entities/channel-user.entity';
 import { RatingUserDto } from './dto/rating-user.dto';
 import { Friend, FriendStatus } from '../friends/entities/friend.entity';
+import { FriendsService } from '../friends/friends.service';
 import { ChatManager } from '../chat/manager';
 
 @Injectable()
@@ -39,6 +40,7 @@ export class UsersService {
     private channelsRepository: Repository<Channel>,
     @Inject(forwardRef(() => ChatManager))
     private chatManager: ChatManager,
+    private readonly friendsService: FriendsService,
   ) { }
 
   async create(createUserDto: CreateUserDto): Promise<User> {
@@ -238,7 +240,7 @@ export class UsersService {
     };
   }
 
-  async getBlocks(userId: string) : Promise<Block[]> {
+  async getBlocks(userId: string) {
     const user = await this.usersRepository.findOne({
       relations: ['blocks'],
       where: {
@@ -249,7 +251,21 @@ export class UsersService {
       throw new HttpException('User not found', HttpStatus.NOT_FOUND);
     }
 
-    return user.blocks;
+    const blockIds = user.blocks.map(block => block.blockId);
+    const blockUsers = await this.usersRepository.find({
+      where: {
+        id: In(blockIds)
+      },
+    });
+    if (!blockUsers) {
+      throw new HttpException('User not found', HttpStatus.NOT_FOUND);
+    }
+
+    return blockUsers.map(user => ({
+      id: user.id,
+      nickname: user.nickname,
+      login: user.login
+    }));
   }
 
   async removeBlock(userId: string, blockId: string) {
@@ -266,6 +282,54 @@ export class UsersService {
     }
 
     return this.blocksRepository.remove(block);
+  }
+  
+  async setStatus(id: string, status: number) {
+    const user = await this.usersRepository.findOne({
+      where: {
+        id: id
+      }
+    })
+    if (!user) {
+      throw new HttpException('User not found', HttpStatus.NOT_FOUND);
+    }
+    user.status = status;
+    return this.usersRepository.save(user);
+  }
+
+  async findUserFriends(userId: string, status?: FriendStatus) {
+    const user = await this.usersRepository.findOne({
+      relations: ['friends.users', 'blocks'],
+      where: {
+        id: userId,
+      },
+    });
+    if (!user) {
+      throw new HttpException('User not found', HttpStatus.NOT_FOUND);
+    }
+
+    let friends = user.friends.filter(friend => (status === undefined || friend.status === status));
+
+    friends = friends.filter(friend => {
+      if (!user.blocks.some(block => block.blockId === friend.senderId)) {
+        return true;
+      } else {
+        return false;
+      }
+    });
+
+    return friends.map(friend => ({
+      user: friend.users
+        .filter(user => user.id !== userId)
+        .map(({ id, nickname, login, status }) => ({ id, nickname, login, status })),
+      receiverId: friend.receiverId,
+      status: friend.status,
+      id: friend.id,
+    }));
+  }
+
+  async setDefaultStatusToAllUsers() : Promise<void> {
+    await this.usersRepository.update({}, { status: 0 });
   }
 
   async update(id: string, updateUserDto?: UpdateUserDto, avatar?: Express.Multer.File): Promise<User> {
@@ -352,20 +416,15 @@ export class UsersService {
         friends = friends.filter(friend => friend.senderId !== userId);
     }
     // Find all friends of user to get their nicknames
-    console.log({friends});
     const friendIds = friends.map(friend => friend.receiverId == userId ? friend.senderId : friend.receiverId).flat();
-    console.log({friendIds});
     const friendUsers = await this.usersRepository.find({
       where: {
         id: In(friendIds),
       },
     });
-    console.log({friendUsers});
     // Add nickname to friend
     friends = friends.map(friend => {
-      console.log({friend});
       const friendUser = friendUsers.find(user => user.id === friend.senderId || user.id === friend.receiverId);
-      console.log({friendUser});
       if (friendUser) {
         friend.nickname = friendUser.nickname;
       }

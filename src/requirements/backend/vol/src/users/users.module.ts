@@ -10,6 +10,7 @@ import { Channel } from '../channels/entities/channel.entity';
 import { Friend } from '../friends/entities/friend.entity';
 import { JwtModule } from '@nestjs/jwt';
 import { ChatModule } from '../chat/chat.module';
+import { FriendsModule } from '../friends/friends.module';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { ChatModule } from '../chat/chat.module';
       signOptions: { expiresIn: '1d' },
     }),
     forwardRef(() => ChatModule),
+    FriendsModule,
   ],
   controllers: [UsersController],
   providers: [UsersService],
