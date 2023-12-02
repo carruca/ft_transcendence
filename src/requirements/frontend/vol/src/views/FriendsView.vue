@@ -44,7 +44,6 @@
               </div>
             </div>
           </div>
-          <!-- TODO if we have time show a blocked users list with unblock option -->
         </div>
       </div>
     </div>
