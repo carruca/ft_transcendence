@@ -407,7 +407,11 @@ function formatChannelName(name) {
   return name.startsWith('#') ? `# ${name.substring(1)}` : `# ${name}`;
 }
 const formattedEvents = computed(() => {
+  console.log("formattedEvents");
+  console.log(`userCurrentChannel: ${userCurrentChannel.value}`);
+  console.log(`currentPrivate: ${currentPrivate.value}`);
   if (userCurrentChannel.value && userCurrentChannel.value.events) {
+    console.log("event channel", userCurrentChannel.value.events.size);
     return [...userCurrentChannel.value.events.values()].map(event => {
       const sourceChannelUser = client.getChannelUserById(selectedChannelUUID.value, event.source.id);
       const targetChannelUser = event.target ? client.getChannelUserById(selectedChannelUUID.value, event.target.id) : undefined;
@@ -415,6 +419,7 @@ const formattedEvents = computed(() => {
     });
   }
   if (currentPrivate.value && currentPrivate.value.events) {
+    console.log("event private", currentPrivate.value.events.size);
     return [...currentPrivate.value.events.values()].map(event => {
       return new ChatEvent(event, undefined, undefined);
     });

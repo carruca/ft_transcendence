@@ -24,4 +24,8 @@ export class Private {
     }
     this.events_.set(event.id, event);
   }
+
+  get events(): Map<string, Event> {
+    return readonly(this.events_);
+  }
 }
