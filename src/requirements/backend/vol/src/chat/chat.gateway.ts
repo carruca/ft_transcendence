@@ -47,6 +47,8 @@ import {
   WebSocketGateway,
   WebSocketServer,
   SubscribeMessage,
+  OnGatewayConnection,
+  OnGatewayDisconnect,
 } from '@nestjs/websockets';
 
 import {
@@ -76,7 +78,7 @@ import {
     origin: process.env.NEST_FRONT_URL
   },
 })
-export class ChatGateway {
+export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   private readonly logger_ = new Logger("ChatGateway");
 
   @WebSocketServer()
@@ -150,7 +152,7 @@ export class ChatGateway {
     }
   }
 
-  async handleDisconnect(client: Socket) {
+  handleDisconnect(client: Socket) {
     if (client.data.user)
       this.chat_.disconnectUser(client.data.user);
   }
@@ -740,13 +742,23 @@ export class ChatGateway {
   @ChatManagerSubscribe('onUserJoined')
   onUserJoined(data: any): void {
     const { channel, sourceUser, targetUsers } = data;
-    const joinedJSON = JSON.stringify({
-      channelId: channel.id,
-      sourceChannelUserDTO: channel.channelUserDTO(sourceUser),
-    });
 
+    //TODO: revisar que un usuario bloqueado del que el cliente no tiene conocimiento es marcado como bloqueado
+    //      Forma de probar:
+    //      Crear un canal, bloquear a cualquier usuario, salir del canal. Reiniciar el navegador y volver a entrar al canal.
     for (const targetUser of targetUsers) {
-      targetUser.socket.emit('userJoined', joinedJSON);
+      targetUser.socket.emit('userJoined', JSON.stringify({
+        channelId: channel.id,
+        sourceChannelUserDTO: channel.channelUserDTO(sourceUser, targetUser),
+      }));
+    }
+
+    for (const targetUser of this.chat_.getAdminWatchers()) {
+      targetUser.socket.emit('adminUpdated', JSON.stringify([
+        AdminObjectTypeEnum.CHANNEL_USER,
+        AdminDataTypeEnum.CREATED,
+        channel.channelUserDTO(sourceUser, targetUser),
+      ]));
     }
   }
 
@@ -760,6 +772,16 @@ export class ChatGateway {
 
     for (const targetUser of targetUsers) {
       targetUser.socket?.emit('userParted', partedJSON);
+    }
+
+    for (const targetUser of this.chat_.getAdminWatchers()) {
+      targetUser.socket.emit('adminUpdated', JSON.stringify([
+        AdminObjectTypeEnum.CHANNEL_USER,
+        AdminDataTypeEnum.DELETED, {
+          channelId: channel.id,
+          sourceUserId: sourceUser.id,
+        },
+      ]));
     }
   }
 
@@ -808,7 +830,8 @@ export class ChatGateway {
     const deleteJSON = JSON.stringify(channel.id);
 
     for (const targetUser of targetUsers) {
-      targetUser.socket?.emit('channelDeleted', deleteJSON);
+      if (targetUser.status !== UserStatusEnum.OFFLINE)
+        targetUser.socket.emit('channelDeleted', deleteJSON);
     }
 
     for (const targetUser of this.chat_.getAdminWatchers()) {

@@ -277,7 +277,7 @@ export class ChatClient {
   private adminUserUpdate_(type: AdminDataTypeEnum, data: any) {
     let user: User | undefined;
 
-    console.log("adminUserUpdate", data);
+    console.log("adminUserUpdate", type);
     if (type === AdminDataTypeEnum.CREATED) {
       user = this.userFromDTO_(data);
       if (user)
@@ -287,7 +287,6 @@ export class ChatClient {
         this.adminCurrentUser_.value = this.adminUserList_.value[0];
     } else if (type === AdminDataTypeEnum.UPDATED) {
       user = this.adminUsers_.get(data.id);
-      console.log("hola", user);
       if (user)
         user.update(data);
     } else if (type === AdminDataTypeEnum.DELETED) {
@@ -301,9 +300,19 @@ export class ChatClient {
 
   private adminChannelUserUpdate_(type: AdminDataTypeEnum, data: any) {
     let channel: Channel | undefined;
+    let user: User | undefined;
 
+    console.log("adminChannelUserUpdate", type);
     if (type === AdminDataTypeEnum.CREATED) {
-      
+      channel = this.adminChannels_.get(data.channelId);
+
+      if (channel) {
+        user = this.adminUsers_.get(data.userDTO.id);
+
+        if (user) {
+          channel.addUser(this.channelUserFromDTO_(data, user));
+        }
+      }
     } else if (type === AdminDataTypeEnum.UPDATED) {
 
     } else if (type === AdminDataTypeEnum.DELETED) {
@@ -314,6 +323,7 @@ export class ChatClient {
   private adminChannelUpdate_(type: AdminDataTypeEnum, data: any) {
     let channel: Channel | undefined;
 
+    console.log("adminChannelUpdate", type);
     if (type === AdminDataTypeEnum.CREATED ) {
       channel = this.channelFromDTO_(data);
       if (channel)
@@ -596,7 +606,6 @@ export class ChatClient {
 
     if (userDTO.channelsDTO) {
       for (const channelDTO of userDTO.channelsDTO) {
-        console.log("hay canales");
         this.addChannelFromDTO_(channelDTO);
       }
     }

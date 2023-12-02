@@ -13,11 +13,11 @@ import socket from "../services/ws";
     });
     if (response.ok) {
       router.replace('/');
+      socket.disconnect();
     }
   } catch (error) {
     console.error(error);
   }
-  socket.disconnect();
 })();
 
 </script>
