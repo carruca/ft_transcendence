@@ -25,6 +25,7 @@ const modalProps = ref({
   rejectText: undefined,
   content: undefined
 })
+
 const toastError = ref(undefined)
 
 onMounted(() => {
@@ -32,6 +33,7 @@ onMounted(() => {
   const stopMe = watch(client.me, (newVal, oldVal) => {
     if (newVal && !oldVal) {
       me.value = newVal
+      props.user.admin = newVal.siteRole_ > 0;
     }
   })
   watch(client.toastMessage, (newVal, _oldVal) => {
@@ -62,8 +64,7 @@ const clearError = () => {
       <i class="material-icons">error</i>
     </Toast>
     <TopBar :user="props.user" />
-    <NavBar :admin="me?.siteRole == UserSiteRoleEnum.MODERATOR
-      || me?.siteRole == UserSiteRoleEnum.OWNER"/>
+    <NavBar :admin="props.user.admin"/>
     <Modal v-if="showPopup" :title="modalProps.title" :onAccept="modalProps.onAccept"
       :onReject="modalProps.onReject" :acceptText="modalProps.acceptText"
       :rejectText="modalProps.rejectText">

@@ -31,7 +31,7 @@ DOCKER				= 	docker
 
 COMMANDS			= 	top ps stop start restart pause unpause down config events up images
 
-ADMINS 				= 	dpoveda- madorna pmira-pe tsierra- rnavarre
+ADMINS 				= 	dpoveda- madorna- pmira-pe tsierra- rnavarre
 
 POSTGRES_PATH		= 	$(SRC_PATH)/$(REQUIREMENTS_PATH)/$(POSTGRESQL)/vol/db/
 POSTGRES_DIRS		= 	pg_notify pg_replslot pg_tblspc pg_twophase pg_commit_ts pg_stat_tmp pg_logical/snapshots pg_logical/mappings
