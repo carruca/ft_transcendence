@@ -35,6 +35,7 @@ const wins = ref<number>();
 const losses = ref<number>();
 
 const userStatus = ref<number>(2);
+let   stopWatchUser = () => {};
 
 const editPage = ref(false);
 const itsMe = ref(true);
@@ -114,21 +115,19 @@ async function loadProfile() {
     ID.value = [user.id, userInfo.id];
 	}
   loadedProfile.value = true;
-};
 
-// Watch user status
-watch(client.isConnected, (connected: boolean) => {
-  console.log('passing by');
-  if (connected && !itsMe.value) {
-    console.log('watching user');
-    client.userWatch(ID.value[1], (watchedUser: User) => {
-      const newer = client.getUserById(ID.value[1]);
-      console.log('user watched', watchedUser.nickname)
-      console.log('newer', newer?.status)
-      userStatus.value = watchedUser.status;
+  // Watch user status
+  if (!itsMe.value) {
+    stopWatchUser = watch(client.isConnected, (connected: boolean) => {
+      if (connected) {
+        client.userWatch(ID.value[1], (watchedUser: User) => {
+          userStatus.value = watchedUser.status;
+        });
+      }
     });
   }
-});
+};
+
 
 const stopWatch = watch(
   () => router.currentRoute.value.params.username,
@@ -148,6 +147,7 @@ const stopWatch = watch(
   onBeforeUnmount(() => {
     unmounted.value = true;
     if (!itsMe.value) client.userUnwatch(ID.value[1]);
+    stopWatchUser();
     stopWatch();
 });
 
