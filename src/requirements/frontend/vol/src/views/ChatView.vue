@@ -1,3 +1,4 @@
+"use strict"
 <!-- ChatView.vue -->
 <template>
   <div class="chat-view">
@@ -407,11 +408,7 @@ function formatChannelName(name) {
   return name.startsWith('#') ? `# ${name.substring(1)}` : `# ${name}`;
 }
 const formattedEvents = computed(() => {
-  console.log("formattedEvents");
-  console.log(`userCurrentChannel: ${userCurrentChannel.value}`);
-  console.log(`currentPrivate: ${currentPrivate.value}`);
   if (userCurrentChannel.value && userCurrentChannel.value.events) {
-    console.log("event channel", userCurrentChannel.value.events.size);
     return [...userCurrentChannel.value.events.values()].map(event => {
       const sourceChannelUser = client.getChannelUserById(selectedChannelUUID.value, event.source.id);
       const targetChannelUser = event.target ? client.getChannelUserById(selectedChannelUUID.value, event.target.id) : undefined;
@@ -419,7 +416,6 @@ const formattedEvents = computed(() => {
     });
   }
   if (currentPrivate.value && currentPrivate.value.events) {
-    console.log("event private", currentPrivate.value.events.size);
     return [...currentPrivate.value.events.values()].map(event => {
       return new ChatEvent(event, undefined, undefined);
     });
@@ -458,13 +454,11 @@ const onClick = (selected, item) => {
     if (item.id === client.me.value.id)
       return;
     client.openPrivate(item.id, item.name);
-    setCurrentPrivate(item.id);
   } else if (selected instanceof ChatEvent || selected instanceof ChannelUser) {
     // Ourself?
     if (item.user.id === client.me.value.id)
       return;
     client.openPrivate(item.user.id, item.user.name);
-    setCurrentPrivate(item.user.id);
   } else {
     console.log(`ERROR: Clicked on item '${item}' not handled`);
   }
