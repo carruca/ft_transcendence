@@ -29,6 +29,8 @@ import {
   EventTypeEnum,
   UserStatusEnum,
   ReturnCodeEnum,
+  AdminDataTypeEnum,
+  AdminObjectTypeEnum,
 } from './enum';
 
 import {
@@ -683,6 +685,14 @@ export class ChatGateway {
     for (const targetUser of targetUsers) {
       targetUser.socket?.emit('userCreated', createJSON);
     }
+
+    for (const targetUser of this.chat_.getAdminWatchers()) {
+      targetUser.socket.emit('adminUpdated', JSON.stringify([
+        AdminObjectTypeEnum.USER,
+        AdminDataTypeEnum.CREATED,
+        sourceUser.DTO(targetUser),
+      ]));
+    }
   }
 
   @ChatManagerSubscribe('onUserUpdated')
@@ -697,6 +707,16 @@ export class ChatGateway {
     for (const targetUser of targetUsers) {
       targetUser.socket?.emit('userUpdated', changesJSON);
     }
+
+    changes.id = sourceUser.id;
+
+    for (const targetUser of this.chat_.getAdminWatchers()) {
+      targetUser.socket.emit('adminUpdated', JSON.stringify([
+        AdminObjectTypeEnum.USER,
+        AdminDataTypeEnum.UPDATED,
+        changes,
+      ]));
+    }
   }
 
   @ChatManagerSubscribe('onUserDeleted')
@@ -706,6 +726,14 @@ export class ChatGateway {
 
     for (const targetUser of targetUsers) {
       targetUser.socket?.emit('userDeleted', deleteJSON);
+    }
+
+    for (const targetUser of this.chat_.getAdminWatchers()) {
+      targetUser.socket.emit('adminUpdated', JSON.stringify([
+        AdminObjectTypeEnum.USER,
+        AdminDataTypeEnum.DELETED,
+        sourceUser.id,
+      ]));
     }
   }
 
@@ -718,7 +746,7 @@ export class ChatGateway {
     });
 
     for (const targetUser of targetUsers) {
-      targetUser.socket?.emit('userJoined', joinedJSON);
+      targetUser.socket.emit('userJoined', joinedJSON);
     }
   }
 
@@ -743,6 +771,14 @@ export class ChatGateway {
     for (const targetUser of targetUsers) {
       targetUser.socket?.emit('channelCreated', JSON.stringify(channel.DTO(targetUser)));
     }
+    
+    for (const targetUser of this.chat_.getAdminWatchers()) {
+      targetUser.socket.emit('adminUpdated', JSON.stringify([
+        AdminObjectTypeEnum.CHANNEL,
+        AdminDataTypeEnum.CREATED,
+        channel.DTO(targetUser),
+      ]));
+    }
   }
 
   @ChatManagerSubscribe('onChannelUpdated')
@@ -753,9 +789,16 @@ export class ChatGateway {
       ...changes,
     });
 
-    console.log("Channel UPDATE:", changes);
     for (const targetUser of targetUsers) {
       targetUser.socket?.emit('channelUpdated', changesJSON);
+    }
+
+    for (const targetUser of this.chat_.getAdminWatchers()) {
+      targetUser.socket.emit('adminUpdated', JSON.stringify([
+        AdminObjectTypeEnum.CHANNEL,
+        AdminDataTypeEnum.UPDATED,
+        channel.DTO(targetUser),
+      ]));
     }
   }
 
@@ -766,6 +809,14 @@ export class ChatGateway {
 
     for (const targetUser of targetUsers) {
       targetUser.socket?.emit('channelDeleted', deleteJSON);
+    }
+
+    for (const targetUser of this.chat_.getAdminWatchers()) {
+      targetUser.socket.emit('adminUpdated', JSON.stringify([
+        AdminObjectTypeEnum.CHANNEL,
+        AdminDataTypeEnum.DELETED,
+        channel.id,
+      ]));
     }
   }
 

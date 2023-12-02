@@ -196,7 +196,6 @@ export class ChatManager {
     return Array.from(this.conversationsById_.values());
   }
 
-  //TODO Esto es realmente necesario? si ya tengo el usuario creado usando userFromDB....
   public addUserDB(userDB: UserDB ): User {
     let sourceUser = this.userFromDB_(userDB);
 
@@ -466,6 +465,10 @@ export class ChatManager {
   adminListChannels(sourceUser: User): void {
     let channelsDTO: ChannelDTO[] = [];
 
+  }
+
+  getAdminWatchers(): User[] {
+    return Array.from(this.adminWatchers_.values());
   }
 
   public async spectateChallengeUserId(sourceUser: User, targetUserid: string): Promise<Response> {

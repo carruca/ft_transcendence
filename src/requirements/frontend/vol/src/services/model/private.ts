@@ -9,10 +9,12 @@ import {
 
 export class Private {
   private readonly maxEvents_: number = 100;
+  public readonly id: string;
   public readonly nickname: string;
   public readonly events_ = reactive(new Map<string, Event>());
 
-  constructor(nickname: string) {
+  constructor(id: string, nickname: string) {
+    this.id = id;
     this.nickname = nickname;
   }
 

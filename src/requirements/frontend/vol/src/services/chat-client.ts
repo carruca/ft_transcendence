@@ -86,7 +86,7 @@ export class ChatClient {
   private userCurrentChannelBanList_ = reactive(new Map<string, User>);
   public userCurrentChannelBanList = readonly(this.userCurrentChannelBanList_);
 
-  private privateList_ = ref<Private[] | null>([]);
+  private privateList_ = ref<Private[] | undefined>([]);
   public privateList = readonly(this.privateList_);
 
   private currentPrivate_ = ref<Private | undefined>(undefined);
@@ -98,10 +98,10 @@ export class ChatClient {
   private adminUserList_ = ref<User[]>([]);
   public adminUserList = readonly(this.adminUserList_);
 
-  private adminCurrentChannel_ = ref<Channel | null>(null);
+  private adminCurrentChannel_ = ref<Channel | undefined>(undefined);
   public adminCurrentChannel = readonly(this.adminCurrentChannel_);
 
-  private adminCurrentUser_ = ref<User | null>(null);
+  private adminCurrentUser_ = ref<User | undefined>(undefined);
   public adminCurrentUser = readonly(this.adminCurrentUser_);
 
   private showModal_ = ref<boolean>(false);
@@ -678,7 +678,7 @@ export class ChatClient {
   }
 
   private openPrivate(userId: string, userNickname: string): Private {
-    const priv = new Private(userNickname);
+    const priv = new Private(userId, userNickname);
 
     this.privates_.set(userId, priv);
     this.privateList_.value = Array.from(this.privates_.values());
