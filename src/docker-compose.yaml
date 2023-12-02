@@ -103,6 +103,8 @@ services:
       - transc
     volumes:
       - pgadmin:/var/lib/pgadmin
+    profiles:
+      - donotstart
 
 networks:
   transc:

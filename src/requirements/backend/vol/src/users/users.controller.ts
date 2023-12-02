@@ -79,6 +79,14 @@ export class UsersController {
     return this.usersService.findUserFriends(req.user?.id);
   }
 
+  @Get('me/pending-friends')
+  findMyPendingFriends(@Req() req: Request) {
+    return this.usersService.findUserFriends(
+      req.user?.id,
+      FriendStatus.requested
+    );
+  }
+
   @Get(':id/channels')
   findChannelsUser(@Param('id') id: string) {
     return this.usersService.findChannelsUser(id);
