@@ -1,4 +1,3 @@
-"use strict"
 <!-- ChatView.vue -->
 <template>
   <div class="chat-view">
