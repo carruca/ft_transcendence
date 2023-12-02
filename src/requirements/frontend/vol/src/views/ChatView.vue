@@ -503,7 +503,15 @@ const getAvailableOptions = (selected, item) => {
   }
 
   const myUser = client.me.value;
-  const myChannelUser = client.getChannelUserById(contextChannelUUID.value, myUser.id);
+  // If we are right clicking on a channel, get that channel
+  // otherwise, get the current selected channel
+  const myChannelUser = (() => {
+    if (selected instanceof Channel)
+      return client.getChannelUserById(contextChannelUUID.value, myUser.id);
+    else
+      return client.getChannelUserById(selectedChannelUUID.value, myUser.id);
+  })();
+
 
   // TODO create the array of options based on our permissions and user permissions
   contextMenuOptions.value = [];
