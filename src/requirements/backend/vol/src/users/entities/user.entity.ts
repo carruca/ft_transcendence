@@ -55,10 +55,10 @@ export class User {
 
   @Column({ default: 0 })
   losses: number;
-/*
+
   @Column({ default: 0 })
   status: number;
-*/
+
   @Column({ default: UserMode.user })
   mode: UserMode;
 
