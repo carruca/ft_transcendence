@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import { onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import md5 from 'md5';
 import router from '@/router';
@@ -7,18 +7,7 @@ import GameCard from './GameCard.vue';
 import AchivementsCard from './achivementsCard.vue';
 import EditProfile from './EditProfile.vue';
 import friendsBotton from './friendsBotton.vue';
-import { client } from '@/services/chat-client';
-import { User } from '@/services/model';
-
-type ConnectionStatus = {
-	[key: number] : string;
-};
-
-const connectionStatus : ConnectionStatus = {
-	0: 'Offline 🔴',
-	1: 'Online 🟢',
-	2: 'Checking... 🟡',
-};
+import { connectionStatus } from './ConnectionStatus'
 
 const props = defineProps({
 	user: {
@@ -34,14 +23,12 @@ const rating = ref();
 const wins = ref<number>();
 const losses = ref<number>();
 
-const userStatus = ref<number>(2);
-let   stopWatchUser = () => {};
+const userStatus = ref<number>(3);
 
 const editPage = ref(false);
 const itsMe = ref(true);
 
 const route = useRouter();
-const unmounted = ref(false);
 const loadedProfile = ref(false);
 
 async function askUserinfo(username : string | string[]) {
@@ -117,38 +104,12 @@ async function loadProfile() {
   loadedProfile.value = true;
 
   // Watch user status
-  if (!itsMe.value) {
-    stopWatchUser = watch(client.isConnected, (connected: boolean) => {
-      if (connected) {
-        client.userWatch(ID.value[1], (watchedUser: User) => {
-          userStatus.value = watchedUser.status;
-        });
-      }
-    });
-  }
+  userStatus.value = userInfo.status;
 };
-
-
-const stopWatch = watch(
-  () => router.currentRoute.value.params.username,
-  () => {
-    if (unmounted.value) return;
-    loadedProfile.value = false;
-    if (!itsMe.value) client.userUnwatch(ID.value[1]);
-    loadProfile();
-  }
-  );
   
-  onMounted(async () => {
-    await route.isReady();
-    loadProfile();
-  });
-  
-  onBeforeUnmount(() => {
-    unmounted.value = true;
-    if (!itsMe.value) client.userUnwatch(ID.value[1]);
-    stopWatchUser();
-    stopWatch();
+onMounted(async () => {
+  await route.isReady();
+  loadProfile();
 });
 
 const launchEditPage = () => {
