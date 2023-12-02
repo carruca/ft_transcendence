@@ -9,9 +9,9 @@ interface APIResponseFriends {
 };
 
 interface APIResponseBlocks {
-  userId: string;
-  blockId: string;
   id: string;
+  nickname: string;
+  login: string;
 };
 
 enum FriendStatus {
@@ -53,11 +53,8 @@ async function takeFriendStatus() {
     }
     friends = await response.json();
     friends.forEach((friend: APIResponseFriends) => {
-      if (friend.senderId === users.value[0] && friend.receiverId === users.value[1])
-      {
-        friendState.value = friend.status;
-      }
-      else if (friend.senderId === users.value[1] && friend.receiverId === users.value[0])
+      if (friend.senderId === users.value[0] && friend.receiverId === users.value[1] || 
+          friend.senderId === users.value[1] && friend.receiverId === users.value[0])
       {
         friendState.value = friend.status;
       }
@@ -141,7 +138,7 @@ async function takeBlockStatus() {
     }
     blocks = await response.json();
     blocks.forEach((block: APIResponseBlocks) => {
-      if (block.blockId === users.value[1])
+      if (block.id === users.value[1])
       {
         blockState.value = true;
       }
@@ -209,6 +206,7 @@ async function unblockIt() {
 }
 
 onMounted(async () => {
+  // debugger;
   users.value = props.users;
   takeFriendStatus();
   takeBlockStatus();
