@@ -4,7 +4,7 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, ILike } from 'typeorm';
 
 import { Channel } from './entities/channel.entity';
 import { ChannelUser } from './entities/channel-user.entity';
@@ -62,6 +62,13 @@ export class ChannelsService {
       throw new HttpException('Channel not found', HttpStatus.NOT_FOUND);
     }
     return channel;
+  }
+
+  async existsChannelByName(name: string) : Promise<boolean> {
+    const channel = await this.channelsRepository.findOneBy({
+      name: ILike(name)
+    });
+    return (channel) ? true : false;
   }
 
   async	findAll(): Promise<Channel[]> {

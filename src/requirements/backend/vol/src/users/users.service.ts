@@ -13,7 +13,7 @@ import { CreateBanDto } from './dto/create-ban.dto';
 import { ReturnBanDto } from './dto/return-ban.dto';
 
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, ILike } from 'typeorm';
 import { User, UserMode } from './entities/user.entity';
 import { Block } from './entities/block.entity';
 import { Ban } from './entities/ban.entity';
@@ -90,7 +90,9 @@ export class UsersService {
   }
 
   async findOneByNickname(nickname: string): Promise<User> {
-    const user = await this.usersRepository.findOneBy({ nickname: nickname });
+    const user = await this.usersRepository.findOneBy({
+      nickname: ILike(nickname)
+    });
     if (!user) {
       throw new HttpException('User not found', HttpStatus.NOT_FOUND);
     }
