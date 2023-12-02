@@ -681,14 +681,14 @@ export class ChatClient {
     const priv = new Private(userNickname);
 
     this.privates_.set(userId, priv);
-    this.privateList_.value = this.privates_.values();
+    this.privateList_.value = Array.from(this.privates_.values());
     this.currentPrivate_.value = priv;
     return priv;
   }
 
   private closePrivate(userId) {
     this.privates_.delete(userId);
-    this.privateList_.value = this.privates_.values();
+    this.privateList_.value = Array.from(this.privates_.values());
     if (this.currentPrivate_.value.id == userId) {
       this.currentPrivate_ = this.privates_.values().next().value;
     }
@@ -866,7 +866,7 @@ export class ChatClient {
 
   public setCurrentPrivate = (userId: string | undefined): void => {
     if (userId === undefined)
-      this.currentPirvate_.value = undefined;
+      this.currentPrivate_.value = undefined;
     else
       this.currentPrivate_.value = this.privates_.get(userId);
   }
