@@ -922,6 +922,7 @@ export class ChatManager {
   }
 
   public async raiseInitializationEvents(): Promise<void> {
+    this.usersService_.setDefaultStatusToAllUsers();
     this.logger_.log("Raising initialization events");
     //await this.asyncRaise_<void>('onChatManagerInitialized');
     await this.asyncRaise_<void>('onChatDataLoad');
