@@ -1009,12 +1009,15 @@ export class ChatManager {
     return new Set();
   }
 
-  private notifyUser_(objects: any[], type: NotifyEventTypeEnum, changes: {}) {
+  private notifyUser_(objects: any[], type: NotifyEventTypeEnum, changes: any) {
     const [ sourceUser ] = objects;
 	  const targetUsers = this.getObserversOf(sourceUser);
 	  console.log(`notifyUser ${type}: ${sourceUser.name} ${changes}`);
 
     if (type === NotifyEventTypeEnum.UPDATE) {
+      if (changes.status !== undefined) {
+        this.usersService_.setStatus(sourceUser.id, changes.status);
+      }
 	    this.raise_<void>('onUserUpdated', { sourceUser, targetUsers, changes });
 	  }
 	  else if (type === NotifyEventTypeEnum.CREATE) {

@@ -283,6 +283,19 @@ export class UsersService {
 
     return this.blocksRepository.remove(block);
   }
+  
+  async setStatus(id: string, status: number) {
+    const user = await this.usersRepository.findOne({
+      where: {
+        id: id
+      }
+    })
+    if (!user) {
+      throw new HttpException('User not found', HttpStatus.NOT_FOUND);
+    }
+    user.status = status;
+    return this.usersRepository.save(user);
+  }
 
   async findUserFriends(userId: string, status?: FriendStatus) {
     const user = await this.usersRepository.findOne({
