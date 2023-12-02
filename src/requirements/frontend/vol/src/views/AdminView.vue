@@ -134,8 +134,17 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, watch, computed } from 'vue';
+import { ref, onMounted, onUnmounted, watch, computed, defineProps } from 'vue';
 import { client } from '@/services/chat-client';
+import router from '@/router';
+
+const props = defineProps({
+  user: {
+    type: Object,
+    required: true,
+    default: false
+  }
+})
 
 const selectedChannel = ref(null);
 const selectedChannelUUID = ref(null);
@@ -160,6 +169,8 @@ const allUsers = computed(() => adminUserList.value.filter(u => !u.isBanned));
 const bannedUsers = computed(() => adminUserList.value.filter(u => u.isBanned));
 
 onMounted(() => {
+  if (!props.user.admin)
+    router.replace('/');
   selectedChannel.value = null;
   selectedChannelUUID.value = null;
   selectedUser.value = null;

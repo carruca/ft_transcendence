@@ -45,10 +45,18 @@ export class GameGateway implements OnGatewayDisconnect {
   }
 
   handleDisconnect(client: Socket) {
-    if (client.data.user) {
-      this.room_service.disconnect(client);
-    }
+    if (!client.data.user)
+      return;
+    this.room_service.disconnect(client);
     //console.log("DISCONNECTION: " + client.id);
+  }
+
+  // Emited when client changes page
+  @SubscribeMessage('leave')
+  leave(client: Socket): void {
+    if (!client.data.user)
+      return;
+    this.room_service.disconnect(client);
   }
 
   @SubscribeMessage('leave_game')
@@ -61,7 +69,7 @@ export class GameGateway implements OnGatewayDisconnect {
   @SubscribeMessage('join_queue')
   join_queue(client: Socket, mode: string): void {
     if (!client.data.user) {
-      client.emit('error_queue');
+      client.emit('error_auth');
       return;
     }
     this.room_service.join_queue(client, mode);

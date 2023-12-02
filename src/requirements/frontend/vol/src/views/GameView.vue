@@ -52,8 +52,7 @@
 <script setup lang=ts>
 import {
   onMounted,
-  onUpdated,
-  onUnmounted,
+  onBeforeUnmount,
   ref,
 } from 'vue';
 
@@ -376,7 +375,7 @@ socket.on('error', (msg: string) => {
   console.log("Fatal error: " + msg);
 })
 
-socket.on('error_queue', () => {
+const resetPlayButtons = () => {
   if (button1Pressed.value == true) {
     button1Text.value = button1DefText;
     button1Pressed.value = !button1Pressed.value;
@@ -385,6 +384,13 @@ socket.on('error_queue', () => {
     button2Text.value = button2DefText;
     button2Pressed.value = !button2Pressed.value;
   }
+}
+socket.on('error_auth', () => {
+  resetPlayButtons();
+  console.log("Error: socket not authenticated, try again later");
+});
+socket.on('error_queue', () => {
+  resetPlayButtons();
   console.log("Error: already in queue");
 });
 
@@ -506,11 +512,15 @@ onMounted(() => {
     displayMenu();
     game.changeStatus(Status.MENU);
     // tell backend to check for queued events
-    socket.emit("events");
+    socket.emit('events');
   });
 });
 
-onUnmounted(() => {
+onBeforeUnmount(() => {
+  // disconnect
+  socket.emit('leave');
+
+  // remove listeners
   window.removeEventListener('keypress', onKeyUp);
   window.removeEventListener('keypress', onKeyDown);
   window.removeEventListener('resize', resize_canvas);
