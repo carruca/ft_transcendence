@@ -711,6 +711,7 @@ export class ChatClient {
   public closePrivate(userId) {
     this.privates_.delete(userId);
     this.privateList_.value = Array.from(this.privates_.values());
+    if (this.currentPrivate.value === undefined) return;
     if (this.currentPrivate_.value.id == userId) {
       this.currentPrivate_.value = this.privates_.values().next().value;
     }
