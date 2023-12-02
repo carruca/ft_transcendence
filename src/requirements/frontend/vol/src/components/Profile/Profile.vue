@@ -122,6 +122,9 @@ watch(client.isConnected, (connected: boolean) => {
   if (connected && !itsMe.value) {
     console.log('watching user');
     client.userWatch(ID.value[1], (watchedUser: User) => {
+      const newer = client.getUserById(ID.value[1]);
+      console.log('user watched', watchedUser.nickname)
+      console.log('newer', newer?.status)
       userStatus.value = watchedUser.status;
     });
   }
