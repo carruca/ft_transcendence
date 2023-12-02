@@ -14,6 +14,7 @@
         <div class="scrollable-content">
           <div class="channel-list">
             <ul class="list">
+              <!-- Channel list -->
               <li
                   v-for="channel in userChannelList"
                   :key="channel.id"
@@ -22,6 +23,16 @@
                   :class="[ channelClass(channel), { 'selected': channel.id === selectedChannelUUID }, { 'selected': channel.id === contextChannelUUID } ]"
               >
                 {{ formatChannelName(channel.name) }}
+              </li>
+              <!-- Private list -->
+              <li
+                  v-for="pm in privateList"
+                  :key="pm.nickname"
+                  @click="selectPrivate(pm.id)"
+                  @contextMenu="onRightClick(pm, pm, $event)"
+                  :class="[ { 'selected': pm.id === selectedPrivateUUID }, { 'selected': pm.id === contextPrivateID } ]"
+              >
+                {{ pm.nickname }}
               </li>
             </ul>
           </div>
@@ -35,8 +46,9 @@
           <h2>Chat</h2>
         </div>
         <div class="scrollable-content" ref="eventsDisplay">
+          <!-- Channel Events -->
           <div class="list" v-if="userCurrentChannel">
-            <h2>{{ userCurrentChannel.name }}</h2>
+            <!-- <h2>{{ userCurrentChannel.name }}</h2> -->
             <div
                 v-for="event in formattedEvents"
                 :key="event.id"
@@ -69,11 +81,26 @@
               </span>
             </div>
           </div>
+          <!-- Private Events -->
+          <div v-else-if="currentPrivate">
+            <!-- <h2>{{ currentPrivate.nickname }}</h2> -->
+            <div
+                v-for="event in formattedEvents"
+                :key="event.id"
+                :title="getTime(event.timestamp)"
+                :class="[ 'event' ]"
+                :style="{ color: event.color }"
+            >
+              <span>&lt;{{ event.source.name }}&gt;&nbsp;{{ event.message }}</span>
+            </div>
+          </div>
+          <!-- Nothing selected -->
           <div v-else>
-            <p>No channel selected.</p>
+            <p>No chat selected.</p>
           </div>
         </div>
-        <div v-if="userCurrentChannel" class="message-input">
+        <!-- message input box -->
+        <div v-if="userCurrentChannel || currentPrivate" class="message-input">
           <input type="text" v-model="newMessage" @keyup.enter="sendMessage" placeholder="Message...">
           <button @click="sendMessage">Send</button>
         </div>
@@ -195,6 +222,7 @@ const {
 } = client;
 
 const selectedChannelUUID = ref(null);
+const selectedPrivateUUID = ref(null);
 
 const contentSection = ref(null);
 
@@ -211,6 +239,7 @@ const newMessage = ref('');
 const contextChannelUUID = ref(null);
 const contextEventUUID = ref(null);
 const contextUserUUID = ref(null);
+const contextPrivateUUID = ref(null);
 
 const showContextMenu = ref(false);
 const contextMenuPosition = ref({ x: 0, y: 0 });
@@ -238,14 +267,12 @@ onMounted(() => {
 
   updateResizerWidth();
 
-  nextTick(() => {
-    if (userCurrentChannel.value && userCurrentChannel.value.id != selectedChannelUUID.value) {
-      selectedChannelUUID.value = userCurrentChannel.value.id;
-      nextTick(() => {
-        scrollToBottom();
-      });
-    }
-  });
+  if (userCurrentChannel.value && userCurrentChannel.value.id != selectedChannelUUID.value) {
+    selectedChannelUUID.value = userCurrentChannel.value.id;
+    nextTick(() => {
+      scrollToBottom();
+    });
+  }
 });
 
 onBeforeUnmount(() => {
@@ -259,22 +286,34 @@ onBeforeUnmount(() => {
   window.removeEventListener('resize', e => handleResize(leftSection.value, middleSection.value, rightSection.value, contentSection.value));
 });
 
-// Watch current channel for changes
+// Watch current channel for change in current channel
 watch(userCurrentChannel, (newChannel) => {
   if (!newChannel) {
     selectedChannelUUID.value = undefined;
   } else if (newChannel.id !== selectedChannelUUID.value) {
-    selectedChannelUUID.value = newChannel.id;
+    selectChannel(newChannel.id);
     nextTick(() => {
       scrollToBottom();
     });
   }
 });
-// Watch the channel list for changes
+// Watch the current private for change in current private
+watch(currentPrivate, (newPrivate) => {
+  if (!newPrivate) {
+    selectedPrivateUUID.value = undefined;
+  } else if (newPrivate.id !== selectedPrivateUUID.value) {
+    selectPrivate(newPrivate.id);
+    nextTick(() => {
+      scrollToBottom();
+    });
+  }
+});
+
+// Watch the channel list for deletion of current channel
 watch(userChannelList, (newChannelList) => {
   if (selectedChannelUUID.value && !newChannelList.some(channel => channel.id === selectedChannelUUID.value)) {
-    selectedChannelUUID.value = null;
-    setUserCurrentChannel(null);
+    selectedChannelUUID.value = undefined;
+    setUserCurrentChannel(undefined);
   }
 });
 // Watch the selectedChannelUUID for changes to its user list
@@ -296,9 +335,24 @@ const updateResizerWidth = () => {
   document.documentElement.style.setProperty('--resizer-width', `${resizerWidth.value}px`);
 };
 
+const unselectChannel = () => {
+  selectedChannelUUID.value = undefined;
+  setUserCurrentChannel(undefined);
+};
+const unselectPrivate = () => {
+  selectedPrivateUUID.value = undefined;
+  setCurrentPrivate(undefined);
+};
+
 const selectChannel = (channelUUID) => {
+  unselectPrivate();
   selectedChannelUUID.value = channelUUID;
   setUserCurrentChannel(channelUUID);
+};
+const selectPrivate = (privateUUID) => {
+  unselectChannel();
+  selectedPrivateUUID.value = privateUUID;
+  setCurrentPrivate(privateUUID);
 };
 
 const getTime = (time) => {
@@ -356,6 +410,11 @@ const formattedEvents = computed(() => {
       return new ChatEvent(event, sourceChannelUser, targetChannelUser);
     });
   }
+  if (currentPrivate.value && currentPrivate.value.events) {
+    return [...currentPrivate.value.events.values()].map(event => {
+      return new ChatEvent(event, undefined, undefined);
+    });
+  }
   return [];
 });
 watch(formattedEvents, () => {
@@ -370,9 +429,11 @@ watch(formattedEvents, () => {
 const sendMessage = () => {
   if (newMessage.value.trim() === '')
     return;
-  // TODO replace with real client
-  client.chanmsg(selectedChannelUUID.value, newMessage.value);
   console.log("Sending message: " + newMessage.value);
+  if (userCurrentChannel.value)
+    client.chanmsg(selectedChannelUUID.value, newMessage.value);
+  if (currentPrivate.value)
+    client.privmsg(currentPrivate.value.id, newMessage.value);
   newMessage.value = '';
 };
 
@@ -387,21 +448,14 @@ const onClick = (selected, item) => {
     // Ourself?
     if (item.id === client.me.value.id)
       return;
+    client.openPrivate(item.id, item.name);
     setCurrentPrivate(item.id);
-    console.log(`Clicked on user '${item.name}'`);
-    console.log(`private list: ${privateList.value}`);
-    console.log(`private list: ${JSON.stringify(privateList.value)}`);
-    console.log(`current private: ${currentPrivate.value}`);
   } else if (selected instanceof ChatEvent || selected instanceof ChannelUser) {
     // Ourself?
     if (item.user.id === client.me.value.id)
       return;
     client.openPrivate(item.user.id, item.user.name);
     setCurrentPrivate(item.user.id);
-    console.log(`Clicked on user '${item.user.name}'`);
-    console.log(`private list: ${privateList.value}`);
-    console.log(`private list: ${JSON.stringify(privateList.value)}`);
-    console.log(`current private: ${currentPrivate.value}`);
   } else {
     console.log(`ERROR: Clicked on item '${item}' not handled`);
   }
@@ -734,11 +788,9 @@ function userClass(user) {
 function userStatus(status) {
   if (status === UserStatusEnum.ONLINE)
     return 'status-online';
-  if (status === UserStatusEnum.INGAME)
-    return 'status-dnd';
   if (status === UserStatusEnum.AWAY)
     return 'status-away';
-  if (status == UserStatusEnum.IN_GAME)
+  if (status === UserStatusEnum.IN_GAME)
     return 'status-dnd';
   return 'status-offline';
 }
