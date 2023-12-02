@@ -686,7 +686,7 @@ export class ChatClient {
 	  return priv;
   }
 
-  private openPrivate(userId: string, userNickname: string): Private {
+  public openPrivate(userId: string, userNickname: string): Private {
     const priv = new Private(userId, userNickname);
 
     this.privates_.set(userId, priv);
@@ -695,7 +695,7 @@ export class ChatClient {
     return priv;
   }
 
-  private closePrivate(userId) {
+  public closePrivate(userId) {
     this.privates_.delete(userId);
     this.privateList_.value = Array.from(this.privates_.values());
     if (this.currentPrivate_.value.id == userId) {
@@ -868,7 +868,7 @@ export class ChatClient {
 
   public setUserCurrentChannel = (channelId: string | undefined): void => {
     if (channelId === undefined)
-      this.currentPrivate_.value = undefined;
+      this.userCurrentChannel_.value = undefined;
     else 
       this.userCurrentChannel_.value = this.me_.value.channels.get(channelId);
   }
