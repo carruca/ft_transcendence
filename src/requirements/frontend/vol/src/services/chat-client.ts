@@ -675,7 +675,6 @@ export class ChatClient {
   private addPrivateEvent_(event: Event): Private {
     let remoteId: string;
     let remoteNickname: string;
-	  let priv: Private | undefined;
 
     if (event.source.id == this.me_.value.id) {
       remoteId = event.target.id;
@@ -684,23 +683,28 @@ export class ChatClient {
       remoteId = event.source.id;
       remoteNickname = event.source.name;
     }
-    console.log("Mensaje en pestaña ", remoteNickname);
-  	priv = this.getPrivateById(remoteId);
-
-    if (!priv) {
-      priv = this.openPrivate(remoteId, remoteNickname);
-  	}
+    const priv = this.receivePrivate_(remoteId, remoteNickname);
 
     priv.addEvent(event);
 	  return priv;
   }
 
-  public openPrivate(userId: string, userNickname: string): Private {
-    const priv = new Private(userId, userNickname);
+  public openPrivate(userId: string, nickUsername: string): Private {
+    const priv = this.receivePrivate_(userId, nickUsername);
 
-    this.privates_.set(userId, priv);
     this.privateList_.value = Array.from(this.privates_.values());
     this.currentPrivate_.value = priv;
+
+    return priv;
+  }
+
+  private receivePrivate_(userId: string, userNickname: string): Private {
+    let priv = this.privates_.get(userId);
+
+    if (!priv) {
+      priv = new Private(userId, userNickname);
+      this.privates_.set(userId, priv);
+    }
     return priv;
   }
 
