@@ -708,7 +708,7 @@ export class ChatClient {
     this.privates_.delete(userId);
     this.privateList_.value = Array.from(this.privates_.values());
     if (this.currentPrivate_.value.id == userId) {
-      this.currentPrivate_ = this.privates_.values().next().value;
+      this.currentPrivate_.value = this.privates_.values().next().value;
     }
   }
 
