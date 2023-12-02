@@ -27,19 +27,21 @@
             </div>
             <div v-else class="list">
               <div v-for="user in getSelectedTabList()"
-                :key="user.user[0].id"
-                class="user">
-                  <div class="user-picture">
-                    <img :src="user.userProfile" alt="Profile picture" class="friend-image">
-                  </div>
-                  <div class="user-info">
-                    <h3><router-link :to="`/profile/${user.user[0].nickname}`" style="color:aliceblue">{{ user.user[0].nickname }}</router-link></h3>
-                  </div>
-                  <div class="user-actions">
-                  <!-- Include the friendsButton component for each friend -->
-                    <friendsBotton :users="[me.id, user.user[0].id]"></friendsBotton>
-                  </div>
-            </div>
+                  :key="user.user[0].id"
+                  class="user"
+              >
+                <div class="user-picture">
+                  <img :src="user.userProfile" alt="Profile picture" class="friend-image">
+                </div>
+                <div
+                    class="user-info"
+                    @click="handleUserClick(user.user[0].nickname)">
+                  <h3>{{ user.user[0].nickname }}</h3>
+                </div>
+                <div class="user-actions">
+                  <friendsBotton :users="[me.id, user.user[0].id]"></friendsBotton>
+                </div>
+              </div>
             </div>
           </div>
           <!-- TODO if we have time show a blocked users list with unblock option -->
@@ -52,6 +54,7 @@
 <script setup lang="ts">
 
 import { ref, onMounted, computed } from 'vue';
+import router from '@/router';
 import md5 from 'md5';
 import friendsBotton from '@/components/Profile/friendsBotton.vue';
 
@@ -110,6 +113,10 @@ function getSelectedTabEmptyText() {
       return '';
   }
 }
+
+function handleUserClick(nickname) {
+  router.push(`/profile/${nickname}`)
+};
 
 // Function to fetch friends data
 async function fetchFriends() {
@@ -239,7 +246,13 @@ async function getProfilePictureUrl(username : string, login : string) {
   margin-left: 1em;
   margin-right: 1em;
 }
-.user-info:hover {
+
+.user-info a {
+  color: white;
+  text-decoration: none;
+}
+
+.user-info a:hover {
   text-decoration: underline;
 }
 
