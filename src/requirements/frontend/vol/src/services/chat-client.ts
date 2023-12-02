@@ -678,7 +678,7 @@ export class ChatClient {
   }
 
   private openPrivate(userId: string, userNickname: string): Private {
-    const priv = new Private(userNickname);
+    const priv = new Private(userId, userNickname);
 
     this.privates_.set(userId, priv);
     this.privateList_.value = Array.from(this.privates_.values());
