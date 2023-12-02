@@ -13,7 +13,7 @@ import { CreateBanDto } from './dto/create-ban.dto';
 import { ReturnBanDto } from './dto/return-ban.dto';
 
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, In } from 'typeorm';
 import { User, UserMode } from './entities/user.entity';
 import { Block } from './entities/block.entity';
 import { Ban } from './entities/ban.entity';
@@ -240,7 +240,7 @@ export class UsersService {
     };
   }
 
-  async getBlocks(userId: string) : Promise<Block[]> {
+  async getBlocks(userId: string) {
     const user = await this.usersRepository.findOne({
       relations: ['blocks'],
       where: {
@@ -251,7 +251,21 @@ export class UsersService {
       throw new HttpException('User not found', HttpStatus.NOT_FOUND);
     }
 
-    return user.blocks;
+    const blockIds = user.blocks.map(block => block.blockId);
+    const blockUsers = await this.usersRepository.find({
+      where: {
+        id: In(blockIds)
+      },
+    });
+    if (!blockUsers) {
+      throw new HttpException('User not found', HttpStatus.NOT_FOUND);
+    }
+
+    return blockUsers.map(user => ({
+      id: user.id,
+      nickname: user.nickname,
+      login: user.login
+    }));
   }
 
   async removeBlock(userId: string, blockId: string) {

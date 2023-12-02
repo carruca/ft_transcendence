@@ -73,14 +73,17 @@ const tabs = ['Online', 'All', 'Pending', 'Blocked'];
 
 // TODO onlineUsers and blockedUsers
 const friendsList = ref([]);
+const blocksList = ref([]);
+
 const allUsers = computed(() => friendsList.value.filter(friend => friend.status === 1));
 const onlineUsers = [];
 const pendingUsers = computed(() => friendsList.value.filter(friend => friend.status === 0));
-const blockedUsers = [];
+const blockedUsers = computed(() => blocksList.value);
 
 onMounted(async () => {
   isLoading.value = true;
   friendsList.value = await fetchFriends();
+  blocksList.value = await fetchBlocks();
   isLoading.value = false;
 });
 
@@ -93,7 +96,7 @@ function getSelectedTabList() {
     case 'Pending':
       return pendingUsers.value;
     case 'Blocked':
-      return [];
+      return blockedUsers.value;
     default:
       return [];
   }
@@ -140,6 +143,30 @@ async function fetchFriends() {
     return data;
   } catch (error) {
     console.error('Error fetching friends:', error);
+  }
+}
+async function fetchBlocks() {
+  try {
+    const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/users/${me.id}/blocks`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      credentials: "include",
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch blocks');
+    }
+    let data = await response.json();
+    data = await Promise.all(data.map(async (item) => {
+      const userProfile = await getProfilePictureUrl(item.user[0].nickname, item.user[0].login);
+      item.userProfile = userProfile;
+      return item;
+    }));
+    return data;
+  } catch (error) {
+    console.error('Error fetching blocks:', error);
   }
 }
 
