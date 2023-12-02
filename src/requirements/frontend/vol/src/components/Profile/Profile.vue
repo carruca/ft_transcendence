@@ -22,9 +22,6 @@ const profilePictureRef = ref();
 const rating = ref();
 const wins = ref<number>();
 const losses = ref<number>();
-const userStatus = ref();
-
-const userStatus = ref<number>(2);
 
 const userStatus = ref<number>(3);
 
@@ -47,7 +44,7 @@ async function askUserinfo(username : string | string[]) {
       });
     if (!response.ok)
     {
-          router.push('/404');
+      router.push('/404');
     }
     return await response.json();
   } catch (error) {

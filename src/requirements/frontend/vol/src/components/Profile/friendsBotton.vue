@@ -81,34 +81,7 @@ async function takeBlockStatus() {
     }
     blocks = await response.json();
     blocks.forEach((block: APIResponseBlocks) => {
-      if (block.blockId === users.value[1])
-      {
-        blockState.value = true;
-      }
-    });
-  } catch (error) {
-    console.error(error);
-  }
-};
-
-async function takeBlockStatus() {
-  try {
-    const response = await fetch(
-      `${import.meta.env.VITE_BACKEND_URL}/users/${users.value[0]}/blocks`,
-      {
-        method: "GET",
-        headers: {
-        "Content-Type": "application/json",
-        },
-        credentials: "include",
-      });
-    if (!response.ok)
-    {
-      throw new Error("Could not get blocks");
-    }
-    blocks = await response.json();
-    blocks.forEach((block: APIResponseBlocks) => {
-      if (block.blockId === users.value[1])
+      if (block.id === users.value[1])
       {
         blockState.value = true;
       }
