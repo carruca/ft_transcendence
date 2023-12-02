@@ -77,11 +77,9 @@ const checkImage = async (username : string, login : string) => {
 async function loadProfile() {
   const { user } = props;
 
-  let username : string | string[]; 
-  username = route.currentRoute.value.params.username;
-  console.log(username);
+  let username : string | string[] = route.currentRoute.value.params.username;
   // Check if the route is 'profile'
-  if (route.currentRoute.value.params.username === undefined) {
+  if (username === undefined) {
     username = user.nickname;
   }
 
@@ -119,9 +117,10 @@ async function loadProfile() {
 };
 
 // Watch user status
-// TODO: Solve problem that this always watch
 watch(client.isConnected, (connected: boolean) => {
-  if (connected) {
+  console.log('passing by');
+  if (connected && !itsMe.value) {
+    console.log('watching user');
     client.userWatch(ID.value[1], (watchedUser: User) => {
       userStatus.value = watchedUser.status;
     });
@@ -131,12 +130,10 @@ watch(client.isConnected, (connected: boolean) => {
 const stopWatch = watch(
   () => router.currentRoute.value.params.username,
   () => {
-    setTimeout(() => {
-      if (unmounted.value) return;
-      loadedProfile.value = false;
-      loadProfile();
-    }, 10);
+    if (unmounted.value) return;
+    loadedProfile.value = false;
     if (!itsMe.value) client.userUnwatch(ID.value[1]);
+    loadProfile();
   }
   );
   
