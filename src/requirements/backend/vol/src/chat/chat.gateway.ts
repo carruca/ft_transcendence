@@ -833,7 +833,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       if (targetUser.status !== UserStatusEnum.OFFLINE)
         targetUser.socket.emit('channelDeleted', deleteJSON);
     }
-
+/*
     for (const targetUser of this.chat_.getAdminWatchers()) {
       targetUser.socket.emit('adminUpdated', JSON.stringify([
         AdminObjectTypeEnum.CHANNEL,
@@ -841,6 +841,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         channel.id,
       ]));
     }
+*/
   }
 
   @ChatManagerSubscribe('onEventCreated')

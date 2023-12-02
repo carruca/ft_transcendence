@@ -316,7 +316,15 @@ export class ChatClient {
     } else if (type === AdminDataTypeEnum.UPDATED) {
 
     } else if (type === AdminDataTypeEnum.DELETED) {
+      console.log("adminChannelUserUpdate- delete:", data);
+      channel = this.adminChannels_.get(data.channelId);
 
+      if (channel) {
+        user = this.adminUsers_.get(data.sourceUserId);
+        channel.delUserById(data.sourceUserId);
+      //  if (user)
+        //  channel.delUser(user);
+      }
     }
   }
 
