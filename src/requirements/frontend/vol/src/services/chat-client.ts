@@ -866,7 +866,7 @@ export class ChatClient {
 
   public setCurrentPrivate = (userId: string | undefined): void => {
     if (userId === undefined)
-      this.currentPirvate_.value = undefined;
+      this.currentPrivate_.value = undefined;
     else
       this.currentPrivate_.value = this.privates_.get(userId);
   }
