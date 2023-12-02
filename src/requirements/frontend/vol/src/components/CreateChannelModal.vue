@@ -17,7 +17,7 @@
       </div>
       <div v-if="hasPassword && passwordError" class="error-message">{{ passwordError }}</div>
       <div v-if="hasPassword" class="input-group">
-        <input type="password" id="channelPassword" v-model="channelPassword" placeholder="Enter password">
+        <input type="password" id="channelPassword" v-model="channelPassword" ref="passwordInput" placeholder="Enter password">
       </div>
       <div class="buttons">
         <button @click="closeModal">Cancel</button>
@@ -45,6 +45,7 @@ const nameError = ref('');
 const passwordError = ref('');
 
 const channelNameInput = ref(null);
+const passwordInput = ref(null);
 
 onMounted(() => {
   window.addEventListener('keydown', handleKeyDown);
@@ -52,6 +53,14 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   window.removeEventListener('keydown', handleKeyDown);
+});
+
+watch(() => hasPassword.value, (newValue) => {
+  if (newValue) {
+    nextTick(() => {
+      passwordInput.value.focus();
+    });
+  }
 });
 
 watch(() => props.visible, (newValue) => {
