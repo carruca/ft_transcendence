@@ -29,7 +29,7 @@
                   v-for="pm in privateList"
                   :key="pm.nickname"
                   @click="selectPrivate(pm.id)"
-                  @contextMenu="onRightClick(pm, pm, $event)"
+                  @contextmenu="onRightClick(pm, pm, $event)"
                   :class="[ { 'selected': pm.id === selectedPrivateUUID }, { 'selected': pm.id === contextPrivateID } ]"
               >
                 {{ pm.nickname }}
@@ -137,6 +137,9 @@
               </li>
             </ul>
           </div>
+          <div v-else-if="currentPrivate">
+            <p>You are on a private chat.</p>
+          </div>
           <div v-else>
             <p>No channel selected.</p>
           </div>
@@ -203,6 +206,7 @@ import {
   Event,
   EventUser,
   ChatEvent,
+  Private,
 } from '@/services/model';
 import { client } from '@/services/chat-client';
 import {
@@ -466,6 +470,7 @@ const onRightClick = (selected, item, event) => {
   contextChannelUUID.value = null;
   contextEventUUID.value = null;
   contextUserUUID.value = null;
+  contextPrivateUUID.value = null;
 
   // Protect in case user is no longer on the channel (item/ChannelUser is undefined)
   if (selected instanceof ChatEvent && !item) {
@@ -483,17 +488,46 @@ const onRightClick = (selected, item, event) => {
 
 // Context menu
 const getAvailableOptions = (selected, item) => {
-  const myUser = client.me.value;
-  const myChannelUser = client.getChannelUserById(selectedChannelUUID.value, myUser.id);
-
-  // TODO create the array of options based on our permissions and user permissions
-  contextMenuOptions.value = [];
+  // Set context variables
   if (selected instanceof ChatEvent || selected instanceof ChannelUser) {
     if (selected instanceof ChatEvent)
       contextEventUUID.value = selected.id;
     else
       contextUserUUID.value = selected.id;
+  } else if (selected instanceof Channel) {
+    contextChannelUUID.value = selected.id;
+  } else if (selected instanceof Private) {
+    contextPrivateUUID.value = selected.id;
+  } else {
+    console.log(`ERROR: Right click on item '${item}' not handled`);
+  }
 
+  const myUser = client.me.value;
+  const myChannelUser = client.getChannelUserById(contextChannelUUID.value, myUser.id);
+
+  // TODO create the array of options based on our permissions and user permissions
+  contextMenuOptions.value = [];
+
+  if (selected instanceof Channel) {
+    if (myChannelUser.isOwner || myChannelUser.isAdmin) {
+      contextMenuOptions.value.push('Edit');
+      contextMenuOptions.value.push('Destroy');
+    }
+    contextMenuOptions.value.push('Leave');
+  }
+
+  if (selected instanceof Private) {
+    contextMenuOptions.value.push('Profile');
+
+    if (client.getUserById(item.id).blocked)
+      contextMenuOptions.value.push('Unblock');
+    else
+      contextMenuOptions.value.push('Block');
+
+    contextMenuOptions.value.push('Close');
+  }
+
+  if (selected instanceof ChatEvent || selected instanceof ChannelUser) {
     // User actions
     contextMenuOptions.value.push('Profile');
 
@@ -535,16 +569,6 @@ const getAvailableOptions = (selected, item) => {
 
       contextMenuOptions.value.push('Kick');
     }
-  } else if (selected instanceof Channel) {
-    contextChannelUUID.value = selected.id;
-
-    if (myChannelUser.isOwner || myChannelUser.isAdmin) {
-      contextMenuOptions.value.push('Edit');
-      contextMenuOptions.value.push('Destroy');
-    }
-    contextMenuOptions.value.push('Leave');
-  } else {
-    console.log(`ERROR: Right click on item '${item}' not handled`);
   }
 }
 const handleContextMenuSelect = ({ option, item }) => {
@@ -591,6 +615,21 @@ const executeContextAction = ( option, item ) => {
     } else if (option === 'Leave') {
       console.log(`Leaving channel '${item.name}'`);
       client.part(item.id);
+    }
+  } else if (item instanceof Private) {
+    let privateUUID = item.id;
+    if (option === 'Profile') {
+      // FIXME fix user route
+      router.push(`/${item.name}`);
+    } else if (option === 'Close') {
+      console.log(`Closing private chat with '${item.nickname}'`);
+      client.closePrivate(item.id);
+    } else if (option === 'Block') {
+      console.log(`Blocking user '${item.nickname}'`);
+      client.block(item.user.id);
+    } else if (option === 'Unblock') {
+      console.log(`Unblocking user '${item.nickname}'`);
+      client.unblock(item.user.id);
     }
   } else if (item instanceof EventUser) {
     if (option === 'Profile') {

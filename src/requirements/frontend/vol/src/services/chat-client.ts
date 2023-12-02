@@ -677,7 +677,7 @@ export class ChatClient {
 	  return priv;
   }
 
-  private openPrivate(userId: string, userNickname: string): Private {
+  public openPrivate(userId: string, userNickname: string): Private {
     const priv = new Private(userId, userNickname);
 
     this.privates_.set(userId, priv);
@@ -686,7 +686,7 @@ export class ChatClient {
     return priv;
   }
 
-  private closePrivate(userId) {
+  public closePrivate(userId) {
     this.privates_.delete(userId);
     this.privateList_.value = Array.from(this.privates_.values());
     if (this.currentPrivate_.value.id == userId) {
