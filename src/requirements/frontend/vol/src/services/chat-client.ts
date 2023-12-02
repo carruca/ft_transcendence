@@ -80,16 +80,16 @@ export class ChatClient {
   private userChannelList_ = ref<Channel[]>([]);
   public userChannelList = readonly(this.userChannelList_);
 
-  private userCurrentChannel_ = ref<Channel | null>(null);
+  private userCurrentChannel_ = ref<Channel | undefined>(undefined);
   public userCurrentChannel = readonly(this.userCurrentChannel_);
 
   private userCurrentChannelBanList_ = reactive(new Map<string, User>);
   public userCurrentChannelBanList = readonly(this.userCurrentChannelBanList_);
 
-  private privateList_ = ref<Private[] | null>([]);
+  private privateList_ = ref<Private[] | undefined>([]);
   public privateList = readonly(this.privateList_);
 
-  private currentPrivate_ = ref<Private | null>(null);
+  private currentPrivate_ = ref<Private | undefined>(undefined);
   public currentPrivate = readonly(this.currentPrivate_);
 
   private adminChannelList_ = ref<Channel[]>([]);
@@ -98,10 +98,10 @@ export class ChatClient {
   private adminUserList_ = ref<User[]>([]);
   public adminUserList = readonly(this.adminUserList_);
 
-  private adminCurrentChannel_ = ref<Channel | null>(null);
+  private adminCurrentChannel_ = ref<Channel | undefined>(undefined);
   public adminCurrentChannel = readonly(this.adminCurrentChannel_);
 
-  private adminCurrentUser_ = ref<User | null>(null);
+  private adminCurrentUser_ = ref<User | undefined>(undefined);
   public adminCurrentUser = readonly(this.adminCurrentUser_);
 
   private showModal_ = ref<boolean>(false);
@@ -681,14 +681,14 @@ export class ChatClient {
     const priv = new Private(userNickname);
 
     this.privates_.set(userId, priv);
-    this.privateList_.value = this.privates_.values();
+    this.privateList_.value = Array.from(this.privates_.values());
     this.currentPrivate_.value = priv;
     return priv;
   }
 
   private closePrivate(userId) {
     this.privates_.delete(userId);
-    this.privateList_.value = this.privates_.values();
+    this.privateList_.value = Array.from(this.privates_.values());
     if (this.currentPrivate_.value.id == userId) {
       this.currentPrivate_ = this.privates_.values().next().value;
     }
