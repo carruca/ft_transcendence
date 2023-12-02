@@ -116,7 +116,7 @@ function getSelectedTabEmptyText() {
   }
 }
 
-function handleUserClick(nickname) {
+function handleUserClick(nickname: string) {
   router.push(`/profile/${nickname}`)
 };
 
