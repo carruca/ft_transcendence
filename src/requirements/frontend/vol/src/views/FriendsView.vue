@@ -33,10 +33,12 @@
                 <div class="user-picture">
                   <img :src="user.userProfile" alt="Profile picture" class="friend-image">
                 </div>
-                <div
-                    class="user-info"
+                <div class="user-info"
                     @click="handleUserClick(user.user[0].nickname)">
-                  <h3>{{ user.user[0].nickname }}</h3>
+                  <h4>{{ user.user[0].nickname }}</h4>
+                </div>
+                <div class="user-status">
+                  <h3>{{ connectionStatus[user.user[0].status] }}</h3>
                 </div>
                 <div class="user-actions">
                   <friendsBotton :users="[me.id, user.user[0].id]"></friendsBotton>
@@ -56,6 +58,7 @@ import { ref, onMounted, computed } from 'vue';
 import router from '@/router';
 import md5 from 'md5';
 import friendsBotton from '@/components/Profile/friendsBotton.vue';
+import { connectionStatus } from '@/components/Profile/ConnectionStatus';
 
 const props = defineProps({
   user: {
@@ -76,7 +79,7 @@ const friendsList = ref([]);
 const blocksList = ref([]);
 
 const allUsers = computed(() => friendsList.value.filter(friend => friend.status === 1));
-const onlineUsers = [];
+const onlineUsers = computed(() => friendsList.value.filter(friend => friend.user[0].status === 1 && friend.user[0].status === 1));;
 const pendingUsers = computed(() => friendsList.value.filter(friend => friend.status === 0));
 const blockedUsers = computed(() => blocksList.value);
 
@@ -92,7 +95,7 @@ function getSelectedTabList() {
     case 'All':
       return allUsers.value;
     case 'Online':
-      return [];
+      return onlineUsers.value;
     case 'Pending':
       return pendingUsers.value;
     case 'Blocked':
@@ -257,15 +260,22 @@ async function getProfilePictureUrl(username : string, login : string) {
 }
 
 .user-picture img {
-  max-height: 9vh;
-  width: auto;
-  display: block;
-  margin-left: 1em;
-  margin-right: 1em;
-  border-radius: 50%; /* Make the image rounded */
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin-right: 30px;
 }
 
 .user-info {
+  display: flex;
+  flex-grow: 1;
+  cursor: pointer;
+  margin-left: 1em;
+  margin-right: 1em;
+}
+
+.user-status {
   display: flex;
   flex-grow: 1;
   cursor: pointer;
