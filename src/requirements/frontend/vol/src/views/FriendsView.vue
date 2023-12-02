@@ -131,7 +131,6 @@ async function fetchFriends() {
       item.userProfile = userProfile;
       return item;
     }));
-    console.log('Friendos:', data);
     return data;
   } catch (error) {
     console.error('Error fetching friends:', error);
