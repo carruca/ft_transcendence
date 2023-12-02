@@ -5,8 +5,8 @@ import { loggedInFn } from '../AuthCheck';
 
 
 onMounted(async () => {
-  await loggedInFn();
   try {
+    await loggedInFn();
     const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/users/me`, {
       method: "GET",
       headers: {
@@ -19,6 +19,7 @@ onMounted(async () => {
     }
   } catch (error) {
     console.error(error);
+    router.replace('/');
   }
 
   const form = document.querySelector('form') as HTMLFormElement;

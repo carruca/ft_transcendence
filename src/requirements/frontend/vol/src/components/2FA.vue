@@ -12,7 +12,11 @@ const emit = defineEmits(["close2fa"]);
 const error = ref<string | undefined>(undefined);
 
 onMounted(async () => {
-    await loggedInFn();
+    try {
+        await loggedInFn();
+    } catch (error) {
+        router.replace("/");
+    }
 });
 
 const props = defineProps({

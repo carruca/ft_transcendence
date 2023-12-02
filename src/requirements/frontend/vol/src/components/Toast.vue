@@ -12,6 +12,7 @@ onMounted(function () {
     toast.value!!.style.opacity = "0";
     window.setTimeout(() => {
       toast.value!!.remove();
+      props.closeToast();
     }, parseInt(props.transitionTimeout) * 1000);
   }, props.timeout);
 });
@@ -40,6 +41,10 @@ const props = defineProps({
   image: {
     type: String,
     default: "",
+  },
+  closeToast: {
+    type: Function,
+    default: () => {},
   },
 });
 </script>

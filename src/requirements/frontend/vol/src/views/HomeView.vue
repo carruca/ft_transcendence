@@ -3,19 +3,33 @@ import Splash from "../components/Splash.vue";
 import { onMounted, ref } from "vue";
 import HomeVue from "../components/Home.vue";
 import { loggedInFn } from "@/components/AuthCheck";
+import Toast from "../components/Toast.vue";
 
 const loggedIn = ref<boolean | undefined>(false);
 const user = ref<Object | undefined>(undefined);
+const error = ref<string | undefined>(undefined);
 
 onMounted(async () => {
-  user.value = await loggedInFn();
-  loggedIn.value = user.value !== undefined;
+  try {
+    user.value = await loggedInFn();
+    loggedIn.value = user.value !== undefined;
+  } catch (_error) {
+    error.value = _error;
+    console.error(_error);
+  }
 });
+
+const clearError = () => {
+  error.value = undefined;
+};
 
 </script>
 
 <template>
   <main class="main_content">
+    <Toast v-if="error" :error-message="error" :close-toast="clearError">
+      <i class="material-icons">error</i>
+    </Toast>
     <Splash v-if="!loggedIn" />
     <HomeVue :user="user" v-else/>
   </main>

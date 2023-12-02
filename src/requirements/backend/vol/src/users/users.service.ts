@@ -13,7 +13,7 @@ import { CreateBanDto } from './dto/create-ban.dto';
 import { ReturnBanDto } from './dto/return-ban.dto';
 
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, In } from 'typeorm';
 import { User, UserMode } from './entities/user.entity';
 import { Block } from './entities/block.entity';
 import { Ban } from './entities/ban.entity';
@@ -334,18 +334,44 @@ export class UsersService {
 
   async findFriendsUser(userId: string, status?: FriendStatus) : Promise<Friend[]> {
     const user = await this.usersRepository.findOne({
-      relations: ['friends'],
+      relations: [
+        'friends'
+      ],
       where: {
         id: userId,
       },
     });
+    console.log({user});
     if (!user) {
       throw new HttpException('User not found', HttpStatus.NOT_FOUND);
     }
-    if (status) {
-      return user.friends.filter(friend => friend.status === status);
+    let friends = user.friends;
+    if (status !== undefined) {
+      friends = user.friends.filter(friend => friend.status === status);
+      if (status === FriendStatus.requested)
+        friends = friends.filter(friend => friend.senderId !== userId);
     }
-    return user.friends;
+    // Find all friends of user to get their nicknames
+    console.log({friends});
+    const friendIds = friends.map(friend => friend.receiverId == userId ? friend.senderId : friend.receiverId).flat();
+    console.log({friendIds});
+    const friendUsers = await this.usersRepository.find({
+      where: {
+        id: In(friendIds),
+      },
+    });
+    console.log({friendUsers});
+    // Add nickname to friend
+    friends = friends.map(friend => {
+      console.log({friend});
+      const friendUser = friendUsers.find(user => user.id === friend.senderId || user.id === friend.receiverId);
+      console.log({friendUser});
+      if (friendUser) {
+        friend.nickname = friendUser.nickname;
+      }
+      return friend;
+    });
+    return friends;
   }
 
   async getLeaderboard() : Promise<RatingUserDto[]> {

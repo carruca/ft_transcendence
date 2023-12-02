@@ -5,7 +5,21 @@ import Modal from './Modal.vue';
 import { onMounted, defineProps, watch, ref } from 'vue';
 import { UserSiteRoleEnum } from '@/services/enum/user-site-role.enum'
 import { ChatClient } from '@/services/chat-client'
-import Toast, { DEFAULT_TIMEOUT } from './Toast.vue'
+import Toast from './Toast.vue'
+
+interface APIResponseFriends {
+  senderId: string;
+  receiverId: string;
+  status: number;
+  id: string;
+};
+
+enum FriendStatus {
+  requested,
+  accepted,
+  rejected,
+  add,
+};
 
 const props = defineProps({
   user: {
@@ -28,7 +42,7 @@ const modalProps = ref({
 
 const toastError = ref(undefined)
 
-onMounted(() => {
+onMounted(async () => {
   const client = ChatClient.getInstance()
   const stopMe = watch(client.me, (newVal, oldVal) => {
     if (newVal && !oldVal) {
@@ -47,6 +61,16 @@ onMounted(() => {
   watch(client.modalProps, (newVal, _oldVal) => {
     modalProps.value = newVal
   })
+  watch(friendPetition, (newVal, _oldVal) => {
+    if (newVal.length > 0) {
+      iterator = nextFriend(friendPetition.value);
+      currentFriendPetition.value = iterator.next().value;
+      return
+    }
+    iterator = undefined
+    currentFriendPetition.value = undefined
+  })
+  await takeFriendStatus();
   setTimeout(() => {
     stopMe()
   }, 5000)
@@ -56,11 +80,71 @@ const clearError = () => {
   toastError.value = undefined
 };
 
+const friends = ref<APIResponseFriends[]>([]);
+const friendPetition = ref<APIResponseFriends[]>([]);
+
+function* nextFriend(friends : APIResponseFriends[]) {
+  for (const friend of friends) {
+    yield friend;
+  }
+};
+
+let iterator: Generator<APIResponseFriends, void, unknown> | undefined = undefined;
+const currentFriendPetition = ref<APIResponseFriends>(null);
+
+async function takeFriendStatus() {
+  try {
+    const response = await fetch(
+      `${import.meta.env.VITE_BACKEND_URL}/users/me/pending-friends`,
+      {
+        method: "GET",
+        headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+        },
+        credentials: "include",
+      });
+    if (!response.ok)
+    {
+      throw new Error("Could not get friends");
+    }
+    friendPetition.value = await response.json();
+  } catch (error) {
+    console.error(error);
+  }
+};
+
+async function handlePetition(friend : APIResponseFriends, status : FriendStatus) {
+  try {
+    const response = await fetch(
+      `${import.meta.env.VITE_BACKEND_URL}/friends`,
+      {
+        method: "PUT",
+        headers: {
+        "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify({
+          "friendId": friend.id,
+          status,
+        }),
+      });
+    if (!response.ok)
+    {
+      throw new Error("Could not get friends");
+    }
+  } catch (error) {
+    console.error(error);
+  }
+  if (iterator) {
+    currentFriendPetition.value = iterator.next().value;
+  }
+};
+
 </script>
 
 <template>
   <div class="main_content">
-    <Toast v-if="toastError != undefined" :error-message="toastError" @closeToast="clearError">
+    <Toast v-if="toastError != undefined" :error-message="toastError" :close-toast="clearError">
       <i class="material-icons">error</i>
     </Toast>
     <TopBar :user="props.user" />
@@ -70,13 +154,14 @@ const clearError = () => {
       :rejectText="modalProps.rejectText">
       <p>{{ modalProps.content }}</p>
     </Modal>
+    <Modal v-if="currentFriendPetition" :title="'Friend request'" :on-accept="() => handlePetition(currentFriendPetition, FriendStatus.accepted)"
+      :on-reject="() => handlePetition(currentFriendPetition, FriendStatus.rejected)">
+      <p>{{ currentFriendPetition.nickname }} wants to be your friend</p>
+    </Modal>
     <main>
       <router-view :user="props.user" />
     </main>
   </div>
-  <template v-for="friend in friendPetition" :key="friend.id">
-    <Modal :title="friend.senderId" :text="friend.receiverId" :on-accept="() => acceptPetition(friend)" :on-reject="() => rejectPetition(friend)" />
-  </template>
 </template>
 
 <style scoped>

@@ -34,6 +34,7 @@ export const loggedInFn = async (): Promise<Object | undefined> => {
     }
   } catch (error) {
     console.error(error);
+    throw new Error('Service unavailable. Try again later.');
   }
   router.push("/login");
   return undefined;

@@ -18,22 +18,27 @@ export class MockService {
   }
 
   async intraBearer(): Promise<any> {
-    const response = await this.rateLimitedFetchService.fetch(`${process.env.NEST_INTRA_API_URL}/oauth/token`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        client_id: process.env.NEST_INTRA_UID,
-        client_secret: process.env.NEST_INTRA_SECRET,
-        grant_type: 'client_credentials',
-        scope: 'public',
-      }),
-    });
-    if (!response.ok) {
-      throw new Error(response.statusText);
+    try {
+      const response = await this.rateLimitedFetchService.fetch(`${process.env.NEST_INTRA_API_URL}/oauth/token`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          client_id: process.env.NEST_INTRA_UID,
+          client_secret: process.env.NEST_INTRA_SECRET,
+          grant_type: 'client_credentials',
+          scope: 'public',
+        }),
+      });
+      if (!response.ok) {
+        throw new Error(response.statusText);
+      }
+      return response.json();
+    } catch (error) {
+      console.error(error);
+      throw new Error(error);
     }
-    return response.json();
   }
 
   async getUser(token: string, _refresh_token: string): Promise<any> {
