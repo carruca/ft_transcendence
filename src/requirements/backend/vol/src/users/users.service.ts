@@ -308,7 +308,7 @@ export class UsersService {
     return friends.map(friend => ({
       user: friend.users
         .filter(user => user.id !== userId)
-        .map(({ id, nickname, login }) => ({ id, nickname, login })),
+        .map(({ id, nickname, login, status }) => ({ id, nickname, login, status })),
       receiverId: friend.receiverId,
       status: friend.status,
       id: friend.id,
