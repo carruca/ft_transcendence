@@ -80,7 +80,7 @@ export class ChatClient {
   private userChannelList_ = ref<Channel[]>([]);
   public userChannelList = readonly(this.userChannelList_);
 
-  private userCurrentChannel_ = ref<Channel | null>(null);
+  private userCurrentChannel_ = ref<Channel | undefined>(undefined);
   public userCurrentChannel = readonly(this.userCurrentChannel_);
 
   private userCurrentChannelBanList_ = reactive(new Map<string, User>);
@@ -89,7 +89,7 @@ export class ChatClient {
   private privateList_ = ref<Private[] | null>([]);
   public privateList = readonly(this.privateList_);
 
-  private currentPrivate_ = ref<Private | null>(null);
+  private currentPrivate_ = ref<Private | undefined>(undefined);
   public currentPrivate = readonly(this.currentPrivate_);
 
   private adminChannelList_ = ref<Channel[]>([]);
@@ -859,7 +859,7 @@ export class ChatClient {
 
   public setUserCurrentChannel = (channelId: string | undefined): void => {
     if (channelId === undefined)
-      this.currentPrivate_.value = undefined;
+      this.userCurrentChannel_.value = undefined;
     else 
       this.userCurrentChannel_.value = this.me_.value.channels.get(channelId);
   }
