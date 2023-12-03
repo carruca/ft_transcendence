@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { on } from 'events';
 import { defineEmits, onMounted, ref } from 'vue';
 
 const props = defineProps({
@@ -7,7 +6,7 @@ const props = defineProps({
     type: String,
     required: true
   },
-  profileImage: {
+  login: {
     type: String,
     required: true
   },
@@ -16,7 +15,7 @@ const props = defineProps({
 const emit = defineEmits(['close']);
 
 let selectedImage : File;
-const profilePicture = ref<String>(props.profileImage);
+const profilePicture = ref();
 
 const imageSet = ref(false);
 

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue';
+import { onMounted, onBeforeUnmount, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import md5 from 'md5';
 import router from '@/router';
@@ -30,6 +30,7 @@ const itsMe = ref(true);
 
 const route = useRouter();
 const loadedProfile = ref(false);
+const unmounted = ref(false);
 
 async function askUserinfo(username : string | string[]) {
   try {
@@ -106,11 +107,26 @@ async function loadProfile() {
   // Watch user status
   userStatus.value = userInfo.status;
 };
+
+const stopWatch = watch(
+  () => router.currentRoute.value.params.username,
+  () => {
+    if (unmounted.value) return;
+    loadedProfile.value = false;
+    loadProfile();
+  }
+  );
   
 onMounted(async () => {
   await route.isReady();
   loadProfile();
 });
+
+onBeforeUnmount(() => {
+  unmounted.value = true;
+  stopWatch();
+});
+
 
 const launchEditPage = () => {
   editPage.value = true;
@@ -147,11 +163,11 @@ const closeEditPage = async () => {
           <span ref="stat-value">{{ losses }}</span>
         </div>
       </div>
-      <div v-if="itsMe">
+      <div v-if="itsMe && profilePictureRef">
         <button class="fancy-button-green" @click="launchEditPage">Edit profile</button>
-        <EditProfile v-if="editPage" @close="closeEditPage" :user="user.nickname" :profileImage="profilePictureRef"></EditProfile>
+        <EditProfile v-if="editPage" @close="closeEditPage" :user="user.nickname" :login="user.login"></EditProfile>
       </div>
-      <div v-else>
+      <div v-if="!itsMe">
         <friendsBotton :users="ID"></friendsBotton>
       </div>
     </div>
@@ -231,16 +247,6 @@ const closeEditPage = async () => {
 .stat-label {
   font-size: 14px;
 }
-/* 
-.stat-value {
-  font-size: 20px;
-}
-
-.events {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-} */
 
 .fancy-button-green {
   padding: 10px 20px;
