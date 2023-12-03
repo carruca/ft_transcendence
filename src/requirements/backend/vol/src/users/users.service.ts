@@ -227,11 +227,12 @@ export class UsersService {
       throw new HttpException('User not found', HttpStatus.NOT_FOUND);
     }
 
-    const blockedFriends = user.friends
-      .filter(friend => (friend.receiverId === createBlockDto.blockId || friend.senderId === createBlockDto.blockId));
-//    if (blockedFriends) {
-//      await this.friendsService.remove(blockedFriends[0].id);
-//    }
+    const blockedFriend = user.friends
+      .find(friend => (friend.receiverId === createBlockDto.blockId || friend.senderId === createBlockDto.blockId));
+    if (blockedFriend) {
+      await this.friendsService.remove(blockedFriend.id);
+      user.friends = user.friends.filter(friend => friend.id !== blockedFriend.id);
+    }
 
     const newBlock = new Block(
       user,
@@ -241,6 +242,7 @@ export class UsersService {
     await this.blocksRepository.save(newBlock);
     user.blocks.push(newBlock);
     await this.usersRepository.save(user);
+
     return {
       id: newBlock.id,
       userId: createBlockDto.userId,
