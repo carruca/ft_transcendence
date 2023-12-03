@@ -385,6 +385,7 @@ const resetPlayButtons = () => {
     button2Pressed.value = !button2Pressed.value;
   }
 }
+
 socket.on('error_auth', () => {
   resetPlayButtons();
   console.log("Error: socket not authenticated, try again later");

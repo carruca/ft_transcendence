@@ -45,8 +45,9 @@ export class GameGateway implements OnGatewayDisconnect {
   }
 
   handleDisconnect(client: Socket) {
-    if (!client.data.user)
+    if (!client.data.user) {
       return;
+    }
     this.room_service.disconnect(client);
     //console.log("DISCONNECTION: " + client.id);
   }
