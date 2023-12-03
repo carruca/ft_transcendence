@@ -56,17 +56,23 @@ export class FriendsService {
     });
     await this.usersRepository.save(users);
 
-    const response = {
+    const chatUser = this.chatManager.getUserById(createFriendDto.receiverId);
+    if (chatUser && chatUser.socket)
+      chatUser.socket.emit('friendship', JSON.stringify({
+        user: users
+          .filter(user => user.id !== createFriendDto.senderId)
+          .map(({ id, nickname, login, status }) => ({ id, nickname, login, status })),
+        receiverId: newFriend.receiverId,
+        status: newFriend.status,
+        id: newFriend.id,
+      }));
+
+    return {
       id: newFriend.id,
       receiverId: newFriend.receiverId,
       senderId: createFriendDto.senderId,
       status: newFriend.status,
     };
-
-    const chatUser = this.chatManager.getUserById(createFriendDto.receiverId);
-    if (chatUser && chatUser.socket)
-      chatUser.socket.emit('friendship', JSON.stringify(response));
-    return response;
   }
 
   async update(updateFriendDto: UpdateFriendDto) : Promise<Friend> {
