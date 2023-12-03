@@ -51,21 +51,27 @@ function sendChanges() {
   })();
 }
 
+let timeout: ReturnType<typeof setTimeout>;
+
 onMounted(() => {
   const nicknameInput = document.querySelector('input[name=nickname]') as HTMLInputElement;
   const submitButton = document.querySelector('.submit') as HTMLInputElement;
   nicknameInput.addEventListener('input', async (event) => {
+    submitButton.disabled = true;
+    timeout && clearTimeout(timeout);
     const target = event.target as HTMLInputElement;
     const value = target.value;
     if (value.length >= 3 && value.length <= 20) {
-      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/users/nickname/${value}`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: 'include'
-      });
-      submitButton.disabled = !response.ok;
+      timeout = setTimeout(async () => {
+        const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/users/nickname/${value}`, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          credentials: 'include'
+        });
+        submitButton.disabled = !response.ok;
+      }, 500);
     } else {
       submitButton.disabled = true;
     }

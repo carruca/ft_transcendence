@@ -40,21 +40,26 @@ onMounted(async () => {
     }
   });
 
+  let timeout: ReturnType<typeof setTimeout>;
+
   const nicknameInput = document.querySelector('input[type="text"]') as HTMLInputElement;
   nicknameInput.addEventListener('input', async (event) => {
     const target = event.target as HTMLInputElement;
     const value = target.value;
     const submitButton = document.querySelector('input[type="submit"]') as HTMLInputElement;
+    submitButton.disabled = true;
+    timeout && clearTimeout(timeout);
     if (value.length >= 3 && value.length <= 20) {
-      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/users/nickname/${value}`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: 'include'
-      });
-      submitButton.disabled = !response.ok;
-      // TODO: check if nickname is already taken
+      timeout = setTimeout(async () => {
+        const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/users/nickname/${value}`, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          credentials: 'include'
+        });
+        submitButton.disabled = !response.ok;
+      }, 500);
     } else {
       submitButton.disabled = true;
     }
