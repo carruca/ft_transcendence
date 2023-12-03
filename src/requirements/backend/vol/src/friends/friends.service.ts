@@ -44,7 +44,7 @@ export class FriendsService {
       throw new HttpException('Users not found', HttpStatus.NOT_FOUND);
     }
 
-    const receiverUser = users.filter(user => user.id !== createFriendDto.receiverId);
+    const receiverUser = users.filter(user => user.id !== createFriendDto.senderId);
 
     if (receiverUser[0].blocks.find(block => block.blockId === createFriendDto.senderId)) {
       throw new HttpException('Sender user blocked', HttpStatus.FORBIDDEN); 
