@@ -1,10 +1,11 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { FriendsService } from './friends.service';
 import { FriendsController } from './friends.controller';
 
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Friend } from './entities/friend.entity';
 import { User } from '../users/entities/user.entity';
+import { ChatModule } from '../chat/chat.module';
 
 @Module({
   imports: [
@@ -12,6 +13,7 @@ import { User } from '../users/entities/user.entity';
       Friend,
       User,
     ]),
+    forwardRef(() => ChatModule),
   ],
   controllers: [FriendsController],
   providers: [FriendsService],

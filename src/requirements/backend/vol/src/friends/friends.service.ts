@@ -1,7 +1,9 @@
 import {
+  Inject,
   Injectable,
   HttpException,
   HttpStatus,
+  forwardRef,
 } from '@nestjs/common';
 import { CreateFriendDto } from './dto/create-friend.dto';
 import { UpdateFriendDto } from './dto/update-friend.dto';
@@ -14,6 +16,7 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Friend, FriendStatus } from './entities/friend.entity';
 import { User } from '../users/entities/user.entity';
+import { ChatManager } from '../chat/manager';
 
 @Injectable()
 export class FriendsService {
@@ -23,6 +26,8 @@ export class FriendsService {
 
     @InjectRepository(User)
     private usersRepository: Repository<User>,
+    @Inject(forwardRef(() => ChatManager))
+    private chatManager: ChatManager,
   ) {}
 
   async create(createFriendDto: CreateFriendDto) : Promise<ResponseFriendDto> {
@@ -50,12 +55,18 @@ export class FriendsService {
       user.friends.push(newFriend);
     });
     await this.usersRepository.save(users);
-    return {
+
+    const response = {
       id: newFriend.id,
       receiverId: newFriend.receiverId,
       senderId: createFriendDto.senderId,
       status: newFriend.status,
     };
+
+    const chatUser = this.chatManager.getUserById(createFriendDto.receiverId);
+    if (chatUser && chatUser.socket)
+      chatUser.socket.emit('friendship', JSON.stringify(response));
+    return response;
   }
 
   async update(updateFriendDto: UpdateFriendDto) : Promise<Friend> {

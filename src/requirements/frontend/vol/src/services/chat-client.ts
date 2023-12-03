@@ -317,14 +317,11 @@ export class ChatClient {
     } else if (type === AdminDataTypeEnum.UPDATED) {
 
     } else if (type === AdminDataTypeEnum.DELETED) {
-      console.log("adminChannelUserUpdate- delete:", data);
       channel = this.adminChannels_.get(data.channelId);
 
       if (channel) {
         user = this.adminUsers_.get(data.sourceUserId);
-        channel.delUserById(data.sourceUserId);
-      //  if (user)
-        //  channel.delUser(user);
+        channel.delUser(user);
       }
     }
   }
@@ -332,11 +329,24 @@ export class ChatClient {
   private adminChannelUpdate_(type: AdminDataTypeEnum, data: any) {
     let channel: Channel | undefined;
 
-    console.log("adminChannelUpdate", type);
+    console.log("adminChannelUpdate", data);
     if (type === AdminDataTypeEnum.CREATED ) {
-      channel = this.channelFromDTO_(data);
-      if (channel)
+      channel = this.adminChannels_.get(data.id);
+
+      if (!channel) {
+        channel = this.channelFromDTO_(data);
+        const ownerUser = this.adminUsers_.get(channel.owner.id);
+
+        if (ownerUser) {
+          channel.owner = ownerUser;
+        }
         this.adminChannels_.set(channel.id, channel);
+        for (const channelUserDTO of data.channelUsersDTO) {
+          const user = this.adminUsers_.get(channelUserDTO.userDTO.id);
+          if (!user) throw new Error("Algo fue mal");
+          channel.addUser(this.channelUserFromDTO_(channelUserDTO, user));
+        }
+      }
       this.adminChannelList_.value = Array.from(this.adminChannels_.values());
       if (this.adminCurrentChannel_.value == undefined)
         this.adminCurrentChannel_.value = this.adminChannelList_.value[0];

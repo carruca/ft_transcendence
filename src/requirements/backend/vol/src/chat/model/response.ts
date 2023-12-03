@@ -83,10 +83,12 @@ export class Response {
 
   send() {
     if (this.code === ResponseCode.SUCCESS) {
-      this.sourceUser.socket.emit(this.success, this.JSON);
+      if (this.sourceUser.socket)
+        this.sourceUser.socket.emit(this.success, this.JSON);
     }
     else {
-      this.sourceUser.socket.emit(this.error, this.JSON);
+      if (this.sourceUser.socket)
+        this.sourceUser.socket.emit(this.error, this.JSON);
     }
   }
 

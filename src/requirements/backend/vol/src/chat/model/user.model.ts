@@ -218,18 +218,11 @@ export class User {
     return this.nickname_!;
   }
 
-  set socket(value: Socket) {
-    if (this.socket_) {
-      //TODO: Se debe hacer una gestión en ChatManager
-      this.socket_.emit('error', "A new connection has been established. Closing the socket");
-      this.socket_.disconnect();
-    }
+  set socket(value: Socket | undefined) {
     this.socket_ = value;
   }
 
-  get socket(): Socket {
-    if (!this.socket_)
-      throw new PropertyUndefinedError("No socket");
+  get socket(): Socket | undefined {
     return this.socket_;
   }
 

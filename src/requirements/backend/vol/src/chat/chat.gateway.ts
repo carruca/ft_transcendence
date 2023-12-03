@@ -128,6 +128,8 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
           client.disconnect();
         } else {
           sourceUser = this.chat_.addUserDB(userDB);
+          if (sourceUser.socket)
+            sourceUser.socket.emit('error', "New connection detected. Closing socket.");
           sourceUser.socket = client;
           client.data.user = sourceUser;
           this.logger_.log("Usuario registrado en la DB. Copiando a memoria.");
@@ -689,11 +691,13 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
 
     for (const targetUser of this.chat_.getAdminWatchers()) {
-      targetUser.socket.emit('adminUpdated', JSON.stringify([
-        AdminObjectTypeEnum.USER,
-        AdminDataTypeEnum.CREATED,
-        sourceUser.DTO(targetUser),
-      ]));
+      if (targetUser.socket) {
+        targetUser.socket.emit('adminUpdated', JSON.stringify([
+          AdminObjectTypeEnum.USER,
+          AdminDataTypeEnum.CREATED,
+          sourceUser.DTO(targetUser),
+        ]));
+      }
     }
   }
 
@@ -713,11 +717,13 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     changes.id = sourceUser.id;
 
     for (const targetUser of this.chat_.getAdminWatchers()) {
-      targetUser.socket.emit('adminUpdated', JSON.stringify([
-        AdminObjectTypeEnum.USER,
-        AdminDataTypeEnum.UPDATED,
-        changes,
-      ]));
+      if (targetUser.socket) {
+        targetUser.socket.emit('adminUpdated', JSON.stringify([
+          AdminObjectTypeEnum.USER,
+          AdminDataTypeEnum.UPDATED,
+          changes,
+        ]));
+      }
     }
   }
 
@@ -731,11 +737,13 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
 
     for (const targetUser of this.chat_.getAdminWatchers()) {
-      targetUser.socket.emit('adminUpdated', JSON.stringify([
-        AdminObjectTypeEnum.USER,
-        AdminDataTypeEnum.DELETED,
-        sourceUser.id,
-      ]));
+      if (targetUser.socket) {
+        targetUser.socket.emit('adminUpdated', JSON.stringify([
+          AdminObjectTypeEnum.USER,
+          AdminDataTypeEnum.DELETED,
+          sourceUser.id,
+        ]));
+      }
     }
   }
 
@@ -754,11 +762,13 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
 
     for (const targetUser of this.chat_.getAdminWatchers()) {
-      targetUser.socket.emit('adminUpdated', JSON.stringify([
-        AdminObjectTypeEnum.CHANNEL_USER,
-        AdminDataTypeEnum.CREATED,
-        channel.channelUserDTO(sourceUser, targetUser),
-      ]));
+      if (targetUser.socket) {
+        targetUser.socket.emit('adminUpdated', JSON.stringify([
+          AdminObjectTypeEnum.CHANNEL_USER,
+          AdminDataTypeEnum.CREATED,
+          channel.channelUserDTO(sourceUser, targetUser),
+        ]));
+      }
     }
   }
 
@@ -775,13 +785,15 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
 
     for (const targetUser of this.chat_.getAdminWatchers()) {
-      targetUser.socket.emit('adminUpdated', JSON.stringify([
-        AdminObjectTypeEnum.CHANNEL_USER,
-        AdminDataTypeEnum.DELETED, {
-          channelId: channel.id,
-          sourceUserId: sourceUser.id,
-        },
-      ]));
+      if (targetUser.socket) {
+        targetUser.socket.emit('adminUpdated', JSON.stringify([
+          AdminObjectTypeEnum.CHANNEL_USER,
+          AdminDataTypeEnum.DELETED, {
+            channelId: channel.id,
+            sourceUserId: sourceUser.id,
+          },
+        ]));
+      }
     }
   }
 
@@ -795,11 +807,13 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
     
     for (const targetUser of this.chat_.getAdminWatchers()) {
-      targetUser.socket.emit('adminUpdated', JSON.stringify([
-        AdminObjectTypeEnum.CHANNEL,
-        AdminDataTypeEnum.CREATED,
-        channel.DTO(targetUser),
-      ]));
+      if (targetUser.socket) {
+        targetUser.socket.emit('adminUpdated', JSON.stringify([
+          AdminObjectTypeEnum.CHANNEL,
+          AdminDataTypeEnum.CREATED,
+          channel.DTO(targetUser),
+        ]));
+      }
     }
   }
 
@@ -816,11 +830,13 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
 
     for (const targetUser of this.chat_.getAdminWatchers()) {
-      targetUser.socket.emit('adminUpdated', JSON.stringify([
-        AdminObjectTypeEnum.CHANNEL,
-        AdminDataTypeEnum.UPDATED,
-        channel.DTO(targetUser),
-      ]));
+      if (targetUser.socket) {
+        targetUser.socket.emit('adminUpdated', JSON.stringify([
+          AdminObjectTypeEnum.CHANNEL,
+          AdminDataTypeEnum.UPDATED,
+          channel.DTO(targetUser),
+        ]));
+      }
     }
   }
 
@@ -833,15 +849,18 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       if (targetUser.status !== UserStatusEnum.OFFLINE)
         targetUser.socket.emit('channelDeleted', deleteJSON);
     }
-/*
-    for (const targetUser of this.chat_.getAdminWatchers()) {
-      targetUser.socket.emit('adminUpdated', JSON.stringify([
-        AdminObjectTypeEnum.CHANNEL,
-        AdminDataTypeEnum.DELETED,
-        channel.id,
-      ]));
+
+    if (channel.isEmpty) {
+      for (const targetUser of this.chat_.getAdminWatchers()) {
+        if (targetUser.socket) {
+          targetUser.socket.emit('adminUpdated', JSON.stringify([
+            AdminObjectTypeEnum.CHANNEL,
+            AdminDataTypeEnum.DELETED,
+            channel.id,
+          ]));
+        }
+      }
     }
-*/
   }
 
   @ChatManagerSubscribe('onEventCreated')
