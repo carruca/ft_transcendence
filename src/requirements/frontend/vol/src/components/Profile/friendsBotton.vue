@@ -138,10 +138,11 @@ async function takeBlockStatus() {
     }
 
     blocks = await response.json();
-    for (let block: APIResponseBlocks of blocks) {
+    for (let block of blocks) {
       if (block.id === users.value[1])
       {
         blockState.value = true;
+        //break;
       }
     }
   } catch (error) {
@@ -181,7 +182,7 @@ async function unblockIt() {
     const blockID: string | undefined = (() => {
       const foundID = blocks.find((block) => {
         return (
-          block.userId === users.value[0] && block.blockId === users.value[1]
+          block.id === users.value[0] && block.id === users.value[1]
         );
       });
       return foundID ? foundID.id : undefined;
@@ -216,12 +217,17 @@ onMounted(async () => {
 
 <template>
   <div v-if="checkedFriend">
-    <button v-if="friendState === 3" class="fancy-button-green" @click="addFriend">Add to friends</button>
-    <button v-if="friendState === 0" class="fancy-button-gray">Pending...</button>
-    <button v-if="friendState === 1" class="fancy-button-red" @click="deleteFriend">Remove friend</button>
-    <button v-if="friendState === 2" class="fancy-button-red">Rejected</button>
-    <button v-if="!blockState" class="fancy-button-red" @click="blockIt">Block</button>
-    <button v-if="blockState"  class="fancy-button-red" @click="unblockIt">Unblock</button>
+    <div v-if="!blockState">
+      <button v-if="friendState === 3" class="fancy-button-green" @click="addFriend">Add to friends</button>
+      <button v-if="friendState === 0" class="fancy-button-gray">Pending...</button>
+      <button v-if="friendState === 1" class="fancy-button-red" @click="deleteFriend">Remove friend</button>
+      <button v-if="friendState === 2" class="fancy-button-red">Rejected</button>
+      <button class="fancy-button-red" @click="blockIt">Block</button>
+    </div>
+    <div v-else>
+      <button class="fancy-button-gray">Blocked...</button>
+      <button class="fancy-button-red" @click="unblockIt">Unblock</button>
+    </div>
   </div>
 </template>
 
