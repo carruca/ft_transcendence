@@ -177,6 +177,9 @@ export class User {
         uniqueUsers.add(user);
       }
     });
+    for (const user of this.watchUsers_.values()) {
+      uniqueUsers.add(user);
+    }
     this.conversations_.forEach(conversation => {
 	    for (const user of conversation.getUsers()) {
 		    uniqueUsers.add(user);

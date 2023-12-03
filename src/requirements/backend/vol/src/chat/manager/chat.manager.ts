@@ -1058,7 +1058,7 @@ export class ChatManager {
 
   private getObserversOf_(object: any): Set<any> {
     if (object instanceof User) {
-      return new Set([...object.getCommonUsersOnline()]);
+      return new Set([...object.getCommonUsersOnline() ]);
     }
     else if (object instanceof Channel) {
       return new Set([...object.getUsersOnline()]);
