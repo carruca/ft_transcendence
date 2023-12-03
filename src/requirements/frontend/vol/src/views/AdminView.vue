@@ -137,8 +137,6 @@
 
 <script setup>
 import { ref, onMounted, onUnmounted, watch, computed, defineProps } from 'vue';
-import router from '@/router';
-
 import { client } from '@/services/chat-client';
 import router from '@/router';
 
