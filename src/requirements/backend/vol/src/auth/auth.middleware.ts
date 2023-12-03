@@ -89,7 +89,6 @@ export class AuthMiddleware implements NestMiddleware {
                     user = await this.usersService.create(data);
                 }
                 req.user = user;
-                debugger
                 if (await this.usersService.isDisabled(user.id)) {
                     throw new userDisabledError();
                 }
