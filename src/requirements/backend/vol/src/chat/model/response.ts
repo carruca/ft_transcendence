@@ -31,6 +31,9 @@ enum ResponseCode {
   SAME_USER,
   USER_ALREADY_MODERATOR,
   USER_NOT_MODERATOR,
+  HIGHER_PRIVILEGES,
+  USER_ALREADY_MUTED,
+  USER_NOT_MUTED,
 }
 
 export class Response {
@@ -202,5 +205,17 @@ export class Response {
 
   static UserNotModerator(): Response {
     return new Response(ResponseCode.USER_NOT_MODERATOR, "User is not a moderator");
+  }
+
+  static HigherPrivileges(): Response {
+    return new Response(ResponseCode.HIGHER_PRIVILEGES, "Target user has higher privileges than you.");
+  }
+
+  static UserAlreadyMuted(): Response {
+    return new Response(ResponseCode.USER_ALREADY_MUTED, "User already muted");
+  }
+
+  static UserNotMuted(): Response {
+    return new Response(ResponseCode.USER_NOT_MUTED, "User not muted");
   }
 }

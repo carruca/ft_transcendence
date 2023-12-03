@@ -69,7 +69,7 @@ export class RoomService {
     // add to queue
     modeQueue.push(socket);
 
-    console.log("join queue " + mode + ": " + socket.id);
+    //console.log("join queue " + mode + ": " + socket.id);
 
     // try to create room
     const modePlayers = modes.get(mode);
@@ -88,7 +88,7 @@ export class RoomService {
       const index = modeQueue.indexOf(socket);
       if (index != -1) {
         modeQueue.splice(index, 1);
-        console.log("leave queue " + mode + ": " + socket.id);
+        //console.log("leave queue " + mode + ": " + socket.id);
         break;
       }
     }

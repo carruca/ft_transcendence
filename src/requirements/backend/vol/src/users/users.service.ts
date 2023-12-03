@@ -143,13 +143,7 @@ export class UsersService {
   }
 
   async setBanned(id: string, value: boolean) {
-    const user = await this.findOne(id);
-    if (!user) {
-      throw new HttpException('User not found', HttpStatus.NOT_FOUND);
-    }
-
-    user.banned = value;
-    return this.usersRepository.save(user);
+    return await this.usersRepository.update(id, { banned: value });
   }
 
   async isBanned(id: string) : Promise<boolean> {
@@ -375,6 +369,7 @@ export class UsersService {
         fs.renameSync(`public/avatars/${user.nickname}.png`, avatarPath);
       }
       user.nickname = updateUserDto.nickname;
+      this.chatManager.changeNickUserId(user.id, updateUserDto.nickname);
     }
     if (avatar) {
       const avatarPath = `public/avatars/${user.nickname}.png`;

@@ -56,6 +56,14 @@ export class User {
     this.siteRole_ = value;
   }
 
+  get isSiteModerator(): boolean {
+    return (this.siteRole_ === UserSiteRoleEnum.MODERATOR);
+  }
+
+  get isSiteOwner(): boolean {
+    return (this.siteRole_ === UserSiteRoleEnum.OWNER);
+  }
+
   update(changes: UserDTO) {
     if (changes.status !== undefined)
       this.status = changes.status;
@@ -67,6 +75,10 @@ export class User {
       this.friend = changes.friend;
     if (changes.blocked !== undefined)
       this.blocked = changes.blocked;
+    if (changes.siteBanned !== undefined)
+      this.siteBanned = changes.siteBanned;
+    if (changes.siteDisabled !== undefined)
+      this.siteDisabled = changes.siteDisabled;
   }
 
   clear() {

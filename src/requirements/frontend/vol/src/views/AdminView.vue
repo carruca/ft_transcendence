@@ -101,13 +101,13 @@
           <h2>Channel Actions</h2>
           <div class="action-buttons">
             <button v-if="canShowAction('destroy')" @click="destroy">Destroy</button>
-            <button v-if="canShowAction('edit')" @click="edit">{{ editButtonText }}</button>
+            <button v-if="canShowAction('edit')" @click="edit">Edit</button>
           </div>
           <h2>User Actions</h2>
           <div class="action-buttons">
-            <button v-if="canShowAction('promote')" @click="promote">{{ promoteButtonText }}</button>
             <button v-if="canShowAction('mute')" @click="mute">{{ muteButtonText }}</button>
             <button v-if="canShowAction('ban')" @click="ban">{{ banButtonText }}</button>
+            <button v-if="canShowAction('promote')" @click="promote">{{ promoteButtonText }}</button>
             <button v-if="canShowAction('kick')" @click="kick">Kick</button>
           </div>
         </div>
@@ -127,6 +127,7 @@
     </div>
     <editChannelModal
       :visible="showEditModal"
+      :users="userCurrentChannelBanList"
       @pm="handleEditModalPm"
       @unban="handleEditModalUnban"
       @save="handleEditModalSave"
@@ -158,7 +159,7 @@ const currentPanel = ref('Chat');
 const showEditModal = ref(false);
 
 // Destructure the properties and methods from the client you want to use
-const { adminChannelList, adminUserList } = client;
+const { adminChannelList, adminUserList, userCurrentChannelBanList } = client;
 import {
     UserSiteRoleEnum,
     UserStatusEnum,
@@ -167,8 +168,8 @@ import { User } from '@/services/model';
 import editChannelModal from '@/components/EditChannelModal.vue';
 
 // Computed users and banned users array
-const allUsers = computed(() => adminUserList.value.filter(u => !u.isBanned));
-const bannedUsers = computed(() => adminUserList.value.filter(u => u.isBanned));
+const allUsers = computed(() => adminUserList.value.filter(u => !u.siteBanned));
+const bannedUsers = computed(() => adminUserList.value.filter(u => u.siteBanned));
 
 onMounted(() => {
   if (!props.user.admin)
@@ -229,19 +230,15 @@ const muteButtonText = computed(() => {
   return selectedUser.value && selectedUser.value.isMuted ? 'Unmute' : 'Mute';
 });
 const promoteButtonText = computed(() => {
-  return selectedUser.value && selectedUser.value.isAdmin ? 'Demote' : 'Promote';
+  return selectedUser.value && (selectedUser.value.isAdmin || selectedUser.value.isOwner) ? 'Demote' : 'Promote';
 });
-const editButtonText = computed(() => {
-  return 'Edit';
-});
+
 // Computed propertion for Web Admin button
 const webbanButtonText = computed(() => {
-  return selectedUser.value && selectedUser.value.isBanned ? 'Unban' : 'Ban';
+  return selectedUser.value && selectedUser.value.siteBanned ? 'Unban' : 'Ban';
 });
 const webpromoteButtonText = computed(() => {
-  // TODO isModerator does not exist
-  //return selectedUser.value && selectedUser.value.isModerator ? 'Demote' : 'Promote';
-  return 'Promote (TODO)';
+  return selectedUser.value && (selectedUser.value.siteRole === UserSiteRoleEnum.MODERATOR || selectedUser.value.siteRole === UserSiteRoleEnum.OWNER) ? 'Demote' : 'Promote';
 })
 
 // Functions to select channel and user
@@ -291,8 +288,7 @@ const handleEditModalClose = () => {
 };
 
 const handleEditModalPm = (user) => {
-  setCurrentPrivate(user.id);
-  // TODO set pm logic
+  client.openPrivate(user.id, user.name);
   router.push('/chat');
 };
 const handleEditModalUnban = (user) => {
@@ -309,8 +305,8 @@ function channelClass(channel) {
 function userClass(user) {
   if (user.isBanned)
     return 'user-banned';
-  /*if (user.isOwner) TODO
-    return 'user-owner';*/
+  if (user.isOwner)
+    return 'user-owner';
   if (user.isAdmin)
     return 'user-admin';
   if (user.isMuted)
@@ -330,20 +326,17 @@ function userStatus(status) {
 
 // Web user color
 function webuserClass(user) {
-  if (user.isBanned) {
+  if (user.siteBanned) {
     return 'user-banned';
-  /*} else if (user.isOwner) { TODO
+  } else if (user.siteRole === UserSiteRoleEnum.OWNER) {
     return 'user-owner';
-  } else if (user.isModerator) {
-    return 'user-admin';*/
+  } else if (user.siteRole === UserSiteRoleEnum.MODERATOR) {
+    return 'user-admin';
   }
-  // TODO maybe add colors for disabled users (?
   return '';
 }
 
 // Function to determine if an action can be shown
-// TODO actions can't be done to owners
-// TODO only owners can promote (both in the chat and in the site)
 function canShowAction(action) {
   if (currentPanel.value === 'Chat') {
     if (selectedChannel.value) {
@@ -358,7 +351,7 @@ function canShowAction(action) {
     }
   } else {
     if (selectedUser.value) {
-      if (selectedUser.value.isBanned)
+      if (selectedUser.value.siteBanned)
         return action === 'webban';
       return true;
     }
@@ -371,51 +364,45 @@ function destroy() {
   client.close(selectedChannelUUID.value);
 }
 function edit() {
+  client.banList(selectedChannelUUID.value);
   handleEditModalClick();
 }
 // User actions
-// TODO change function to working ones
-function promote() {
-  if (selectedUser.value && selectedUser.value.isAdmin)
-    client.demote(selectedChannelUUID.value, selectedUserUUID.value);
-  else
-    client.promote(selectedChannelUUID.value, selectedUserUUID.value);
-}
 function mute() {
   if (selectedUser.value && selectedUser.value.isMuted)
     client.unmute(selectedChannelUUID.value, selectedUserUUID.value);
-  else
+  else if (selectedUser.value)
     client.mute(selectedChannelUUID.value, selectedUserUUID.value);
 }
 function ban() {
   if (selectedUser.value && selectedUser.value.isBanned)
     client.unban(selectedChannelUUID.value, selectedUserUUID.value);
-  else
+  else if (selectedUser.value)
     client.ban(selectedChannelUUID.value, selectedUserUUID.value);
+}
+function promote() {
+  if (selectedUser.value && selectedUser.value.isAdmin)
+    client.demote(selectedChannelUUID.value, selectedUserUUID.value);
+  else if (selectedUser.value)
+    client.promote(selectedChannelUUID.value, selectedUserUUID.value);
 }
 function kick() {
   client.kick(selectedChannelUUID.value, selectedUserUUID.value);
 }
 
 // Web actions
-// TODO change function to working ones
-// TODO maybe more actions ?
 function webban() {
-  if (selectedUser.value && selectedUser.value.isBanned) {
-    client.siteBan(selectedUser.value.id);
-    alert('unban!');
-  } else {
+  if (selectedUser.value && selectedUser.value.siteBanned)
     client.siteUnban(selectedUser.value.id);
-    alert('ban!');
-  }
+  else if (selectedUser.value)
+    client.siteBan(selectedUser.value.id);
+  console.log(selectedUser.value.id);
 }
 function webpromote() {
-  // TODO isModerator does not exist
-  /*if (selectedUser.value && selectedUser.value.isModerator)
-    alert('Demote!');
-  else
-    alert('Promote!');*/
-  alert('TODO!');
+  if (selectedUser.value && (selectedUser.value.isSiteModerator || selectedUser.value.isSiteOwner))
+    client.siteDemote(selectedUser.value.id);
+  else if (selectedUser.value)
+    client.sitePromote(selectedUser.value.id);
 }
 </script>
 

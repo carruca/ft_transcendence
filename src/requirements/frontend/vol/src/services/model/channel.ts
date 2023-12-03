@@ -106,6 +106,5 @@ export class Channel {
 
     get events(): Map<string, Event> {
       return readonly(this.events_);
-      return readonly(this.events_);
     }
 }

@@ -155,8 +155,9 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   handleDisconnect(client: Socket) {
-    if (client.data.user)
+    if (client.data.user) {
       this.chat_.disconnectUser(client.data.user);
+    }
   }
 
   /*
@@ -665,7 +666,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   onUserWatchUser(event: any): void {
     const { sourceUser, targetUser } = event;
 
-    sourceUser.socket.emit('watch', JSON.stringify([ targetUser.DTO() ]));
+    //sourceUser.socket.emit('watch', JSON.stringify([ targetUser.DTO() ]));
   }
 
   @ChatManagerSubscribe('onUserConnected')

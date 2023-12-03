@@ -165,6 +165,10 @@ export class ChatClient {
     return Array.from(this.privates_);
   }
 
+  get adminusers() {
+    return Array.from(this.adminUsers_);
+  }
+
 
   private setupSocketEventHandlers_() {
     socket.on('error', this.onError_.bind(this));
@@ -213,7 +217,6 @@ export class ChatClient {
     const channelsDTO = JSON.parse(responseJSON);
 
     this.channelsSummary_.value = channelsDTO; //.map(item => item.name);
-    console.log("userChannelsDTO", this.channelsSummary_.value);
   }
 
   private onChannelBanList_(responseJSON: string): void {
@@ -229,7 +232,6 @@ export class ChatClient {
     const [ channelId, targetUserId ] = JSON.parse(responseJSON);
     const channel = this.getChannelById(channelId);
 
-    console.log('unUnban', channelId, targetUserId);
     if (!channel) return;
     if (channel.id === this.userCurrentChannel.value.id)
       this.userCurrentChannelBanList_.delete(targetUserId);
@@ -264,8 +266,6 @@ export class ChatClient {
     this.adminChannelList_.value = Array.from(this.adminChannels_.values());
     this.adminUserList_.value = Array.from(this.adminUsers_.values());
 
-    console.log("onAdminData channels", this.adminChannelList_.value);
-    console.log("onAdminData users", this.adminUserList_.value);
     this.admin_ = true;
   }
 
@@ -284,7 +284,6 @@ export class ChatClient {
   private adminUserUpdate_(type: AdminDataTypeEnum, data: any) {
     let user: User | undefined;
 
-    console.log("adminUserUpdate", type);
     if (type === AdminDataTypeEnum.CREATED) {
       user = this.userFromDTO_(data);
       if (user)
@@ -309,7 +308,6 @@ export class ChatClient {
     let channel: Channel | undefined;
     let user: User | undefined;
 
-    console.log("adminChannelUserUpdate", type);
     if (type === AdminDataTypeEnum.CREATED) {
       channel = this.adminChannels_.get(data.channelId);
 
@@ -335,7 +333,6 @@ export class ChatClient {
   private adminChannelUpdate_(type: AdminDataTypeEnum, data: any) {
     let channel: Channel | undefined;
 
-    console.log("adminChannelUpdate", data);
     if (type === AdminDataTypeEnum.CREATED ) {
       channel = this.adminChannels_.get(data.id);
 
@@ -418,7 +415,6 @@ export class ChatClient {
       }
       clearTimeout(timeout);
     }, 10000);
-    console.log("onChallengeRequested", sourceUser.nickname, sourceUser.id);
   }
 
   private onWatch_(responseJSON: string): void {
@@ -431,7 +427,6 @@ export class ChatClient {
     const [ eventDTO ] = JSON.parse(responseJSON);
     const event = this.eventFromDTO_(eventDTO);
 
-    console.log(responseJSON);
     this.addPrivateEvent_(event);
   }
 
@@ -481,21 +476,10 @@ export class ChatClient {
   private onRegistered_(responseJSON: string): void {
     const meUserDTO = JSON.parse(responseJSON);
 
-    //TODO: Aquí lo que llega es la información de nuestro usuario, eso contempla
-    //todos los canales y de estos, los usuarios y los eventos.
     this.users_.clear();
     this.channels_.clear();
     this.me_.value = this.addUserFromDTO_(meUserDTO);
-    //meUserDTO.channels.map((channelDTO: ChannelDTO) => this.me_.channels.set(channelDTO.id, this.addChannel_(this.channelFromDTO_(channelDTO))));
 
-
-    console.log(`%cSuccess: Your id is '${this.me_.value.id}' and '${this.me_.value.nickname}' is your nick. You are in ${this.me_.value.channels.size} channels`, "color: green;");
-
-    console.log(this.me_.value.channels.values());
-    for (const channel of this.me_.value.channels.values()) {
-      console.log(`${channel.name}: ${channel.id}`);
-      console.log('users', channel.users);
-    }
     this.updateUserChannelList_();
     this.userCurrentChannel_.value = this.userChannelList.value[0];
     this.isConnected_.value = true;
@@ -518,7 +502,6 @@ export class ChatClient {
   private onChannelCreated_(dataJSON: string) {
     const channelDTO = JSON.parse(dataJSON);
 
-    console.log('onChannelCreated', channelDTO);
     this.addChannelFromDTO_(channelDTO)
     this.updateUserChannelList_();
   }
@@ -532,7 +515,6 @@ export class ChatClient {
     if (!channel)
       throw new Error(`Channel ${channelId} not found`);
 
-    console.log('onChannelUpdated', channelId, userId, changes);
     channel.update(channelUser, changes);
   }
 
@@ -543,7 +525,6 @@ export class ChatClient {
 	if (!channel)
 	  throw new Error(`Channel ${channelId} not found`);
 
-    console.log('onChannelDeleted', channelId);
     this.deleteChannel_(channel);
     this.updateUserChannelList_();
     this.manageDestroyedChannelSelection_(channel);
@@ -552,19 +533,15 @@ export class ChatClient {
   private onUserCreated_(dataJSON: string) {
     const data = JSON.parse(dataJSON);
 
-    console.log('onUserCreated', data);
   }
 
   private onUserUpdated_(dataJSON: string) {
     const { sourceUserId, changes } = JSON.parse(dataJSON);
     let sourceUser = this.getUserById(sourceUserId);
 
-    console.log('onUserUpdated', sourceUserId, changes, sourceUser);
     if (sourceUser) {
       sourceUser.update(changes);
     }
-
-    console.log(sourceUser);
   }
 
   private userUpdate_(userId: string, chanes: UserDTO) {
@@ -577,44 +554,37 @@ export class ChatClient {
   private onUserDeleted_(dataJSON: string) {
     const data = JSON.parse(dataJSON);
 
-    console.log('onUserDeleted', data);
   }
 
   private onEventCreated_(dataJSON: string) {
     const data = JSON.parse(dataJSON);
 
-    console.log('onEventCreated', data);
   }
 
   private onEventUpdated_(dataJSON: string) {
     const data = JSON.parse(dataJSON);
 
-    console.log('onEventUpdated', data);
   }
 
   private onUserChannelCreated_(dataJSON: string) {
     const data = JSON.parse(dataJSON);
 
-    console.log('onUserChannelCreated', data);
   }
 
   private onUserChannelUpdated_(dataJSON: string) {
     const data = JSON.parse(dataJSON);
 
-    console.log('onUserChannelUpdated', data);
   }
 
   private onUserChannelDeleted_(dataJSON: string) {
     const data = JSON.parse(dataJSON);
 
-    console.log('onUserChannelDeleted', data);
   }
 
   private onFriendship_(dataJSON: string) {
     const data = JSON.parse(dataJSON);
 
     this.friendPetition_.value = data;
-    console.log('onFriendship', data);
   }
 
   private onChannelEventCreated_(dataJSON: string) {
@@ -628,7 +598,6 @@ export class ChatClient {
   }
 
   private addUserFromDTO_(userDTO: UserDTO): User {
-    console.log("addUserFromDTO_", userDTO);
     let user = this.getUserById(userDTO.id);
     let channel: Channel;
     let channelUser: ChannelUser[];
@@ -671,6 +640,8 @@ export class ChatClient {
       status: userDTO.status,
       blocked: userDTO.blocked,
       friend: userDTO.friend,
+      siteBanned: userDTO.siteBanned,
+      siteDisabled: userDTO.siteDisabled,
     });
   }
 
@@ -897,12 +868,12 @@ export class ChatClient {
     this.admin_ = false;
   }
 
-  public userWatch(userId: string) {
-    socket.emit('userwatch', JSON.stringify([ userId ]));
+  public userWatch(userId: string[]) {
+    socket.emit('userwatch', JSON.stringify(userId));
   }
 
-  public userUnwatch(userId: string) {
-    socket.emit('userunwatch', JSON.stringify([ userId ]));
+  public userUnwatch(userId: string[]) {
+    socket.emit('userunwatch', JSON.stringify(userId));
   }
 
   public setUserCurrentChannel = (channelId: string | undefined): void => {

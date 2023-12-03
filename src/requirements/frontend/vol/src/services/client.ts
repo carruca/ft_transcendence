@@ -39,6 +39,10 @@ export class Client {
         return client.users;
     }
 
+    get adminusers() {
+        return client.adminusers;
+    }
+
     private send_(event: string, data: any) {
         socket.emit(event, JSON.stringify(data));
     }

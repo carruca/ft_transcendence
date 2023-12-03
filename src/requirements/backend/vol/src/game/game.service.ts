@@ -205,8 +205,8 @@ export class GameService {
         room.players[i].stats.rival_score++;
       }
 
-      console.log("score 0: " + room.players[0].socket!.data.user.nickname + ": " + room.players[0].stats.score);
-      console.log("score 1: " + room.players[1].socket!.data.user.nickname + ": " + room.players[1].stats.score);
+      //console.log("score 0: " + room.players[0].socket!.data.user.nickname + ": " + room.players[0].stats.score);
+      //console.log("score 1: " + room.players[1].socket!.data.user.nickname + ": " + room.players[1].stats.score);
       RoomService.update(room, 'score', room.players[0].stats.score, room.players[1].stats.score);
       const winners = room.players.filter(player => player.stats.score === room.options.score);
       const losers = room.players.filter(player => player.stats.score !== room.options.score);

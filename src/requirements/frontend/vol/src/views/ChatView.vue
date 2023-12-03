@@ -198,7 +198,6 @@ import joinChannelModal from '@/components/JoinChannelModal.vue';
 import createChannelModal from '@/components/CreateChannelModal.vue';
 import editChannelModal from '@/components/EditChannelModal.vue';
 import confirmModal from '@/components/ConfirmModal.vue';
-// FIXME real client
 import {
   Channel,
   ChannelUser,
@@ -559,11 +558,6 @@ const getAvailableOptions = (selected, item) => {
     else if (item.user.status === UserStatusEnum.IN_GAME)
       contextMenuOptions.value.push('Spectate');
 
-    if (item.isMuted)
-      contextMenuOptions.value.push('Unmute');
-    else
-      contextMenuOptions.value.push('Mute');
-
     if (item.user.blocked)
       contextMenuOptions.value.push('Unblock');
     else
@@ -571,11 +565,17 @@ const getAvailableOptions = (selected, item) => {
 
     if (myChannelUser.isOwner || myChannelUser.isAdmin) {
       // TODO what if target is admin or owner?
-      if (myChannelUser.isOwner && item.isAdmin && !item.isOwner) {
+      if (myChannelUser.isOwner && item.isAdmin) {
         contextMenuOptions.value.push('Demote');
-      } else if (myChannelUser.isOwner && !item.isOwner) {
+      } else if (myChannelUser.isOwner) {
         contextMenuOptions.value.push('Promote');
       }
+
+      if (item.isMuted)
+        contextMenuOptions.value.push('Unmute');
+      else
+        contextMenuOptions.value.push('Mute');
+
       if (item.isBanned)
         contextMenuOptions.value.push('Unban');
       else
@@ -621,7 +621,6 @@ const executeContextAction = ( option, item ) => {
     if (option === 'Edit') {
       console.log(`Editing channel '${item.name}'`);
       client.banList(item.id);
-      console.log(`userCurrentChannelBanList: ${userCurrentChannelBanList}`);
       handleEditClick();
     } else if (option === 'Destroy') {
       console.log(`Destroying channel '${item.name}'`);
@@ -633,28 +632,25 @@ const executeContextAction = ( option, item ) => {
   } else if (item instanceof Private) {
     let privateUUID = item.id;
     if (option === 'Profile') {
-      // FIXME fix user route
-      router.push(`/${item.name}`);
+      router.push(`/profile/${item.nickname}`);
     } else if (option === 'Close') {
       console.log(`Closing private chat with '${item.nickname}'`);
       client.closePrivate(item.id);
     } else if (option === 'Block') {
       console.log(`Blocking user '${item.nickname}'`);
-      client.block(item.user.id);
+      client.block(item.id);
     } else if (option === 'Unblock') {
       console.log(`Unblocking user '${item.nickname}'`);
-      client.unblock(item.user.id);
+      client.unblock(item.id);
     }
   } else if (item instanceof EventUser) {
     if (option === 'Profile') {
-      // FIXME fix user route
-      router.push(`/${item.name}`);
+      router.push(`/profile/${item.name}`);
     }
   } else if (item instanceof ChannelUser) {
     let userUUID = item.user.id;
     if (option === 'Profile') {
-      // FIXME fix user route
-      router.push(`/${item.user.nickname}`);
+      router.push(`/profile/${item.user.name}`);
     } else if (option === 'Challenge') {
       console.log(`Challenging user '${item.user.name}'`);
       client.challengeRequest(item.user.id);
@@ -679,15 +675,15 @@ const executeContextAction = ( option, item ) => {
     } else if (option === 'Unban') {
       console.log(`Unbanning user '${item.user.name}'`)
       client.unban(selectedChannelUUID.value, item.user.id);
-    } else if (option === 'Kick') {
-      console.log(`Kicking user '${item.user.name}'`)
-      client.kick(selectedChannelUUID.value, item.user.id);
     } else if (option === 'Promote') {
       console.log(`Promoting user '${item.user.name}'`)
       client.promote(selectedChannelUUID.value, item.user.id);
     } else if (option === 'Demote') {
       console.log(`Demoting user '${item.user.name}'`)
       client.demote(selectedChannelUUID.value, item.user.id);
+    } else if (option === 'Kick') {
+      console.log(`Kicking user '${item.user.name}'`)
+      client.kick(selectedChannelUUID.value, item.user.id);
     }
   } else {
     console.log(`ERROR: Option '${option}' selected for item '${item}' not handled`);

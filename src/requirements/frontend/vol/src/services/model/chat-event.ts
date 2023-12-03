@@ -72,6 +72,10 @@ export class ChatEvent extends BaseEvent {
       return true;
     if (this.type === EventTypeEnum.UNMUTE)
       return true;
+    if (this.type === EventTypeEnum.PROMOTE)
+      return true;
+    if (this.type === EventTypeEnum.DEMOTE)
+      return true;
     return false;
   };
 
@@ -101,6 +105,10 @@ export class ChatEvent extends BaseEvent {
         return `has muted`;
       case EventTypeEnum.UNMUTE:
         return `has unmuted`;
+      case EventTypeEnum.PROMOTE:
+        return `has promoted`;
+      case EventTypeEnum.DEMOTE:
+        return `has demoted`;
       case EventTypeEnum.PASSWORD:
         if (event.value === undefined)
           return `unset a password`;

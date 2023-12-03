@@ -65,7 +65,7 @@ export class User {
   @Column({ default: false })
   disabled: boolean;
 
-  @Column({ default: false })
+  @Column({ default: false, update: true })
   banned: boolean;
 
   @OneToMany(() => MatchUser, (matchUser) => matchUser.user)

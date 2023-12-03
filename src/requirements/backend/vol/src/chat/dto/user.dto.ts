@@ -35,8 +35,8 @@ export class UserDTO {
       this.blocked = targetUser.hasBlocked(user);
       this.friend = targetUser.hasFriend(user);
       if (targetUser.siteRole === UserSiteRoleEnum.OWNER || targetUser.siteRole === UserSiteRoleEnum.MODERATOR) {
-        this.siteDisabled = user.siteDisabled;
-        this.siteBanned = user.siteBanned;
+        this.siteDisabled = user.isSiteDisabled;
+        this.siteBanned = user.isSiteBanned;
       }
     }
   }

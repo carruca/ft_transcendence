@@ -184,8 +184,8 @@ export class ChatManager {
     return Array.from(this.usersById_.values());
   }
 
-  public getUsersDTO(): UserDTO[] {
-    return this.getUsers().map((user) => user.DTO());
+  public getUsersDTO(sourceUser?: User): UserDTO[] {
+    return this.getUsers().map((user) => user.DTO(sourceUser));
   }
 
   public getChannelsDTO(): ChannelDTO[] {
@@ -342,24 +342,31 @@ export class ChatManager {
     }
   }
 
-  public async userWatchUserId(sourceUser: User, targetUserId: string): Promise<Response> {
-    const targetUser = this.getUserById(targetUserId);
+  public async userWatchUserId(sourceUser: User, targetUsersId: string[]): Promise<Response> {
+    const targetUsers: User[] = [];
 
-    if (!targetUser) return Response.UserNotExists();
+    for (const targetUserId of targetUsersId) {
+      const targetUser = this.getUserById(targetUserId);
+
+      if (!targetUser) return Response.UserNotExists();
+      sourceUser.addWatcher(targetUser);
+      targetUsers.push(targetUser);
+    }
+
     //if (targetUser.hasWatcher(sourceUser)) return Response.Success();
-    sourceUser.addWatcher(targetUser);
     
-    this.raise_<void>('onUserWatchUser', { sourceUser, targetUser });
+    this.raise_<void>('onUserWatchUser', { sourceUser, targetUsers });
     return Response.Success();
   }
 
 
-  public async userUnwatchUserId(sourceUser: User, targetUserId: string): Promise<Response> {
-    const targetUser = this.getUserById(targetUserId);
-
-    if (!targetUser) return Response.UserNotExists();
-    if (!targetUser.hasWatcher(sourceUser)) return Response.Success();
-    targetUser.removeWatcher(sourceUser);
+  public async userUnwatchUserId(sourceUser: User, targetUsersId: string): Promise<Response> {
+    for (const targetUserId of targetUsersId) {
+      const targetUser = this.getUserById(targetUserId);
+      
+      if (!targetUser) return Response.UserNotExists();
+      targetUser.removeWatcher(sourceUser);
+    }
 
     return Response.Success();
   }
@@ -368,7 +375,7 @@ export class ChatManager {
     if (!sourceUser.hasPrivileges()) return Response.InsufficientPrivileges();
 
     this.adminWatchers_.add(sourceUser);
-    this.raise_<void>('onUserAdminData', { sourceUser, channelsDTO: this.getChannelsDTO(), usersDTO: this.getUsersDTO() });
+    this.raise_<void>('onUserAdminData', { sourceUser, channelsDTO: this.getChannelsDTO(), usersDTO: this.getUsersDTO(sourceUser) });
     return Response.Success();
   }
 
@@ -465,6 +472,25 @@ export class ChatManager {
 
   }
 
+  private getPrivilegeLevel_(user: User, channel?: Channel): number {
+    let level = 0;
+
+    if (user.siteRole === UserSiteRoleEnum.OWNER) level = 4;
+    if (user.siteRole === UserSiteRoleEnum.MODERATOR) level = 3;
+    if (channel) {
+      if (channel.isOwner(user)) level = 2;
+      if (channel.isAdmin(user)) level = 1;
+    }
+    return level;
+  }
+
+  private hasPrivilegesOver_(sourceUser: User, targetUser: User, channel?: Channel): boolean {
+    const sourceLevel = this.getPrivilegeLevel_(sourceUser, channel);
+    const targetLevel = this.getPrivilegeLevel_(targetUser, channel);
+
+    return (sourceLevel > targetLevel);
+  }
+
   getAdminWatchers(): User[] {
     return Array.from(this.adminWatchers_.values());
   }
@@ -486,6 +512,7 @@ export class ChatManager {
     const channel = this.getChannelById(channelId);
 
     if (!channel) return Response.ChannelNotExists();
+    if (!channel.hasUser(sourceUser) && !sourceUser.hasPrivileges()) return Response.NotInChannel();
     if (!sourceUser.hasPrivileges() && !channel.isOwner(sourceUser)) return Response.InsufficientPrivileges();
 
     this.raise_<void>("onChannelClosed", { channel, sourceUser });
@@ -536,13 +563,14 @@ export class ChatManager {
     if (!channel) return Response.ChannelNotExists();
     if (channel.isBanned(sourceUser)) return Response.BannedFromChannel();
     if (!channel.hasPrivileges(sourceUser)) return Response.InsufficientPrivileges();
-    if (!channel.hasUser(sourceUser)) return Response.NotInChannel();
+    if (!channel.hasUser(sourceUser) && !sourceUser.hasPrivileges()) return Response.NotInChannel();
     if (!targetUser) return Response.UserNotExists();
     if (!channel.hasUser(targetUser)) return Response.NotInChannel();
     if (channel.owner === targetUser) return Response.InsufficientPrivileges();
 
     channel.createEventAction(EventTypeEnum.KICK, sourceUser, targetUser, message);
     //this.raise_<void>("onChannelClosed", { channel, targetUser });
+    channel.demoteUser(targetUser);
     await this.removeUserFromChannel_(targetUser, channel);
     return Response.Success();
   }
@@ -555,10 +583,10 @@ export class ChatManager {
     if (channel.isBanned(sourceUser)) return Response.BannedFromChannel();
     if (!channel.hasPrivileges(sourceUser)) return Response.InsufficientPrivileges();
     if (!targetUser) return Response.UserNotExists();
-    if (!channel.hasUser(sourceUser)) return Response.NotInChannel();
+    if (!channel.hasUser(sourceUser) && !sourceUser.hasPrivileges()) return Response.NotInChannel();
     if (!channel.hasUser(targetUser)) return Response.NotInChannel();
-    if (channel.owner == targetUser) return Response.InsufficientPrivileges();
-    if (channel.isMuted(targetUser)) return Response.Success();
+    if (!this.hasPrivilegesOver_(sourceUser, targetUser, channel)) return Response.HigherPrivileges();
+    if (channel.isMuted(targetUser)) return Response.UserAlreadyMuted();
 
     channel.muteUser(targetUser);
     channel.createEventAction(EventTypeEnum.MUTE, sourceUser, targetUser);
@@ -579,10 +607,10 @@ export class ChatManager {
     if (channel.isBanned(sourceUser)) return Response.BannedFromChannel();
     if (!channel.hasPrivileges(sourceUser)) return Response.InsufficientPrivileges();
     if (!targetUser) return Response.UserNotExists();
-    if (!channel.hasUser(sourceUser)) return Response.NotInChannel();
+    if (!channel.hasUser(sourceUser) && !sourceUser.hasPrivileges()) return Response.NotInChannel();
     if (!channel.hasUser(targetUser)) return Response.NotInChannel();
-    if (channel.owner === targetUser) return Response.InsufficientPrivileges();
-    if (!channel.isMuted(targetUser)) return Response.Success();
+    if (!this.hasPrivilegesOver_(sourceUser, targetUser, channel)) return Response.HigherPrivileges()
+    if (!channel.isMuted(targetUser)) return Response.UserNotMuted();
 
     channel.unmuteUser(targetUser);
     channel.createEventAction(EventTypeEnum.UNMUTE, sourceUser, targetUser);
@@ -604,9 +632,9 @@ export class ChatManager {
     if (channel.isBanned(sourceUser)) return Response.BannedFromChannel();
     if (!channel.hasPrivileges(sourceUser)) return Response.InsufficientPrivileges();
     if (!targetUser) return Response.UserNotExists();
-    if (!channel.hasUser(sourceUser)) return Response.NotInChannel();
+    if (!channel.hasUser(sourceUser) && !sourceUser.hasPrivileges()) return Response.NotInChannel();
     if (!channel.hasUser(targetUser)) return Response.NotInChannel();
-    if (channel.owner === targetUser) return Response.InsufficientPrivileges();
+    if (!this.hasPrivilegesOver_(sourceUser, targetUser, channel)) return Response.HigherPrivileges()
     if (channel.isBanned(targetUser)) return Response.UserAlreadyBanned();
 
 
@@ -615,6 +643,7 @@ export class ChatManager {
 
     //this.raise_<void>("onUserBanned", { channel, sourceUser, targetUser });
     channel.banUser(targetUser);
+    channel.demoteUser(targetUser);
     channel.createEventAction(EventTypeEnum.BAN, sourceUser, targetUser);
     this.removeUserFromChannel_(targetUser, channel);
     await this.usersService_.createBan({ userId: targetUser.id, channelId: channel.id });
@@ -631,8 +660,9 @@ export class ChatManager {
     if (channel.isBanned(sourceUser)) return Response.BannedFromChannel();
     if (!channel.hasPrivileges(sourceUser)) return Response.InsufficientPrivileges();
     if (!targetUser) return Response.UserNotExists();
-    if (!channel.hasUser(sourceUser)) return Response.NotInChannel();
-    if (channel.owner === targetUser) return Response.InsufficientPrivileges();
+    if (!channel.hasUser(sourceUser) && !sourceUser.hasPrivileges()) return Response.NotInChannel();
+    if (!channel.hasUser(targetUser)) return Response.NotInChannel();
+    if (!this.hasPrivilegesOver_(sourceUser, targetUser, channel)) return Response.HigherPrivileges()
     if (!channel.isBanned(targetUser)) return Response.UserNotBanned();
 
     //if (this.raise_<boolean>("onUserUnbanning", { channel, sourceUser, targetUser }).includes(true))
@@ -653,7 +683,7 @@ export class ChatManager {
     if (channel.isBanned(sourceUser)) return Response.BannedFromChannel();
     if (!channel.hasPrivileges(sourceUser)) return Response.InsufficientPrivileges();
     if (!targetUser) return Response.UserNotExists();
-    if (!channel.hasUser(sourceUser)) return Response.NotInChannel();
+    if (!channel.hasUser(sourceUser) && !sourceUser.hasPrivileges()) return Response.NotInChannel();
     if (!channel.hasUser(targetUser)) return Response.NotInChannel();
     if (channel.isAdmin(targetUser)) return Response.Success();
 
@@ -679,7 +709,7 @@ export class ChatManager {
     if (channel.isBanned(sourceUser)) return Response.BannedFromChannel();
     if (!channel.hasPrivileges(sourceUser)) return Response.InsufficientPrivileges();
     if (!targetUser) return Response.UserNotExists();
-    if (!channel.hasUser(sourceUser)) return Response.NotInChannel();
+    if (!channel.hasUser(sourceUser) && !sourceUser.hasPrivileges()) return Response.NotInChannel();
     if (!channel.hasUser(targetUser)) return Response.NotInChannel();
     //if (channel.owner === targetUser) return this.chatMessage(ChatReturnCodeEnum.InsufficientPrivileges();
     if (!channel.isAdmin(targetUser)) return Response.Success();
@@ -822,9 +852,7 @@ export class ChatManager {
 
     if (!sourceUser.hasPrivileges()) return Response.InsufficientPrivileges();
     if (!targetUser) return Response.UserNotExists();
-    if (!targetUser.isSiteModerator) return Response.Success();
-    if (sourceUser.is(targetUser)) return Response.Success();
-    if (targetUser.isSiteOwner) return Response.Denied();
+    if (!this.hasPrivilegesOver_(sourceUser, targetUser)) return Response.HigherPrivileges(); 
 
     targetUser.siteRole = UserSiteRoleEnum.USER;
     await this.usersService_.setMode(targetUser.id, +UserSiteRoleEnum.USER);
@@ -862,7 +890,7 @@ export class ChatManager {
 
     //this.raise_<void>('onUserUnbanned', { sourceUser, targetUser });
     targetUser.siteBanned = false;
-    await this.usersService_.setBanned(sourceUser.id, false)
+    await this.usersService_.setBanned(targetUser.id, false)
     return Response.Success();
   }
 
@@ -1139,6 +1167,8 @@ export class ChatManager {
       nickname: userDB.nickname,
       siteRole: userDB.mode as number,
       blocks: blockUsers,
+      siteBanned: userDB.banned,
+      siteDisabled: userDB.disabled,
     });
   }
 
