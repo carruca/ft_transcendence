@@ -106,7 +106,7 @@ const clearError = () => {
 
 <template>
     <section>
-        <Toast v-if="error" :error-message="error" @closeToast="clearError">
+        <Toast v-if="error" :error-message="error" :close-toast="clearError">
             <i class="material-icons">error</i>
         </Toast>
         <main>

@@ -110,6 +110,8 @@ export class ChatClient {
   private toastMessage_ = ref<string>(undefined);
   public toastMessage = readonly(this.toastMessage_);
 
+  public showToast = ref<boolean>(false);
+
   private friendPetition_ = ref<Object>(undefined);
   public friendPetition = readonly(this.friendPetition_);
 
@@ -465,6 +467,7 @@ export class ChatClient {
   private onRetError_(responseJSON: string): void {
     const response = JSON.parse(responseJSON);
     this.toastMessage_.value = response.message;
+    this.showToast.value = true;
 
     console.log(`%cError: ${response.message}`, "color: red;");
   }

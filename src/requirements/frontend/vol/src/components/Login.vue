@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import Toast from "@/components/Toast.vue";
+import { ref } from "vue";
 
 const intra_login = import.meta.env.VITE_URL_42;
 const mock_login = import.meta.env.VITE_MOCK_LOGIN;
@@ -9,7 +10,11 @@ const hasParam = (paramName: string, value: string | undefined = undefined) => {
   return urlParams.has(paramName);
 };
 
-let error: string | undefined = undefined;
+const error = ref<string>();
+
+const onCloseToast = () => {
+  error.value = undefined;
+};
 
 (async () => {
   try {
@@ -46,7 +51,7 @@ let error: string | undefined = undefined;
     }
   } catch (err) {
     console.error(err);
-    error = err as string;
+    error.value = err as string;
   }
 })();
 
@@ -76,7 +81,7 @@ const mockUsers = [
 
 <template>
   <section>
-    <Toast v-if="error" :error-message="error">
+    <Toast v-if="error" :error-message="error" :close-toast="onCloseToast">
       <i class="material-icons">error</i>
     </Toast>
     <ul v-if="mock_login === 'true' && hasParam('mock', 'true')">

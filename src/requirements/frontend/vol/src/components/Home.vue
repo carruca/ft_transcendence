@@ -50,10 +50,8 @@ onMounted(async () => {
       props.user.admin = newVal.siteRole_ > 0;
     }
   })
-  watch(client.toastMessage, (newVal, _oldVal) => {
-    if (newVal) {
-      toastError.value = newVal
-    }
+  watch(client.showToast, (newVal, _oldVal) => {
+    toastError.value = newVal ? client.toastMessage.value : undefined
   })
   watch(client.showModal, (newVal, _oldVal) => {
     showPopup.value = newVal
@@ -80,7 +78,7 @@ onMounted(async () => {
 })
 
 const clearError = () => {
-  toastError.value = undefined
+  ChatClient.getInstance().showToast.value = false
 };
 
 const friendPetition = ref<APIResponseFriends[]>([]);
@@ -145,7 +143,7 @@ async function handlePetition(friend : APIResponseFriends, status : FriendStatus
 
 <template>
   <div class="main_content">
-    <Toast v-if="toastError != undefined" :error-message="toastError" :close-toast="clearError">
+    <Toast v-if="toastError" :error-message="toastError" :close-toast="clearError">
       <i class="material-icons">error</i>
     </Toast>
     <TopBar :user="props.user" />

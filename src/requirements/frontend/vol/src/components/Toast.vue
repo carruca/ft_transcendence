@@ -11,7 +11,6 @@ onMounted(function () {
   window.setTimeout(() => {
     toast.value!!.style.opacity = "0";
     window.setTimeout(() => {
-      toast.value!!.remove();
       props.closeToast();
     }, parseInt(props.transitionTimeout) * 1000);
   }, props.timeout);
