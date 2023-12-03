@@ -32,7 +32,7 @@ export class FriendsService {
 
   async create(createFriendDto: CreateFriendDto) : Promise<ResponseFriendDto> {
     const users = await this.usersRepository.find({
-      relations: ['friends'],
+      relations: ['friends', 'blocks'],
       where: {
         id: In([
           createFriendDto.receiverId,
@@ -42,6 +42,12 @@ export class FriendsService {
     });
     if (!users || users.length === 1) {
       throw new HttpException('Users not found', HttpStatus.NOT_FOUND);
+    }
+
+    const receiverUser = users.filter(user => user.id !== createFriendDto.receiverId);
+
+    if (receiverUser[0].blocks.find(block => block.blockId === createFriendDto.senderId)) {
+      throw new HttpException('Sender user blocked', HttpStatus.FORBIDDEN); 
     }
 
     const newFriend = new Friend(
