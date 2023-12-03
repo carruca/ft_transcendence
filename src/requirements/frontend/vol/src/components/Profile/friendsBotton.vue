@@ -29,8 +29,9 @@ const props = defineProps({
 });
 
 const users = ref();
+const loaded = ref(false);
+
 const friendState = ref<FriendStatus>(3);
-const checkedFriend = ref(false);
 let friends : APIResponseFriends[] = [];
 
 let blocks : APIResponseBlocks[] = [];
@@ -142,12 +143,13 @@ async function takeBlockStatus() {
       if (block.id === users.value[1])
       {
         blockState.value = true;
-        //break;
+        break;
       }
     }
   } catch (error) {
     console.error(error);
   }
+  loaded.value = true;
 };
 
 async function blockIt() {
@@ -171,7 +173,7 @@ async function blockIt() {
       throw new Error("Could not block");
     }
     console.log("Blocked");
-    takeBlockStatus();
+    blockState.value = true;
   } catch (error) {
     console.error(error);
   }
@@ -179,22 +181,19 @@ async function blockIt() {
 
 async function unblockIt() {
   try {
-    const blockID: string | undefined = (() => {
-      const foundID = blocks.find((block) => {
-        return (
-          block.id === users.value[0] && block.id === users.value[1]
-        );
-      });
-      return foundID ? foundID.id : undefined;
-    })();
     const response = await fetch(
-      `${import.meta.env.VITE_BACKEND_URL}/users/block/${blockID}`,
+      `${import.meta.env.VITE_BACKEND_URL}/users/block`,
       {
         method: "DELETE",
         headers: {
-          "accept": "*/*",
+          "accept": "application/json",
+          "Content-Type": "application/json",
         },
-        credentials: "include"
+        credentials: "include",
+        body: JSON.stringify({
+          "userId" : users.value[0],
+          "blockId": users.value[1],
+        })
       });
     if (response.ok)
     {
@@ -210,13 +209,12 @@ async function unblockIt() {
 onMounted(async () => {
   users.value = props.users;
   Promise.all([takeFriendStatus(), takeBlockStatus()]);
-  checkedFriend.value = true;
 });
 
 </script>
 
 <template>
-  <div v-if="checkedFriend">
+  <div v-if="loaded">
     <div v-if="!blockState">
       <button v-if="friendState === 3" class="fancy-button-green" @click="addFriend">Add to friends</button>
       <button v-if="friendState === 0" class="fancy-button-gray">Pending...</button>
@@ -228,6 +226,9 @@ onMounted(async () => {
       <button class="fancy-button-gray">Blocked...</button>
       <button class="fancy-button-red" @click="unblockIt">Unblock</button>
     </div>
+  </div>
+  <div v-else>
+    <button class="fancy-button-gray">loading...</button>
   </div>
 </template>
 

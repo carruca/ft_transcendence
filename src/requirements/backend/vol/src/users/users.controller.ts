@@ -119,8 +119,8 @@ export class UsersController {
   }
 
   @Get(':id/blocks')
-  getBlocks(@Param('userId') userId: string) {
-    return this.usersService.getBlocks(userId);
+  getBlocks(@Param('id') id: string) {
+    return this.usersService.getBlocks(id);
   }
 
   @Post('ban')
