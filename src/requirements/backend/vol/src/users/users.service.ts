@@ -218,7 +218,7 @@ export class UsersService {
 
   async createBlock(createBlockDto: CreateBlockDto) : Promise<ReturnBlockDto> {
     const user = await this.usersRepository.findOne({
-      relations: ['blocks'],
+      relations: ['blocks', 'friends'],
       where: {
         id: createBlockDto.userId,
       },
@@ -226,6 +226,12 @@ export class UsersService {
     if (!user) {
       throw new HttpException('User not found', HttpStatus.NOT_FOUND);
     }
+
+    const blockedFriends = user.friends
+      .filter(friend => (friend.receiverId === createBlockDto.blockId || friend.senderId === createBlockDto.blockId));
+//    if (blockedFriends) {
+//      await this.friendsService.remove(blockedFriends[0].id);
+//    }
 
     const newBlock = new Block(
       user,
