@@ -29,16 +29,18 @@ export const loggedInFn = async (): Promise<Object | undefined> => {
             router.replace("/2fa");
             break;
           case 'User disabled':
+            router.replace(`/login?error=access_denied&error_description=${data.message}`);
+            clearCookies();
             break;
           case 'User banned':
+            router.replace(`/login?error=access_denied&error_description=${data.message}`);
+            clearCookies();
             break;
           default:
             clearCookies();
             router.replace("/login");
             break;
         }
-        router.replace(`/login?error=access_denied&error_description=${data.message}`);
-        clearCookies();
         return data.message;
       }
     }
