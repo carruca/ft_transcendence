@@ -63,9 +63,11 @@ import { connectionStatus } from '@/components/Profile/ConnectionStatus';
 import { UserStatusEnum } from '@/services/enum';
 import { RelationUser, RelationStatusEnum } from '@/services/model';
 
-import socket from '@/services/ws';
+import { socket } from '@/services/ws';
 
-import { client } from '@/services/chat-client';
+import { ChatClient } from '@/services/chat-client';
+
+const client = ChatClient.getInstance();
 
 const props = defineProps({
   user: {

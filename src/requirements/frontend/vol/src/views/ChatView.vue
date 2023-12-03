@@ -207,12 +207,15 @@ import {
   ChatEvent,
   Private,
 } from '@/services/model';
-import { client } from '@/services/chat-client';
+import { ChatClient } from '@/services/chat-client';
 import {
   EventTypeEnum,
   UserSiteRoleEnum,
   UserStatusEnum,
 } from '@/services/enum';
+
+const client = ChatClient.getInstance();
+
 const {
   channelsSummary,
   userChannelList,
@@ -223,6 +226,7 @@ const {
   currentPrivate,
   setCurrentPrivate,
 } = client;
+
 
 const selectedChannelUUID = ref(null);
 const selectedPrivateUUID = ref(null);

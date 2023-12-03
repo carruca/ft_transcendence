@@ -8,9 +8,12 @@ import AchivementsCard from './achivementsCard.vue';
 import EditProfile from './EditProfile.vue';
 import friendsBotton from './friendsBotton.vue';
 import { connectionStatus } from './ConnectionStatus'
-import socket from '@/services/ws';
+import { socket } from '@/services/ws';
 
-import { client } from '@/services/chat-client';
+import { ChatClient } from '@/services/chat-client';
+
+
+const client = ChatClient.getInstance();
 
 const props = defineProps({
 	user: {

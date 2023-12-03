@@ -33,12 +33,6 @@ import {
 } from '../enum';
 
 import {
-  ReturnCodeEnum,
-  ReturnMessage,
-  ReturnMessages,
-} from '../return-messages';
-
-import {
   UserNotFoundError,
   UserNoSocketError,
   NotImplementedError,
@@ -346,7 +340,6 @@ export class ChatManager {
     const targetUsers: User[] = [];
 
     if (targetUsersId == undefined) return Response.Success();
-    console.log(targetUsersId);
 
     for (const targetUserId of targetUsersId) {
       const targetUser = this.getUserById(targetUserId);
@@ -1000,15 +993,6 @@ export class ChatManager {
       results.push(result as T);
     });
     return results;
-  }
-
-  //TODO: A eliminar
-  async test() {
-    if ((await this.asyncRaise_<boolean>('test', "value")).includes(true)) {
-      console.log("stop");
-    } else {
-      console.log("continue");
-    }
   }
 
   private async asyncRaise_<T>(event: string, ...params: any[]): Promise<T[]> {

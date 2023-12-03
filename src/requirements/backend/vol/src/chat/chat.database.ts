@@ -44,7 +44,6 @@ export class ChatDatabase {
   onChatUserConnecting(event: any): void {
     this.usersService_.findOneByIntraId(event.userIntraID).then(user => {
       event.user = user;
-      console.log("event.user ", event.user);
     });
   }
 

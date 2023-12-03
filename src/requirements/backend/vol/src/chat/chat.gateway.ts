@@ -28,14 +28,9 @@ import {
 import {
   EventTypeEnum,
   UserStatusEnum,
-  ReturnCodeEnum,
   AdminDataTypeEnum,
   AdminObjectTypeEnum,
 } from './enum';
-
-import {
-  ReturnMessage,
-} from './return-messages';
 
 import {
   MissingEnvironmentVariableError,
@@ -104,7 +99,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         cookies.token === undefined ||
         cookies.refresh_token === undefined
       ) {
-        this.logger_.error(`Undefined cookies: ${cookies}`);
         setTimeout(() => {
           client.disconnect();
         }, 100);
@@ -112,31 +106,43 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       }
       const userIntra = await this.auth_.getUser(cookies.auth_method, cookies.token, cookies.refresh_token);
       if (!userIntra) {
-        this.logger_.error(`42 nos peta la vida`);
-        client.emit('error', "42 nos peta la vida");
+        client.emit('reterror',
+          JSON.stringify({
+          event: 'connection',
+          code: 4,
+          message: "Service not available",
+        }));
         setTimeout(() => {
           client.disconnect();
-        }, 100);
+        }, 500);
         return;
       }
       let sourceUser = this.chat_.getUserByIntraId(userIntra.id);
       if (!sourceUser) {
         const userDB = await this.usersService_.findOneByIntraId(userIntra.id);
         if (!userDB?.nickname) {
-          this.logger_.warn(`The user ${userIntra.login} (${userIntra.id}) does not appear in the in-memory database of ChatManager.`);
-          client.emit('error', `${userIntra.login} not registered.`);
           client.disconnect();
         } else {
           sourceUser = this.chat_.addUserDB(userDB);
-          if (sourceUser.socket)
-            sourceUser.socket.emit('error', "New connection detected. Closing socket.");
+          if (sourceUser.socket) {
+            console.log("joder");
+            sourceUser.socket.emit('reterror',
+              JSON.stringify({
+                event: 'connection',
+                code: 4,
+                message: "Signed in from another device",
+              })
+            );
+            setTimeout(() => {
+              if (sourceUser?.socket)
+                sourceUser.socket.disconnect();
+            }, 500);
+          }
           sourceUser.socket = client;
           client.data.user = sourceUser;
-          this.logger_.log("Usuario registrado en la DB. Copiando a memoria.");
           this.chat_.connectUser(sourceUser);
         }
       } else {
-        this.logger_.log("Usuario en memoria.");
         sourceUser.socket = client;
         client.data.user = sourceUser;
         this.chat_.connectUser(sourceUser);
@@ -514,10 +520,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     response.setSourceUser(sourceUser)
             .setEvent('chanmsg')
             .send();
-    /*
-    if (response.code === ReturnCodeEnum.ALLOWED)
-      console.log("chanmsg:", response.data.messageEvent);
-      */
   }
 
   @SubscribeMessage('adminwatch')
@@ -573,22 +575,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   /*
   ** ChatService events handle
   */
-
-  //TODO: A eliminar
-  @ChatManagerSubscribe('test')
-  async onTest(events: any): Promise<boolean> {
-    console.log("Inicio de test");
-
-    await new Promise((resolve)  => {
-      setTimeout(() => {
-        console.log("Se ha realizado la espera.");
-        resolve(false); // Resuelve la promesa después de la espera.
-      }, 5000);
-    });
-
-     console.log("Fin de test");
-    return true;
-  }
 
   @ChatManagerSubscribe('onUserUnbanned')
   onUseUnbanned(data: any): void {

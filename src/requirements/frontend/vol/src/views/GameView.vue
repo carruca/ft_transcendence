@@ -56,7 +56,7 @@ import {
   ref,
 } from 'vue';
 
-import socket from "../services/ws.ts";
+import { socket } from "../services/ws.ts";
 
 /** VAR  --------------------------------------- */
 

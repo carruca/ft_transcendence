@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import router from "@/router";
-import socket from "../services/ws";
+import { socket } from "../services/ws";
 
 (async (): Promise<void> => {
   try {

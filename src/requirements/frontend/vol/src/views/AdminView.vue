@@ -138,8 +138,10 @@
 
 <script setup>
 import { ref, onMounted, onUnmounted, watch, computed, defineProps } from 'vue';
-import { client } from '@/services/chat-client';
+import { ChatClient } from '@/services/chat-client';
 import router from '@/router';
+
+const client = ChatClient.getInstance();
 
 const props = defineProps({
   user: {

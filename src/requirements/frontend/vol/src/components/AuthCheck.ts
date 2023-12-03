@@ -1,5 +1,5 @@
 import router from "@/router";
-import socket from "../services/ws";
+import { socket } from "../services/ws";
 
 const clearCookies = () => {
   const cookies = document.cookie.split("; ");

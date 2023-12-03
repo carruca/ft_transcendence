@@ -26,6 +26,8 @@ enum FriendStatus {
   add,
 };
 
+const client = ChatClient.getInstance();
+
 const props = defineProps({
   user: {
     type: Object,
@@ -48,7 +50,6 @@ const modalProps = ref({
 const toastError = ref(undefined)
 
 onMounted(async () => {
-  const client = ChatClient.getInstance()
   const stopMe = watch(client.me, (newVal, oldVal) => {
     if (newVal && !oldVal) {
       me.value = newVal

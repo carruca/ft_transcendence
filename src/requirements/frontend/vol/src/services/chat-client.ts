@@ -1,5 +1,3 @@
-"use strict";
-
 import {
   ref,
   readonly,
@@ -35,22 +33,20 @@ import {
   ChannelPayload,
 } from './interface';
 
-import socket from './ws';
+import {
+  socket,
+  socketSend,
+} from './ws';
 
 import router from '@/router';
 
-import { Client } from './client';
-
-
 export class ChatClient {
   static instance: ChatClient;
-  private _client: Client;
 
   constructor() {
     if (ChatClient.instance)
       return ChatClient.instance;
     this.setupSocketEventHandlers_();
-    this._client = Client.getInstance();
     ChatClient.instance = this;
     return ChatClient.instance;
   }
@@ -463,14 +459,11 @@ export class ChatClient {
     const response = JSON.parse(responseJSON);
     this.toastMessage_.value = response.message;
     this.showToast.value = true;
-
-    console.log(`%cError: ${response.message}`, "color: red;");
   }
 
   private onRetSuccess_(responseJSON: string): void {
     const response = JSON.parse(responseJSON);
 
-    console.log(`%cSuccess: ${response.event}`, "color: green;");
   }
 
   private onRegistered_(responseJSON: string): void {
@@ -750,130 +743,130 @@ export class ChatClient {
   }
 
   public chanmsg(channelId: string, message: string) {
-    socket.emit('chanmsg', JSON.stringify([ channelId, message ]));
+    socketSend('chanmsg', JSON.stringify([ channelId, message ]));
   }
 
   public privmsg(channelId: string, message: string) {
-    socket.emit('privmsg', JSON.stringify([ channelId, message ]));
+    socketSend('privmsg', JSON.stringify([ channelId, message ]));
   }
 
   public create(channelName: string, password?: string) {
-    socket.emit('create', JSON.stringify([ channelName, password === "" ? undefined : password ]));
+    socketSend('create', JSON.stringify([ channelName, password === "" ? undefined : password ]));
   }
 
   public join(channelId: string, password?: string) {
-    socket.emit('join', JSON.stringify([ channelId, password ]));
+    socketSend('join', JSON.stringify([ channelId, password ]));
   }
 
   public part(channelId: string) {
-    socket.emit('part', JSON.stringify([ channelId ]));
+    socketSend('part', JSON.stringify([ channelId ]));
   }
 
   public close(channelId: string) {
-    socket.emit('close', JSON.stringify([ channelId ]));
+    socketSend('close', JSON.stringify([ channelId ]));
   }
 
   public kick(channelId: string, userId: string, message?: string) {
-    socket.emit('kick', JSON.stringify([ channelId, userId, message ]));
+    socketSend('kick', JSON.stringify([ channelId, userId, message ]));
   }
 
   public ban(channelId: string, userId: string) {
-    socket.emit('ban', JSON.stringify([ channelId, userId ]));
+    socketSend('ban', JSON.stringify([ channelId, userId ]));
   }
 
   public unban(channelId: string, userId: string) {
-    socket.emit('unban', JSON.stringify([ channelId, userId ]));
+    socketSend('unban', JSON.stringify([ channelId, userId ]));
   }
 
   public promote(channelId: string, userId: string) {
-    socket.emit('promote', JSON.stringify([ channelId, userId ]));
+    socketSend('promote', JSON.stringify([ channelId, userId ]));
   }
 
   public demote(channelId: string, userId: string) {
-    socket.emit('demote', JSON.stringify([ channelId, userId ]));
+    socketSend('demote', JSON.stringify([ channelId, userId ]));
   }
 
   public siteBan(userId: string) {
-    socket.emit('siteban', JSON.stringify([ userId ]));
+    socketSend('siteban', JSON.stringify([ userId ]));
   }
 
   public siteUnban(userId: string) {
-    socket.emit('siteunban', JSON.stringify([ userId ]));
+    socketSend('siteunban', JSON.stringify([ userId ]));
   }
 
   public sitePromote(userId: string) {
-    socket.emit('sitepromote', JSON.stringify([ userId ]));
+    socketSend('sitepromote', JSON.stringify([ userId ]));
   }
 
   public siteDemote(userId: string) {
-    socket.emit('sitedemote', JSON.stringify([ userId ]));
+    socketSend('sitedemote', JSON.stringify([ userId ]));
   }
 
   public password(channelId: string, password?: string) {
-    socket.emit('password', JSON.stringify([ channelId, password ]));
+    socketSend('password', JSON.stringify([ channelId, password ]));
   }
 
   public mute(channelId: string, userId: string) {
-    socket.emit('mute', JSON.stringify([ channelId, userId ]));
+    socketSend('mute', JSON.stringify([ channelId, userId ]));
   }
 
   public unmute(channelId: string, userId: string) {
-    socket.emit('unmute', JSON.stringify([ channelId, userId ]));
+    socketSend('unmute', JSON.stringify([ channelId, userId ]));
   }
 
   public topic(channelId: string, topic: string) {
-    socket.emit('topic', JSON.stringify([ channelId, topic ]));
+    socketSend('topic', JSON.stringify([ channelId, topic ]));
   }
 
   public block(userId: string) {
-    socket.emit('block', JSON.stringify([ userId ]));
+    socketSend('block', JSON.stringify([ userId ]));
   }
 
   public unblock(userId: string) {
-    socket.emit('unblock', JSON.stringify([ userId ]));
+    socketSend('unblock', JSON.stringify([ userId ]));
   }
 
   public challengeRequest(userId: string, gameMode?: GameMode) {
-    socket.emit('challengerequest', JSON.stringify([ userId, gameMode ]));
+    socketSend('challengerequest', JSON.stringify([ userId, gameMode ]));
   }
 
   public challengeAccept(userId: string, gameMode?: GameMode) {
-    socket.emit('challengeaccept', JSON.stringify([ userId, gameMode ]));
+    socketSend('challengeaccept', JSON.stringify([ userId, gameMode ]));
   }
 
   public challengeReject(userId: string) {
-    socket.emit('challengereject', JSON.stringify([ userId ]));
+    socketSend('challengereject', JSON.stringify([ userId ]));
   }
 
   public challengeSpectate(userId: string) {
-    socket.emit('challengespectate', JSON.stringify([ userId ]));
+    socketSend('challengespectate', JSON.stringify([ userId ]));
   }
 
   public list() {
-    socket.emit('list');
+    socketSend('list');
   }
 
   public adminWatch() {
-    socket.emit('adminwatch');
+    socketSend('adminwatch');
   }
 
   public banList(channelUUID: string) {
-    socket.emit('channelbanlist', JSON.stringify([ channelUUID ]));
+    socketSend('channelbanlist', JSON.stringify([ channelUUID ]));
   }
 
   public adminUnwatch() {
-    socket.emit('adminunwatch');
+    socketSend('adminunwatch');
     this.adminChannelList_.value = [];
     this.adminUserList_.value = [];
     this.admin_ = false;
   }
 
   public userWatch(userId: string[]) {
-    socket.emit('userwatch', JSON.stringify(userId));
+    socketSend('userwatch', JSON.stringify(userId));
   }
 
   public userUnwatch(userId: string[]) {
-    socket.emit('userunwatch', JSON.stringify(userId));
+    socketSend('userunwatch', JSON.stringify(userId));
   }
 
   public setUserCurrentChannel = (channelId: string | undefined): void => {
@@ -942,4 +935,4 @@ export class ChatClient {
   }
 }
 
-export const client = new ChatClient();
+export const client = ChatClient.getInstance();

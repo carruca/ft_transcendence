@@ -194,7 +194,6 @@ export class User {
       ...Array.from(this.watchUsers_).filter((user) => user.status !== UserStatusEnum.OFFLINE),
     ]);
 
-    console.log("User: getWatchers", uniqueUsers);
     return Array.from(uniqueUsers);
   }
 
