@@ -55,8 +55,13 @@ const routes = [
         component: FriendsView,
       },
       {
-        path: '/:username',
+        path: 'profile',
         name: 'Profile',
+        component: Profile,
+      },
+      {
+        path: 'profile/:username',
+        name: 'ProfileUser',
         component: Profile,
       },
       // TODO: Add routes that must display the navbar and sidebar here

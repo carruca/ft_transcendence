@@ -6,12 +6,15 @@ import {
   Body,
   Patch,
   Param,
-  Delete
+  Query,
+  Delete,
 } from '@nestjs/common';
+import { ApiTags } from '@nestjs/swagger';
+
 import { FriendsService } from './friends.service';
 import { CreateFriendDto } from './dto/create-friend.dto';
 import { UpdateFriendDto } from './dto/update-friend.dto';
-import { ApiTags } from '@nestjs/swagger';
+import { FriendStatus } from './entities/friend.entity';
 
 @ApiTags('friends')
 @Controller('friends')
@@ -23,9 +26,12 @@ export class FriendsController {
     return this.friendsService.create(createFriendDto);
   }
 
-  @Put()
-  update(@Body() updateFriendDto: UpdateFriendDto) {
-    return this.friendsService.updateStatus(updateFriendDto);
+  @Put(':id')
+  update(@Param('id') id: string, @Query('status') status: FriendStatus) {
+    return this.friendsService.update({
+      id,
+      status
+    });
   }
 
   @Get()

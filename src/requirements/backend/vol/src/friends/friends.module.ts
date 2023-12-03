@@ -14,6 +14,7 @@ import { User } from '../users/entities/user.entity';
     ]),
   ],
   controllers: [FriendsController],
-  providers: [FriendsService]
+  providers: [FriendsService],
+  exports: [FriendsService],
 })
 export class FriendsModule {}

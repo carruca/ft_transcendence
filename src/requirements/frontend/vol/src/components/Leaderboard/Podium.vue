@@ -36,7 +36,7 @@ const resetImage = (position : number) => {
 
 const redirectToProfile = (nickname : string) => {
   if (nickname === 'no_podium') return;
-  window.location.href = `/${nickname}`;
+  window.location.href = `/profile/${nickname}`;
 };
 
 const checkImage = async (username : string) => {

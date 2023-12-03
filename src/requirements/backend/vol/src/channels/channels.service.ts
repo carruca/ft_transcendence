@@ -226,14 +226,14 @@ export class ChannelsService {
   async removeChannelPassword(channelId: string): Promise<Channel> {
     const channel = await this.findOneById(channelId);
 
-    channel.password = undefined;
+    channel.password = '';
     return this.channelsRepository.save(channel);
   }
 
   async verifyChannelPassword(channelId: string, password: string): Promise<boolean> {
     const channel = await this.findOneById(channelId);
 
-    if (!channel.password) {
+    if (!channel.password || channel.password === '') {
       return true;
     }
     return await bcrypt.compare(password, channel.password);

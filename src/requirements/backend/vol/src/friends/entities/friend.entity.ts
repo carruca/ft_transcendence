@@ -31,7 +31,9 @@ export class Friend {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @ManyToMany(() => User, (user) => user.friends)
+  @ManyToMany(() => User, (user) => user.friends, {
+    onDelete: 'CASCADE'
+  })
   users: User[];
 
   @Column()

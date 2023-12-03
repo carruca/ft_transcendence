@@ -56,7 +56,7 @@
       <th>Losses</th>
     </tr>
     <tr v-for="ranking in rankingUsers">
-      <td><router-link :to="`${ranking.nickname}`" style="color:aliceblue">{{ ranking.nickname }}</router-link></td>
+      <td><router-link :to="`/profile/${ranking.nickname}`" style="color:aliceblue">{{ ranking.nickname }}</router-link></td>
       <td>{{ ranking.rating }}</td>
       <td>{{ ranking.wins }}</td>
       <td>{{ ranking.losses }}</td>
