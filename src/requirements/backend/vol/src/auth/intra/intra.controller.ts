@@ -22,8 +22,8 @@ export class IntraController {
       const { secure } = req;
       const data = await this.intraService.login(code);
       res.cookie('token', data.access_token, { httpOnly: false, signed: true, sameSite: secure ? 'none' : 'lax', maxAge: 3600000, secure });
-      res.cookie('refresh_token', data.refresh_token, { httpOnly: false, signed: true, sameSite: secure ? 'none' : 'lax', maxAge: 3600000, secure });
-      res.cookie('auth_method', 'intra', { httpOnly: false, signed: true, sameSite: secure ? 'none' : 'lax', maxAge: 3600000, secure });
+      res.cookie('refresh_token', data.refresh_token, { httpOnly: false, signed: true, sameSite: secure ? 'none' : 'lax', maxAge: 3600000 * 2, secure });
+      res.cookie('auth_method', 'intra', { httpOnly: false, signed: true, sameSite: secure ? 'none' : 'lax', maxAge: 3600000 * 2, secure });
       return data
     } catch (error) {
       console.error(error);
