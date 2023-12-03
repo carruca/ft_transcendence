@@ -118,7 +118,7 @@ async function loadProfile() {
   // Watch user status
   userStatus.value = userInfo.status;
   //TODO hacer que esto se actualice con client
-  if (!itsMe)
+  if (itsMe)
     client.userWatch([ ID.value[1] ]);
 
   loadedProfile.value = true;
@@ -129,30 +129,32 @@ const stopWatch = watch(
   () => {
     if (unmounted.value) return;
     loadedProfile.value = false;
-    if (!itsMe)
+    if (itsMe)
       client.userUnwatch([ ID.value[1] ]);
     loadProfile();
 });
-  
+
+const handleStatus = (responseJSON) => {
+  const userDTO = JSON.parse(responseJSON);
+
+  if (userDTO.sourceUserId === ID.value[1]) {
+    if (userDTO.changes.status != undefined)
+      userStatus.value = userDTO.changes.status;
+  }
+};
+
 onMounted(async () => {
   await route.isReady();
+  socket.on('userUpdated', handleStatus);
   loadProfile();
-  socket.on('watch', handleStatus);
 });
 
 onBeforeUnmount(() => {
   unmounted.value = true;
   if (!itsMe) client.userUnwatch([ ID.value[1] ]);
   stopWatch();
-  socket.off('watch', handleStatus);
+  socket.off('userUpdated', handleStatus);
 });
-
-const handleStatus = (responseJSON) => {
-  const userDTO = JSON.parse(responseJSON);
-
-  if (userDTO.id === ID.value[1])
-    userStatus.value = JSON.parse(userDTO).id;
-};
 
 const launchEditPage = () => {
   editPage.value = true;
