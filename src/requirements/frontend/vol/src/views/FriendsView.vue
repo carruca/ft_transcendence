@@ -27,21 +27,21 @@
             </div>
             <div v-else class="list">
               <div v-for="user in getSelectedTabList()"
-                  :key="user.user[0].id"
+                  :key="user.id"
                   class="user"
               >
                 <div class="user-picture">
                   <img :src="user.userProfile" alt="Profile picture" class="friend-image">
                 </div>
                 <div class="user-info"
-                    @click="handleUserClick(user.user[0].nickname)">
-                  <h4>{{ user.user[0].nickname }}</h4>
+                    @click="handleUserClick(user.nickname)">
+                  <h4>{{ user.nickname }}</h4>
                 </div>
-                <div class="user-status">
-                  <h3>{{ connectionStatus[user.user[0].status] }}</h3>
+                <div class="user-status" v-if="user.relationStatus !== RelationStatusEnum.BLOCKED">
+                  <h3>{{ connectionStatus[user.userStatus] }}</h3>
                 </div>
                 <div class="user-actions">
-                  <friendsBotton :users="[me.id, user.user[0].id]"></friendsBotton>
+                  <friendsBotton :users="[me.id, user.id]"></friendsBotton>
                 </div>
               </div>
             </div>
@@ -59,6 +59,8 @@ import router from '@/router';
 import md5 from 'md5';
 import friendsBotton from '@/components/Profile/friendsBotton.vue';
 import { connectionStatus } from '@/components/Profile/ConnectionStatus';
+import { UserStatusEnum } from '@/services/enum';
+import { RelationUser, RelationStatusEnum } from '@/services/model';
 
 const props = defineProps({
   user: {
@@ -70,23 +72,25 @@ const me = props.user;
 
 const isLoading = ref(true);
 
-// TODO change to 'Online' when possible
-const selectedTab = ref('All');
+const selectedTab = ref('Online');
 const tabs = ['Online', 'All', 'Pending', 'Blocked'];
 
-// TODO onlineUsers and blockedUsers
-const friendsList = ref([]);
-const blocksList = ref([]);
+const usersList = ref([]);
 
-const allUsers = computed(() => friendsList.value.filter(friend => friend.status === 1));
-const onlineUsers = computed(() => friendsList.value.filter(friend => friend.user[0].status === 1 && friend.user[0].status === 1));;
-const pendingUsers = computed(() => friendsList.value.filter(friend => friend.status === 0));
-const blockedUsers = computed(() => blocksList.value);
+const allUsers = computed(() => usersList.value.filter(user => user.relationStatus === RelationStatusEnum.ACCEPTED));
+const onlineUsers = computed(() => usersList.value.filter(user => user.relationStatus === RelationStatusEnum.ACCEPTED && user.userStatus === UserStatusEnum.ONLINE));;
+const pendingUsers = computed(() => usersList.value.filter(user => user.relationStatus === RelationStatusEnum.PENDING));
+const blockedUsers = computed(() => usersList.value.filter(user => user.relationStatus === RelationStatusEnum.BLOCKED));
 
 onMounted(async () => {
   isLoading.value = true;
-  friendsList.value = await fetchFriends();
-  blocksList.value = await fetchBlocks();
+  const friendsList = await fetchFriends();
+  const blocksList = await fetchBlocks();
+
+  //console.log(`friendsList: ${JSON.stringify(friendsList)}`);
+  //console.log(`blocksList: ${JSON.stringify(blocksList)}`);
+  usersList.value = [...friendsList, ...blocksList];
+
   isLoading.value = false;
 });
 
@@ -124,7 +128,7 @@ function handleUserClick(nickname: string) {
 };
 
 // Function to fetch friends data
-async function fetchFriends() {
+async function fetchFriends(): Promise<RelationUser[]> {
   try {
     const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/users/${me.id}/friends`, {
       method: "GET",
@@ -138,17 +142,19 @@ async function fetchFriends() {
       throw new Error('Failed to fetch friends');
     }
     let data = await response.json();
-    data = await Promise.all(data.map(async (item) => {
+    console.log(`FRIEND data: ${JSON.stringify(data)}`);
+    return await Promise.all(data.map(async (item) => {
       const userProfile = await getProfilePictureUrl(item.user[0].nickname, item.user[0].login);
-      item.userProfile = userProfile;
-      return item;
+      const userStatus = new RelationUser(item.user[0], item.status);
+      userStatus.userProfile = userProfile;
+      return userStatus;
     }));
-    return data;
   } catch (error) {
     console.error('Error fetching friends:', error);
+    return [];
   }
 }
-async function fetchBlocks() {
+async function fetchBlocks(): Promise<RelationUser[]> {
   try {
     const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/users/${me.id}/blocks`, {
       method: "GET",
@@ -162,14 +168,16 @@ async function fetchBlocks() {
       throw new Error('Failed to fetch blocks');
     }
     let data = await response.json();
-    data = await Promise.all(data.map(async (item) => {
-      const userProfile = await getProfilePictureUrl(item.user[0].nickname, item.user[0].login);
-      item.userProfile = userProfile;
-      return item;
+    console.log(`BLOCK data: ${JSON.stringify(data)}`);
+    return await Promise.all(data.map(async (item) => {
+      const userProfile = await getProfilePictureUrl(item.nickname, item.login);
+      const userStatus = new RelationUser(item, RelationStatusEnum.BLOCKED);
+      userStatus.userProfile = userProfile;
+      return userStatus;
     }));
-    return data;
   } catch (error) {
     console.error('Error fetching blocks:', error);
+    return [];
   }
 }
 
