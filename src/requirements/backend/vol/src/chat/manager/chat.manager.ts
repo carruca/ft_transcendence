@@ -345,11 +345,14 @@ export class ChatManager {
   public async userWatchUserId(sourceUser: User, targetUsersId: string[]): Promise<Response> {
     const targetUsers: User[] = [];
 
+    if (targetUsersId == undefined) return Response.Success();
+    console.log(targetUsersId);
+
     for (const targetUserId of targetUsersId) {
       const targetUser = this.getUserById(targetUserId);
 
       if (!targetUser) return Response.UserNotExists();
-      sourceUser.addWatcher(targetUser);
+      targetUser.addWatcher(sourceUser);
       targetUsers.push(targetUser);
     }
 
@@ -361,6 +364,8 @@ export class ChatManager {
 
 
   public async userUnwatchUserId(sourceUser: User, targetUsersId: string): Promise<Response> {
+    if (targetUsersId == undefined) return Response.Success();
+
     for (const targetUserId of targetUsersId) {
       const targetUser = this.getUserById(targetUserId);
       

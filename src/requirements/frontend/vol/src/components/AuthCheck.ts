@@ -41,7 +41,7 @@ export const loggedInFn = async (): Promise<Object | undefined> => {
             router.replace("/login");
             break;
         }
-        return data.message;
+        return undefined;
       }
     }
     if (response.ok) {

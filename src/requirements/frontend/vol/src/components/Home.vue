@@ -2,10 +2,15 @@
 import NavBar from './NavBar.vue';
 import TopBar from './TopBar.vue';
 import Modal from './Modal.vue';
-import { onMounted, defineProps, watch, ref } from 'vue';
-import { UserSiteRoleEnum } from '@/services/enum/user-site-role.enum'
+import { onMounted, defineProps, watch, ref, defineEmits } from 'vue';
 import { ChatClient } from '@/services/chat-client'
 import Toast from './Toast.vue'
+
+const emit = defineEmits(['userUpdated']);
+
+const onUserUpdated = () => {
+  emit('userUpdated');
+};
 
 interface APIResponseFriends {
   senderId: string;
@@ -158,7 +163,7 @@ async function handlePetition(friend : APIResponseFriends, status : FriendStatus
       <p>{{ currentFriendPetition.user[0].nickname }} wants to be your friend</p>
     </Modal>
     <main>
-      <router-view :user="props.user" />
+      <router-view :user="props.user" @userUpdated="onUserUpdated" />
     </main>
   </div>
 </template>

@@ -23,6 +23,18 @@ const clearError = () => {
   error.value = undefined;
 };
 
+const onUserUpdated = async (c) => {
+  try {
+    user.value = undefined;
+    loggedIn.value = user.value !== undefined;
+    user.value = await loggedInFn();
+    loggedIn.value = user.value !== undefined;
+  } catch (_error) {
+    error.value = _error;
+    console.error(_error);
+  }
+}
+
 </script>
 
 <template>
@@ -31,7 +43,7 @@ const clearError = () => {
       <i class="material-icons">error</i>
     </Toast>
     <Splash v-if="!loggedIn" />
-    <HomeVue :user="user" v-else/>
+    <HomeVue :user="user" @userUpdated="onUserUpdated" v-else/>
   </main>
 </template>
 

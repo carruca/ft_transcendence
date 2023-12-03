@@ -19,6 +19,12 @@ const props = defineProps({
 	}
 });
 
+const emit = defineEmits(['userUpdated']);
+
+const onUserUpdated = () => {
+  emit('userUpdated');
+};
+
 const ID = ref<[string, string]>(['none', 'none']);
 const usernameRef = ref()
 const profilePictureRef = ref();
@@ -182,7 +188,7 @@ const closeEditPage = async () => {
       </div>
       <div v-if="itsMe">
         <button class="fancy-button-green" @click="launchEditPage">Edit profile</button>
-        <EditProfile v-if="editPage && profilePictureRef" @close="closeEditPage" :nickname="usernameRef" :profilePicture="profilePictureRef"></EditProfile>
+        <EditProfile v-if="editPage && profilePictureRef" @close="closeEditPage" :nickname="usernameRef" :profilePicture="profilePictureRef" @userUpdated="onUserUpdated"/>
       </div>
       <div v-if="!itsMe">
         <friendsBotton :users="ID"></friendsBotton>
