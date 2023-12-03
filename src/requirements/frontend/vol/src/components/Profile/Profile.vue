@@ -42,7 +42,7 @@ async function askUserinfo(username : string | string[]) {
       {
         method: "GET",
         headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
+        "Content-Type": "application/json",
         },
         credentials: "include",
       });

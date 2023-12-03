@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
+import router from '@/router';
 import md5 from 'md5';
 
 interface rankingUser {
@@ -36,7 +37,7 @@ const resetImage = (position : number) => {
 
 const redirectToProfile = (nickname : string) => {
   if (nickname === 'no_podium') return;
-  window.location.href = `/profile/${nickname}`;
+  router.push(`/profile/${nickname}`);
 };
 
 const checkImage = async (username : string) => {
