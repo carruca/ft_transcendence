@@ -127,6 +127,8 @@
     </div>
     <editChannelModal
       :visible="showEditModal"
+      @pm="handleEditModalPm"
+      @unban="handleEditModalUnban"
       @save="handleEditModalSave"
       @close="handleEditModalClose"
     />
@@ -135,6 +137,8 @@
 
 <script setup>
 import { ref, onMounted, onUnmounted, watch, computed, defineProps } from 'vue';
+import router from '@/router';
+
 import { client } from '@/services/chat-client';
 import router from '@/router';
 
@@ -288,6 +292,16 @@ const handleEditModalClose = () => {
   showEditModal.value = false;
 };
 
+const handleEditModalPm = (user) => {
+  setCurrentPrivate(user.id);
+  // TODO set pm logic
+  router.push('/chat');
+};
+const handleEditModalUnban = (user) => {
+  console.log(`Unbanning user '${user.name}'`)
+  client.unban(selectedChannelUUID.value, user.id);
+};
+
 // User color
 function channelClass(channel) {
   if (channel.hasPassword)
@@ -389,10 +403,13 @@ function kick() {
 // TODO change function to working ones
 // TODO maybe more actions ?
 function webban() {
-  if (selectedUser.value && selectedUser.value.isBanned)
+  if (selectedUser.value && selectedUser.value.isBanned) {
+    client.siteBan(selectedUser.value.id);
     alert('unban!');
-  else
+  } else {
+    client.siteUnban(selectedUser.value.id);
     alert('ban!');
+  }
 }
 function webpromote() {
   // TODO isModerator does not exist

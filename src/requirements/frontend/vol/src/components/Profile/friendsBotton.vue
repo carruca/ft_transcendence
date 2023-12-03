@@ -64,33 +64,6 @@ async function takeFriendStatus() {
   }
 };
 
-async function takeBlockStatus() {
-  try {
-    const response = await fetch(
-      `${import.meta.env.VITE_BACKEND_URL}/users/${users.value[0]}/blocks`,
-      {
-        method: "GET",
-        headers: {
-        "Content-Type": "application/json",
-        },
-        credentials: "include",
-      });
-    if (!response.ok)
-    {
-      throw new Error("Could not get blocks");
-    }
-    blocks = await response.json();
-    blocks.forEach((block: APIResponseBlocks) => {
-      if (block.id === users.value[1])
-      {
-        blockState.value = true;
-      }
-    });
-  } catch (error) {
-    console.error(error);
-  }
-};
-
 async function addFriend() {
   try {
     const response = await fetch(
@@ -143,6 +116,33 @@ async function deleteFriend() {
     }
     console.log("Deleted");
     friendState.value = 3;
+  } catch (error) {
+    console.error(error);
+  }
+};
+
+async function takeBlockStatus() {
+  try {
+    const response = await fetch(
+      `${import.meta.env.VITE_BACKEND_URL}/users/${users.value[0]}/blocks`,
+      {
+        method: "GET",
+        headers: {
+        "Content-Type": "application/json",
+        },
+        credentials: "include",
+      });
+    if (!response.ok)
+    {
+      throw new Error("Could not get blocks");
+    }
+    blocks = await response.json();
+    blocks.forEach((block: APIResponseBlocks) => {
+      if (block.blockId === users.value[1])
+      {
+        blockState.value = true;
+      }
+    });
   } catch (error) {
     console.error(error);
   }
@@ -209,8 +209,6 @@ onMounted(async () => {
   // debugger;
   users.value = props.users;
   Promise.all([takeFriendStatus(), takeBlockStatus()]);
-  takeFriendStatus();
-  takeBlockStatus();
   checkedFriend.value = true;
 });
 

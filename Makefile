@@ -78,10 +78,10 @@ export:
 	$(DOCKER_COMPOSE) exec -u root -t $(POSTGRESQL) pg_dump $(DATABASE) --data-only
 
 data:
-	$(DOCKER_COMPOSE) exec -u root -t $(POSTGRESQL) psql $(DATABASE) -c "SELECT * FROM \"user\"; SELECT * FROM \"channel\"; SELECT * FROM \"channel_user\"; SELECT * FROM \"block\"; SELECT * FROM \"ban\";"
+	$(DOCKER_COMPOSE) exec -u root -t $(POSTGRESQL) psql $(DATABASE) -c "SELECT 'User' as table, * FROM \"user\"; SELECT 'Channel' as table, * FROM \"channel\"; SELECT 'ChannelUser' as table, * FROM \"channel_user\"; SELECT 'Block' as table, * FROM \"block\"; SELECT 'Ban' as table, * FROM \"ban\";"
 
 clear:
-	$(DOCKER_COMPOSE) exec -u root -t $(POSTGRESQL) psql $(DATABASE) -c "DELETE FROM \"ban\"; DELETE FROM \"channel_user\"; DELETE FROM \"channel\"; DELETE FROM \"user\";"
+	$(DOCKER_COMPOSE) exec -u root -t $(POSTGRESQL) psql $(DATABASE) -c "DELETE FROM \"ban\"; DELETE FROM \"channel_user\"; DELETE FROM \"channel\"; DELETE FROM \"user\"; DELETE FROM \"ban\";"
 
 
 $(ADMINS): ADMINUSER := $(word 1,$(MAKECMDGOALS))

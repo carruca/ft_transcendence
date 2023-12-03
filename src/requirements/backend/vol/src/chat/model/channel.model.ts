@@ -48,11 +48,11 @@ export class Channel {
   private topic_?: string;
   private topicSetDate_?: Date;
   private topicUser_?: User;
-  private password_?: string;
+  private password_: boolean;
 
   private readonly users_ = new Set<User>;
   private readonly admins_ = new Set<User>;
-  private readonly bans_ = new Set<User>;
+  private readonly bans_: Set<User>;
   private readonly mutes_ = new Set<User>;
   private readonly events_ = new RollingLogger<Event>(EVENTS_MAX);
 
@@ -74,6 +74,7 @@ export class Channel {
     this.topicUser_ = channelPayload.topicUser;
     this.password_ = channelPayload.password;
     this.notifyCallback_ = notifyCallback;
+    this.bans_ = new Set<User>(channelPayload.bans);
   }
 
   public delete(): void {
@@ -93,7 +94,7 @@ export class Channel {
   }
 
   public createEvent(eventPayload: EventPayload): Event {
-    const event = new Event(this.childNotify_.bind(this), eventPayload);
+    const event = new Event(eventPayload, this.childNotify_.bind(this));
 
     this.events_.add(event);
     this.childNotify_([ event ], NotifyEventTypeEnum.CREATE);
@@ -136,11 +137,6 @@ export class Channel {
     else
       this.admins_.delete(user);
     
-    if (channelUserDB.banned)
-      this.bans_.add(user);
-    else
-      this.bans_.delete(user);
-
     if (channelUserDB.muted)
       this.mutes_.add(user);
     else
@@ -153,6 +149,10 @@ export class Channel {
 
   public isOwner(user: User): boolean {
     return this.owner == user;
+  }
+
+  public getBans(): User[] {
+    return Array.from(this.bans_.values());
   }
 
   public getUsers(): User[] {
@@ -168,7 +168,6 @@ export class Channel {
   }
 
   public getEvents(): Event[] {
-    console.log("channel::getEvents -> ", this.events_.values());
     return this.events_.values();
   }
 
@@ -222,10 +221,10 @@ export class Channel {
   unbanUser(user: User) {
     if (this.isBanned(user)) {
       this.bans_.delete(user);
-      this.notify_(NotifyEventTypeEnum.UPDATE, {
-        userId: user.id,
-        banned: false,
-      });
+  //    this.notify_(NotifyEventTypeEnum.UPDATE, {
+  //      userId: user.id,
+  //      banned: false,
+  //    });
     }
   }
 
@@ -312,16 +311,16 @@ export class Channel {
     }
   }
 
-  set password(value: string | undefined) {
+  set password(value: boolean) {
     if (this.password_ !== value) {
       this.password_ = value;
       this.notify_(NotifyEventTypeEnum.UPDATE, {
-        password: value,
+        password: this.password_,
       });
     }
   }
 
-  get password(): string | undefined {
+  get password(): boolean {
     return this.password_;
   }
 
@@ -329,8 +328,8 @@ export class Channel {
     return new ChannelUserDTO(this, user);
   }
 
-  get DTO(): ChannelDTO {
-    return new ChannelDTO(this);
+  DTO(targetUser?: User): ChannelDTO {
+    return new ChannelDTO(this, targetUser);
   }
 
   get summaryDTO(): ChannelSummaryDTO {

@@ -14,6 +14,7 @@
         <div class="scrollable-content">
           <div class="channel-list">
             <ul class="list">
+              <!-- Channel list -->
               <li
                   v-for="channel in userChannelList"
                   :key="channel.id"
@@ -22,6 +23,16 @@
                   :class="[ channelClass(channel), { 'selected': channel.id === selectedChannelUUID }, { 'selected': channel.id === contextChannelUUID } ]"
               >
                 {{ formatChannelName(channel.name) }}
+              </li>
+              <!-- Private list -->
+              <li
+                  v-for="pm in privateList"
+                  :key="pm.nickname"
+                  @click="selectPrivate(pm.id)"
+                  @contextmenu="onRightClick(pm, pm, $event)"
+                  :class="[ { 'selected': pm.id === selectedPrivateUUID }, { 'selected': pm.id === contextPrivateID } ]"
+              >
+                {{ pm.nickname }}
               </li>
             </ul>
           </div>
@@ -35,8 +46,9 @@
           <h2>Chat</h2>
         </div>
         <div class="scrollable-content" ref="eventsDisplay">
+          <!-- Channel Events -->
           <div class="list" v-if="userCurrentChannel">
-            <h2>{{ userCurrentChannel.name }}</h2>
+            <!-- <h2>{{ userCurrentChannel.name }}</h2> -->
             <div
                 v-for="event in formattedEvents"
                 :key="event.id"
@@ -58,23 +70,38 @@
               <span>
                 {{ event.message }}
               </span>
+              <span v-if="event.isTargetEvent()">&nbsp;</span>
               <span
                   v-if="event.isTargetEvent()"
                   class="event-user"
                   :title="getUserTitle(event.targetChannelUser)"
                   @click="onClick(event, event.targetChannelUser)"
                   @contextmenu="onRightClick(event, event.targetChannelUser, $event)">
-                &nbsp;
                 {{ event.target.name }}
               </span>
             </div>
           </div>
+          <!-- Private Events -->
+          <div v-else-if="currentPrivate">
+            <!-- <h2>{{ currentPrivate.nickname }}</h2> -->
+            <div
+                v-for="event in formattedEvents"
+                :key="event.id"
+                :title="getTime(event.timestamp)"
+                :class="[ 'event' ]"
+                :style="{ color: event.color }"
+            >
+              <span>&lt;{{ event.source.name }}&gt;&nbsp;{{ event.message }}</span>
+            </div>
+          </div>
+          <!-- Nothing selected -->
           <div v-else>
-            <p>No channel selected.</p>
+            <p>No chat selected.</p>
           </div>
         </div>
-        <div class="message-input" v-if="userCurrentChannel">
-          <input type="text" v-model="newMessage" @keyup.enter="sendMessage" placeholder="Message...">
+        <!-- message input box -->
+        <div v-if="userCurrentChannel || currentPrivate" class="message-input">
+          <input type="text" v-model="newMessage" ref="messageInput" @keyup.enter="sendMessage" placeholder="Message...">
           <button @click="sendMessage">Send</button>
         </div>
       </div>
@@ -110,6 +137,9 @@
               </li>
             </ul>
           </div>
+          <div v-else-if="currentPrivate">
+            <p>You are on a private chat.</p>
+          </div>
           <div v-else>
             <p>No channel selected.</p>
           </div>
@@ -137,6 +167,9 @@
   />
   <editChannelModal
       :visible="showEditModal"
+      :users="userCurrentChannelBanList"
+      @pm="handleEditModalPm"
+      @unban="handleEditModalUnban"
       @save="handleEditModalSave"
       @close="handleEditModalClose"
   />
@@ -150,19 +183,50 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onBeforeUnmount, watch, computed, nextTick } from 'vue';
+import {
+  ref,
+  onMounted,
+  onBeforeUnmount,
+  watch,
+  computed,
+  nextTick,
+} from 'vue';
+import router from '@/router';
+
 import contextMenu from '@/components/ContextMenu.vue';
 import joinChannelModal from '@/components/JoinChannelModal.vue';
 import createChannelModal from '@/components/CreateChannelModal.vue';
 import editChannelModal from '@/components/EditChannelModal.vue';
 import confirmModal from '@/components/ConfirmModal.vue';
 // FIXME real client
-import { Channel, ChannelUser, User, Event, EventUser, ChatEvent } from '@/services/model';
+import {
+  Channel,
+  ChannelUser,
+  User,
+  Event,
+  EventUser,
+  ChatEvent,
+  Private,
+} from '@/services/model';
 import { client } from '@/services/chat-client';
-import { EventTypeEnum, UserSiteRoleEnum, UserStatusEnum } from '@/services/enum';
-const { channelsSummary, userChannelList, userCurrentChannel, setUserCurrentChannel } = client;
+import {
+  EventTypeEnum,
+  UserSiteRoleEnum,
+  UserStatusEnum,
+} from '@/services/enum';
+const {
+  channelsSummary,
+  userChannelList,
+  userCurrentChannel,
+  setUserCurrentChannel,
+  userCurrentChannelBanList,
+  privateList,
+  currentPrivate,
+  setCurrentPrivate,
+} = client;
 
 const selectedChannelUUID = ref(null);
+const selectedPrivateUUID = ref(null);
 
 const contentSection = ref(null);
 
@@ -175,10 +239,13 @@ const rightResizer = ref(null);
 const eventsDisplay = ref(null);
 const newMessage = ref('');
 
+const messageInput = ref(null);
+
 // Context menu
 const contextChannelUUID = ref(null);
 const contextEventUUID = ref(null);
 const contextUserUUID = ref(null);
+const contextPrivateUUID = ref(null);
 
 const showContextMenu = ref(false);
 const contextMenuPosition = ref({ x: 0, y: 0 });
@@ -196,22 +263,16 @@ const showConfirmModal = ref(false);
 const confirmModalTitle = ref('');
 const confirmModalText = ref('');
 
+// Assuming userCurrentChannelBanList is a ref
 onMounted(() => {
   window.addEventListener('click', closeContextMenu);
 
-  nextTick(() => {
-    window.addEventListener('resize', e => handleResize(leftSection.value, middleSection.value, rightSection.value, contentSection.value));
-    leftResizer.value.addEventListener('mousedown', e => initDrag(e, leftSection.value, middleSection.value, rightSection.value, contentSection.value, true));
-    rightResizer.value.addEventListener('mousedown', e => initDrag(e, leftSection.value, middleSection.value, rightSection.value, contentSection.value, false));
-    updateResizerWidth();
-    scrollToBottom();
-    if (userCurrentChannel.value && userCurrentChannel.value.id != selectedChannelUUID.value) {
-      selectedChannelUUID.value = userCurrentChannel.value.id;
-      nextTick(() => {
-        scrollToBottom();
-      });
-    }
-  });
+  if (userCurrentChannel.value && userCurrentChannel.value.id != selectedChannelUUID.value) {
+    selectedChannelUUID.value = userCurrentChannel.value.id;
+    nextTick(() => {
+      scrollToBottom();
+    });
+  }
 });
 
 onBeforeUnmount(() => {
@@ -225,22 +286,34 @@ onBeforeUnmount(() => {
   window.removeEventListener('resize', e => handleResize(leftSection.value, middleSection.value, rightSection.value, contentSection.value));
 });
 
-// Watch current channel for changes
+// Watch current channel for change in current channel
 watch(userCurrentChannel, (newChannel) => {
   if (!newChannel) {
     selectedChannelUUID.value = undefined;
   } else if (newChannel.id !== selectedChannelUUID.value) {
-    selectedChannelUUID.value = newChannel.id;
+    selectChannel(newChannel.id);
     nextTick(() => {
       scrollToBottom();
     });
   }
 });
-// Watch the channel list for changes
+// Watch the current private for change in current private
+watch(currentPrivate, (newPrivate) => {
+  if (!newPrivate) {
+    selectedPrivateUUID.value = undefined;
+  } else if (newPrivate.id !== selectedPrivateUUID.value) {
+    selectPrivate(newPrivate.id);
+    nextTick(() => {
+      scrollToBottom();
+    });
+  }
+});
+
+// Watch the channel list for deletion of current channel
 watch(userChannelList, (newChannelList) => {
   if (selectedChannelUUID.value && !newChannelList.some(channel => channel.id === selectedChannelUUID.value)) {
-    selectedChannelUUID.value = null;
-    setUserCurrentChannel(null);
+    selectedChannelUUID.value = undefined;
+    setUserCurrentChannel(undefined);
   }
 });
 // Watch the selectedChannelUUID for changes to its user list
@@ -262,9 +335,30 @@ const updateResizerWidth = () => {
   document.documentElement.style.setProperty('--resizer-width', `${resizerWidth.value}px`);
 };
 
+const unselectChannel = () => {
+  selectedChannelUUID.value = undefined;
+  setUserCurrentChannel(undefined);
+};
+const unselectPrivate = () => {
+  selectedPrivateUUID.value = undefined;
+  setCurrentPrivate(undefined);
+};
+
 const selectChannel = (channelUUID) => {
+  unselectPrivate();
   selectedChannelUUID.value = channelUUID;
   setUserCurrentChannel(channelUUID);
+  nextTick(() => {
+    messageInput.value.focus();
+  });
+};
+const selectPrivate = (privateUUID) => {
+  unselectChannel();
+  selectedPrivateUUID.value = privateUUID;
+  setCurrentPrivate(privateUUID);
+  nextTick(() => {
+    messageInput.value.focus();
+  });
 };
 
 const getTime = (time) => {
@@ -322,6 +416,11 @@ const formattedEvents = computed(() => {
       return new ChatEvent(event, sourceChannelUser, targetChannelUser);
     });
   }
+  if (currentPrivate.value && currentPrivate.value.events) {
+    return [...currentPrivate.value.events.values()].map(event => {
+      return new ChatEvent(event, undefined, undefined);
+    });
+  }
   return [];
 });
 watch(formattedEvents, () => {
@@ -336,41 +435,119 @@ watch(formattedEvents, () => {
 const sendMessage = () => {
   if (newMessage.value.trim() === '')
     return;
-  // TODO replace with real client
-  client.chanmsg(selectedChannelUUID.value, newMessage.value);
   console.log("Sending message: " + newMessage.value);
+  if (userCurrentChannel.value)
+    client.chanmsg(selectedChannelUUID.value, newMessage.value);
+  if (currentPrivate.value)
+    client.privmsg(currentPrivate.value.id, newMessage.value);
   newMessage.value = '';
 };
 
 // Click handlers
 const onClick = (selected, item) => {
-  if (selected instanceof ChatEvent || selected instanceof ChannelUser) {
-    console.log(`Clicked on user '${item.user.name}'`);
+  // Protect in case user is no longer on the channel (item/ChannelUser is undefined)
+  if (selected instanceof ChatEvent && !item) {
+    if (selected.isTargetEvent())
+      item = selected.target;
+    else
+      item = selected.source;
+    // Ourself?
+    if (item.id === client.me.value.id)
+      return;
+    client.openPrivate(item.id, item.name);
+  } else if (selected instanceof ChatEvent || selected instanceof ChannelUser) {
+    // Ourself?
+    if (item.user.id === client.me.value.id)
+      return;
+    client.openPrivate(item.user.id, item.user.name);
   } else {
     console.log(`ERROR: Clicked on item '${item}' not handled`);
   }
 };
 const onRightClick = (selected, item, event) => {
   event.preventDefault(); // Prevent the default context menu
-  contextMenuItem.value = item;
 
   contextChannelUUID.value = null;
   contextEventUUID.value = null;
   contextUserUUID.value = null;
+  contextPrivateUUID.value = null;
 
-  const myUser = client.me.value;
-  const myChannelUser = client.getChannelUserById(selectedChannelUUID.value, myUser.id);
+  // Protect in case user is no longer on the channel (item/ChannelUser is undefined)
+  if (selected instanceof ChatEvent && !item) {
+    if (selected.isTargetEvent())
+      item = selected.target;
+    else
+      item = selected.source;
+  }
+  getAvailableOptions(selected, item);
 
-  // TODO create the array of options based on our permissions and user permissions
-  contextMenuOptions.value = [];
+  contextMenuItem.value = item;
+  contextMenuPosition.value = { x: event.clientX, y: event.clientY };
+  showContextMenu.value = true;
+};
+
+// Context menu
+const getAvailableOptions = (selected, item) => {
+  // Set context variables
   if (selected instanceof ChatEvent || selected instanceof ChannelUser) {
     if (selected instanceof ChatEvent)
       contextEventUUID.value = selected.id;
     else
       contextUserUUID.value = selected.id;
+  } else if (selected instanceof Channel) {
+    contextChannelUUID.value = selected.id;
+  } else if (selected instanceof Private) {
+    contextPrivateUUID.value = selected.id;
+  } else {
+    console.log(`ERROR: Right click on item '${item}' not handled`);
+  }
 
+  const myUser = client.me.value;
+  // If we are right clicking on a channel, get that channel
+  // otherwise, get the current selected channel
+  const myChannelUser = (() => {
+    if (selected instanceof Channel)
+      return client.getChannelUserById(contextChannelUUID.value, myUser.id);
+    else
+      return client.getChannelUserById(selectedChannelUUID.value, myUser.id);
+  })();
+
+
+  // TODO create the array of options based on our permissions and user permissions
+  contextMenuOptions.value = [];
+
+  if (selected instanceof Channel) {
+    if (myChannelUser.isOwner || myChannelUser.isAdmin) {
+      contextMenuOptions.value.push('Edit');
+      contextMenuOptions.value.push('Destroy');
+    }
+    contextMenuOptions.value.push('Leave');
+  }
+
+  if (selected instanceof Private) {
     contextMenuOptions.value.push('Profile');
 
+    if (client.getUserById(item.id).blocked)
+      contextMenuOptions.value.push('Unblock');
+    else
+      contextMenuOptions.value.push('Block');
+
+    contextMenuOptions.value.push('Close');
+  }
+
+  if (selected instanceof ChatEvent || selected instanceof ChannelUser) {
+    // User actions
+    contextMenuOptions.value.push('Profile');
+
+    // Protect in case user no longer in channel 
+    // (item is EventUser instead of ChannelUser)
+    if (item instanceof EventUser)
+      return;
+    // in case we clicked on ourself!
+    if (item.user.id === myUser.id)
+      return;
+
+    // Channel user actions
     if (item.user.status === UserStatusEnum.ONLINE)
       contextMenuOptions.value.push('Challenge');
     else if (item.user.status === UserStatusEnum.IN_GAME)
@@ -400,23 +577,8 @@ const onRightClick = (selected, item, event) => {
 
       contextMenuOptions.value.push('Kick');
     }
-  } else if (selected instanceof Channel) {
-    contextChannelUUID.value = selected.id;
-
-    if (myChannelUser.isOwner || myChannelUser.isAdmin) {
-      contextMenuOptions.value.push('Edit');
-      contextMenuOptions.value.push('Destroy');
-    }
-    contextMenuOptions.value.push('Leave');
-  } else {
-    console.log(`ERROR: Right click on item '${item}' not handled`);
   }
-
-  contextMenuPosition.value = { x: event.clientX, y: event.clientY };
-  showContextMenu.value = true;
-};
-
-// Context menu
+}
 const handleContextMenuSelect = ({ option, item }) => {
   if (['Block',
        'Unblock',
@@ -428,7 +590,14 @@ const handleContextMenuSelect = ({ option, item }) => {
        'Destroy',
        'Leave'].includes(option)) {
     confirmModalTitle.value = `Confirm ${option.toLowerCase()}`;
-    confirmModalText.value = `Are you sure you want to ${option.toLowerCase()} '${item.name}'?`;
+
+    let name = '';
+    if (item instanceof Channel)
+        name = item.name;
+    else if (item instanceof ChannelUser)
+        name = item.user.name;
+    confirmModalText.value = `Are you sure you want to ${option.toLowerCase()} '${name}'?`;
+
     showConfirmModal.value = true;
     contextAction.value = option;
   } else {
@@ -445,6 +614,8 @@ const executeContextAction = ( option, item ) => {
     let channelUUID = item.id;
     if (option === 'Edit') {
       console.log(`Editing channel '${item.name}'`);
+      client.banList(item.id);
+      console.log(`userCurrentChannelBanList: ${userCurrentChannelBanList}`);
       handleEditClick();
     } else if (option === 'Destroy') {
       console.log(`Destroying channel '${item.name}'`);
@@ -453,10 +624,31 @@ const executeContextAction = ( option, item ) => {
       console.log(`Leaving channel '${item.name}'`);
       client.part(item.id);
     }
+  } else if (item instanceof Private) {
+    let privateUUID = item.id;
+    if (option === 'Profile') {
+      // FIXME fix user route
+      router.push(`/${item.name}`);
+    } else if (option === 'Close') {
+      console.log(`Closing private chat with '${item.nickname}'`);
+      client.closePrivate(item.id);
+    } else if (option === 'Block') {
+      console.log(`Blocking user '${item.nickname}'`);
+      client.block(item.user.id);
+    } else if (option === 'Unblock') {
+      console.log(`Unblocking user '${item.nickname}'`);
+      client.unblock(item.user.id);
+    }
+  } else if (item instanceof EventUser) {
+    if (option === 'Profile') {
+      // FIXME fix user route
+      router.push(`/${item.name}`);
+    }
   } else if (item instanceof ChannelUser) {
     let userUUID = item.user.id;
     if (option === 'Profile') {
-      console.log(`Showing profile for user '${item.user.name}'`);
+      // FIXME fix user route
+      router.push(`/${item.user.nickname}`);
     } else if (option === 'Challenge') {
       console.log(`Challenging user '${item.user.name}'`);
       client.challengeRequest(item.user.id);
@@ -528,7 +720,8 @@ const handleCreateModalCreate = (channelOptions) => {
 };
 const handleEditModalSave = (channelOptions) => {
   console.log(`Editing channel: has password? '${channelOptions.hasPassword}', password: '${channelOptions.password}'`);
-  client.password(selectedChannelUUID, channeloptions.hasPassword ? channelOptions.password : undefined);
+  console.log("selectedChannelUUID", selectedChannelUUID.value);
+  client.password(selectedChannelUUID.value, channelOptions.hasPassword ? channelOptions.password : undefined);
   showEditModal.value = false;
 };
 
@@ -542,9 +735,20 @@ const handleEditModalClose = () => {
   showEditModal.value = false;
 };
 
+const handleEditModalPm = (user) => {
+  setCurrentPrivate(user.id);
+  // TODO set pm logic
+};
+const handleEditModalUnban = (user) => {
+  console.log(`Unbanning user '${user.name}'`)
+  client.unban(selectedChannelUUID.value, user.id);
+};
+
 // Resize functions
 const MIN_WIDTH = 100;
 const handleResize = (leftSection, middleSection, rightSection, contentSection) => {
+  if (!leftSection || !middleSection || !rightSection || !contentSection)
+    return;
   const totalWidth = contentSection.offsetWidth;
   let newLeftWidth = leftSection.offsetWidth;
   let newMiddleWidth = middleSection.offsetWidth;
@@ -552,14 +756,15 @@ const handleResize = (leftSection, middleSection, rightSection, contentSection) 
 
   newRightWidth = Math.max(totalWidth - newLeftWidth - newMiddleWidth, MIN_WIDTH);
   newLeftWidth = Math.max(totalWidth - newMiddleWidth - newRightWidth, MIN_WIDTH);
-  newMiddleWidth = totalWidth - newLeftWidth - newRightWidth - (resizerWidth.value * 2);
-
+  newMiddleWidth =  -totalWidth - newLeftWidth - newRightWidth - (resizerWidth.value * 2);
   leftSection.style.width = `${newLeftWidth}px`;
   middleSection.style.width = `${newMiddleWidth}px`;
   rightSection.style.width = `${newRightWidth}px`;
 }
 const initDrag = (e, leftSection, middleSection, rightSection, contentSection, isLeftResizer) => {
   e.preventDefault();
+  if (!leftSection || !middleSection || !rightSection || !contentSection)
+    return;
   const startX = e.clientX;
   const startLeftWidth = leftSection.offsetWidth;
   const startMiddleWidth = middleSection.offsetWidth;
@@ -630,11 +835,9 @@ function userClass(user) {
 function userStatus(status) {
   if (status === UserStatusEnum.ONLINE)
     return 'status-online';
-  if (status === UserStatusEnum.INGAME)
-    return 'status-dnd';
   if (status === UserStatusEnum.AWAY)
     return 'status-away';
-  if (status == UserStatusEnum.IN_GAME)
+  if (status === UserStatusEnum.IN_GAME)
     return 'status-dnd';
   return 'status-offline';
 }
@@ -642,6 +845,7 @@ function userStatus(status) {
 const getUserRoles = (channelUser) => {
   const roles = [];
   if (!channelUser) return roles;
+  if (channelUser.user.id === client.me.value.id) roles.push('me');
   if (channelUser.isOwner) roles.push('owner');
   if (channelUser.isAdmin && !channelUser.isOwner) roles.push('admin');
   if (channelUser.isMuted) roles.push('muted');
@@ -652,7 +856,7 @@ const getUserRoles = (channelUser) => {
 }
 const getUserTitle = (channelUser) => {
   if (!channelUser)
-    return '(user not in channel)';
+    return '(user no longer in channel)';
 
   const roles = getUserRoles(channelUser);
   if (roles.length === 0)
@@ -661,7 +865,7 @@ const getUserTitle = (channelUser) => {
 }
 const getUserInfo = (channelUser) => {
   if (!channelUser)
-    return '(user not in channel)';
+    return '(user no longer in channel)';
 
   const roles = getUserRoles(channelUser);
   if (roles.length === 0)

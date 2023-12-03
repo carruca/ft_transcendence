@@ -30,6 +30,11 @@ export class Client {
         //return client.channels;
     }
 
+    get privs() {
+        for (const priv of client.privs)
+            console.log(priv);
+    }
+
     get users() {
         return client.users;
     }
@@ -112,6 +117,10 @@ export class Client {
 
     public observeUser(targetUserUUID: string) {
         this.send_('userobserve', [ targetUserUUID ]);
+    }
+
+    public banList(ChannelUUID: string) {
+        this.send_('channelbanlist', [ targetChannelUUID ]);
     }
 
     public list() {

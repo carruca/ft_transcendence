@@ -18,7 +18,6 @@ enum ResponseCode {
   BAD_CHANNEL_NAME,
   BAD_CHANNEL_PASSWORD,
   CANNOT_SEND_TO_CHANNEL,
-  INVALID_PASSWORD,
   INSUFFICIENT_PRIVILEGES,
   BANNED_FROM_CHANNEL,
   BANNED_FROM_SITE,
@@ -26,6 +25,12 @@ enum ResponseCode {
   CONVERSATION_NOT_EXISTS,
   USER_ALREADY_BANNED,
   USER_NOT_BANNED,
+  USER_ALREADY_BLOCKED,
+  USER_NOT_BLOCKED,
+  SAME_CHANNEL_PASSWORD,
+  SAME_USER,
+  USER_ALREADY_MODERATOR,
+  USER_NOT_MODERATOR,
 }
 
 export class Response {
@@ -113,8 +118,8 @@ export class Response {
     return new Response(ResponseCode.BANNED_FROM_CHANNEL, "You are banned from channel");
   }
 
-  static InvalidPassword(): Response {
-    return new Response(ResponseCode.INVALID_PASSWORD, "Invalid password");
+  static BadChannelPassword(): Response {
+    return new Response(ResponseCode.BAD_CHANNEL_PASSWORD, "Bad channel password");
   }
 
   static Success(): Response {
@@ -162,7 +167,7 @@ export class Response {
   }
 
   static ConversationNotExists(): Response {
-    return new Response(ResponseCode.CONVERSATION_NOT_EXISTS, "Conversation not exists");
+    return new Response(ResponseCode.CONVERSATION_NOT_EXISTS, "There is no conversation");
   }
 
   static UserAlreadyBanned(): Response {
@@ -170,6 +175,30 @@ export class Response {
   }
 
   static UserNotBanned(): Response {
-    return new Response(ResponseCode.USER_NOT_BANNED, "User not banned");
+    return new Response(ResponseCode.USER_NOT_BANNED, "Unbanned user");
+  }
+
+  static UserAlreadyBlocked(): Response {
+    return new Response(ResponseCode.USER_ALREADY_BLOCKED, "User already blocked");
+  }
+
+  static UserNotBlocked(): Response {
+    return new Response(ResponseCode.USER_NOT_BLOCKED, "User not blocked");
+  }
+
+  static SameChannelPassword(): Response {
+    return new Response(ResponseCode.SAME_CHANNEL_PASSWORD, "Channel has same password");
+  }
+
+  static SameUser(): Response {
+    return new Response(ResponseCode.SAME_USER, "Same user");
+  }
+
+  static UserAlreadyModerator(): Response {
+    return new Response(ResponseCode.USER_ALREADY_MODERATOR, "User is already a moderator")
+  }
+
+  static UserNotModerator(): Response {
+    return new Response(ResponseCode.USER_NOT_MODERATOR, "User is not a moderator");
   }
 }

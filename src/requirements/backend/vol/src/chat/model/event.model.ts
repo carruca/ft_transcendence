@@ -31,10 +31,10 @@ export class Event {
   private readonly targetUser_: User | undefined;
   private readonly type_: EventTypeEnum;
   private value_: string | undefined;
-  private notifyCallback_: Function;
+  private notifyCallback_?: Function;
 
-  constructor(notifyCallback: Function, eventPayload: EventPayload) {
-    this.id_ = eventPayload.uuid || uuidv4();
+  constructor(eventPayload: EventPayload, notifyCallback?: Function) {
+    this.id_ = eventPayload.id || uuidv4();
     this.timestamp_ = eventPayload.timestamp || new Date();
     this.modified_ = eventPayload.modified || false;
 	  if (!eventPayload.sourceUser)
@@ -60,7 +60,8 @@ export class Event {
   }
 
   private notify_(type: NotifyEventTypeEnum, changes?: {}) {
-    this.notifyCallback_( [ this ], type, changes);
+    if (this.notifyCallback_)
+      this.notifyCallback_( [ this ], type, changes);
   }
 
   get id(): string {
@@ -114,7 +115,7 @@ export class Event {
     return false;
   }
 
-  get DTO(): EventDTO {
+  DTO(): EventDTO {
     return new EventDTO(this);
   }
 }

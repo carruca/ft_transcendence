@@ -13,7 +13,7 @@ import { CreateBanDto } from './dto/create-ban.dto';
 import { ReturnBanDto } from './dto/return-ban.dto';
 
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, In } from 'typeorm';
+import { Repository, In, ILike } from 'typeorm';
 import { User, UserMode } from './entities/user.entity';
 import { Block } from './entities/block.entity';
 import { Ban } from './entities/ban.entity';
@@ -92,7 +92,9 @@ export class UsersService {
   }
 
   async findOneByNickname(nickname: string): Promise<User> {
-    const user = await this.usersRepository.findOneBy({ nickname: nickname });
+    const user = await this.usersRepository.findOneBy({
+      nickname: ILike(nickname)
+    });
     if (!user) {
       throw new HttpException('User not found', HttpStatus.NOT_FOUND);
     }
@@ -330,6 +332,19 @@ export class UsersService {
 
   async setDefaultStatusToAllUsers() : Promise<void> {
     await this.usersRepository.update({}, { status: 0 });
+  }
+
+  async setStatus(id: string, status: number) {
+    const user = await this.usersRepository.findOne({
+      where: {
+        id: id
+      }
+    })
+    if (!user) {
+      throw new HttpException('User not found', HttpStatus.NOT_FOUND);
+    }
+    user.status = status;
+    return this.usersRepository.save(user);
   }
 
   async update(id: string, updateUserDto?: UpdateUserDto, avatar?: Express.Multer.File): Promise<User> {

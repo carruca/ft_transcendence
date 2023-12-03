@@ -1,11 +1,14 @@
 import {
     UserStatusEnum,
-    UserSiteRoleEnum,
-    UserChannelRoleEnum,
 } from '../enum';
 
+import {
+	UserDTO,
+} from '.';
+
 export interface ChannelUserDTO {
-    uuid: string,
+	userDTO: UserDTO,
+    id: string,
     nickname: string,
     status: UserStatusEnum,
     admin: boolean,

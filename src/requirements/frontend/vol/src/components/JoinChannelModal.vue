@@ -3,7 +3,7 @@
     <div ref="modalContent" class="modal-content" @click.stop>
       <h2>Join a Channel</h2>
       <div class="scrollable-content">
-        <ul v-if="channels.length" class="channel-list">
+        <ul v-if="channels && channels.length" class="channel-list">
           <li
               v-for="channel in channels"
               :key="channel.id"
@@ -14,7 +14,7 @@
           </li>
         </ul>
         <div v-else>
-          No channels available
+          No more channels available
         </div>
       </div>
       <div class="buttons">
@@ -28,7 +28,7 @@
       <h3>Enter Password</h3>
       <div v-if="nameError" class="error-message">{{ nameError }}</div>
       <div class="input-group">
-        <input type="password" v-model="channelPassword" placeholder="Enten password">
+        <input type="password" v-model="channelPassword" ref="passwordInput" placeholder="Enten password">
       </div>
       <div class="buttons">
         <button @click="cancelPasswordEntry">Cancel</button>
@@ -40,7 +40,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onBeforeUnmount, watch, defineProps, defineEmits } from 'vue';
+import { ref, onMounted, onBeforeUnmount, watch, defineProps, defineEmits, nextTick } from 'vue';
 
 const props = defineProps({
   visible: Boolean,
@@ -55,6 +55,35 @@ const passwordRequired = ref(false);
 const channelPassword = ref('');
 
 const nameError = ref('');
+
+const passwordInput = ref(null);
+
+onMounted(() => {
+  window.addEventListener('keydown', handleKeyDown);
+});
+
+onBeforeUnmount(() => {
+  window.removeEventListener('keydown', handleKeyDown);
+});
+
+watch(() => passwordRequired.value, (newValue) => {
+  if (newValue) {
+    nextTick(() => {
+      passwordInput.value.focus();
+    });
+  }
+});
+
+const handleKeyDown = (event) => {
+  if (!props.visible) return;
+  if (event.key === 'Escape') {
+    closeModal();
+  } else if (event.key === 'Enter') {
+    if (passwordRequired.value && channelPassword.value) {
+      joinChannel();
+    }
+  }
+};
 
 const handleBackgroundClick = (event) => {
   if (event.target.classList.contains('modal')) {

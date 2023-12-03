@@ -42,8 +42,8 @@ export class User {
 
   private readonly channels_ = new Set<Channel>; // Array para almacenar los canales a los que pertenece el nick
   private readonly conversations_ = new Set<Conversation>;
-  private readonly blockUsers_ = new Set<User>;
-  private readonly friendUsers_ = new Set<User>;
+  private readonly blockUsers_: Set<string>;
+  private readonly friendUsers_: Set<string>;
   private readonly watchUsers_ = new Set<User>;
   //private watchers_ = new Set<User>;
   //
@@ -66,6 +66,8 @@ export class User {
     this.siteBanned_ = userPayload.siteBanned ?? false;
     this.siteDisabled_ = userPayload.siteDisabled ?? false;
     this.notifyCallback_ = notifyCallback;
+    this.blockUsers_ = new Set<string>(userPayload.blocks);
+    this.friendUsers_ = new Set<string>(userPayload.friends);
     this.notify_(NotifyEventTypeEnum.CREATE);
     //TODO: blockUsers y friendUsers
     //this.blockUsers_ = ....
@@ -102,28 +104,28 @@ export class User {
 
   addBlock(user: User): void {
     if (!this.hasBlocked(user))
-      this.blockUsers_.add(user);
+      this.blockUsers_.add(user.id);
   }
 
   hasBlocked(user: User): boolean {
-    return this.blockUsers_.has(user);
+    return this.blockUsers_.has(user.id);
   }
 
   removeBlock(user: User): void {
-    this.blockUsers_.delete(user);
+    this.blockUsers_.delete(user.id);
   }
 
   addFriend(user: User): void {
     if (!this.hasFriend(user))
-      this.friendUsers_.add(user);
+      this.friendUsers_.add(user.id);
   }
 
   hasFriend(user: User): boolean {
-    return this.friendUsers_.has(user);
+    return this.friendUsers_.has(user.id);
   }
 
   removeFriend(user: User): void {
-    this.friendUsers_.delete(user);
+    this.friendUsers_.delete(user.id);
   }
 
   addConversation(conversation: Conversation): void {
@@ -299,8 +301,10 @@ export class User {
     return this === user;
   }
 
-  get DTO(): UserDTO {
-    return new UserDTO(this);
+  DTO(targetUser?: User): UserDTO {
+    if (targetUser)
+      console.log("DTO from User. list blocks", targetUser.blockUsers_);
+    return new UserDTO(this, targetUser);
   }
 
   // Otros métodos relacionados con el nick y los canales

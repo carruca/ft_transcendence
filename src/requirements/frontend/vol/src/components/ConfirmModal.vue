@@ -12,7 +12,7 @@
 </template>
 
 <script setup>
-import { defineProps, defineEmits } from 'vue';
+import { defineProps, defineEmits, onMounted, onBeforeUnmount } from 'vue';
 
 const props = defineProps({
   visible: Boolean,
@@ -21,6 +21,23 @@ const props = defineProps({
 });
 
 const emit = defineEmits(['confirm', 'close']);
+
+onMounted(() => {
+  window.addEventListener('keydown', handleKeyDown);
+});
+
+onBeforeUnmount(() => {
+  window.removeEventListener('keydown', handleKeyDown);
+});
+
+const handleKeyDown = (event) => {
+  if (!props.visible) return;
+  if (event.key === 'Escape') {
+    closeModal();
+  } else if (event.key === 'Enter') {
+    confirmModal();
+  }
+};
 
 const handleBackgroundClick = (event) => {
   if (event.target.classList.contains('modal')) {
