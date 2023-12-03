@@ -54,13 +54,18 @@
 
 <script setup lang="ts">
 
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, onBeforeUnmount, computed } from 'vue';
 import router from '@/router';
 import md5 from 'md5';
+
 import friendsBotton from '@/components/Profile/friendsBotton.vue';
 import { connectionStatus } from '@/components/Profile/ConnectionStatus';
 import { UserStatusEnum } from '@/services/enum';
 import { RelationUser, RelationStatusEnum } from '@/services/model';
+
+import socket from '@/services/ws';
+
+import { client } from '@/services/chat-client';
 
 const props = defineProps({
   user: {
@@ -92,7 +97,42 @@ onMounted(async () => {
   usersList.value = [...friendsList, ...blocksList];
 
   isLoading.value = false;
+
+  socket.on('watch', handleUserChange);
+  client.userWatch(usersList.value.map(user => user.id));
 });
+
+onBeforeUnmount(() => {
+  client.userUnwatch(usersList.value.map(user => user.id));
+  socket.off('watch', handleUserChange);
+});
+
+const handleUserChange = (responseJSON) => {
+  const userDTO = JSON.parse(responseJSON);
+
+  const userIndex = usersList.value.findIndex(user => user.id === userDTO.id);
+  if (userIndex !== -1) {
+    let user = { ...usersList.value[userIndex] };
+
+    user.userStatus = userDTO.status;
+
+    if (userDTO.nickname !== user.nickname) {
+      user.nickname = userDTO.nickname;
+      user.userProfile = getProfilePictureUrl(userDTO.nickname, userDTO.login);
+    }
+
+    if (userDTO.blocked) {
+      user.relationStatus = RelationStatusEnum.BLOCKED;
+    } else if (userDTO.friend) {
+      user.relationStatus = RelationStatusEnum.ACCEPTED;
+    } else if (user.relationStatus !== RelationStatusEnum.PENDING) {
+      client.userUnwatch([user.id]);
+      usersList.value.splice(userIndex, 1);
+    }
+
+    usersList.value = [...usersList.value];
+  }
+};
 
 function getSelectedTabList() {
   switch (selectedTab.value) {
