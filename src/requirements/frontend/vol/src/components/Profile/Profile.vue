@@ -102,10 +102,11 @@ async function loadProfile() {
 	else {
     ID.value = [user.id, userInfo.id];
 	}
-  loadedProfile.value = true;
 
   // Watch user status
   userStatus.value = userInfo.status;
+
+  loadedProfile.value = true;
 };
 
 const stopWatch = watch(
