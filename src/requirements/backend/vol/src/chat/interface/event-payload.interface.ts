@@ -7,7 +7,7 @@ import {
 } from '../enum';
 
 export interface EventPayload {
-  uuid?: string;
+  id?: string;
   type: EventTypeEnum;
   timestamp?: Date;
   modified?: boolean;

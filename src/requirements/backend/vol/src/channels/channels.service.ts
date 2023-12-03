@@ -4,7 +4,7 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, ILike } from 'typeorm';
 
 import { Channel } from './entities/channel.entity';
 import { ChannelUser } from './entities/channel-user.entity';
@@ -33,7 +33,7 @@ export class ChannelsService {
   ) {}
 
   async create(createChannelDto: CreateChannelDto): Promise<Channel> {
-    if (createChannelDto.password != undefined) {
+    if (createChannelDto.password !== "") {
       createChannelDto.password = await this.encryptPassword(createChannelDto.password);
     }
     const newChannel = new Channel(
@@ -62,6 +62,13 @@ export class ChannelsService {
       throw new HttpException('Channel not found', HttpStatus.NOT_FOUND);
     }
     return channel;
+  }
+
+  async existsChannelByName(name: string) : Promise<boolean> {
+    const channel = await this.channelsRepository.findOneBy({
+      name: ILike(name)
+    });
+    return (channel) ? true : false;
   }
 
   async	findAll(): Promise<Channel[]> {
@@ -116,7 +123,6 @@ export class ChannelsService {
       }
     });
     if (!user) {
-      console.log(createChannelUserDto);
       throw new HttpException('User not found', HttpStatus.NOT_FOUND);
     }
 
@@ -149,6 +155,9 @@ export class ChannelsService {
 
     const channelUser = await this.findChannelUser(channelId, userId);
 
+    if (!channelUser) {
+      throw new HttpException('ChannelUser not found', HttpStatus.NOT_FOUND);
+    }
     await this.channelUsersRepository.delete(channelUser);
     channel.users = channel.users.filter(user => user.id !== userId);
     return this.channelsRepository.save(channel);
@@ -197,6 +206,9 @@ export class ChannelsService {
   async setChannelTopic(channelId: string, userId: string, topic: string): Promise<Channel> {
     const channel = await this.findOneById(channelId);
 
+    if (!channel) {
+      throw new HttpException('Channel not found', HttpStatus.NOT_FOUND);
+    }
     channel.topic = topic;
     channel.topicSetDate = new Date();
     channel.topicUser = userId;
@@ -206,6 +218,9 @@ export class ChannelsService {
   async removeChannelTopic(channelId: string): Promise<Channel> {
     const channel = await this.findOneById(channelId);
 
+    if (!channel) {
+      throw new HttpException('Channel not found', HttpStatus.NOT_FOUND);
+    }
     channel.topic = undefined;
     return this.channelsRepository.save(channel);
   }
@@ -219,6 +234,9 @@ export class ChannelsService {
   async setChannelPassword(channelId: string, password: string): Promise<Channel> {
     const channel = await this.findOneById(channelId);
 
+    if (!channel) {
+      throw new HttpException('Channel not found', HttpStatus.NOT_FOUND);
+    }
     channel.password = await this.encryptPassword(password);
     return this.channelsRepository.save(channel);
   }
@@ -233,9 +251,8 @@ export class ChannelsService {
   async verifyChannelPassword(channelId: string, password: string): Promise<boolean> {
     const channel = await this.findOneById(channelId);
 
-    if (!channel.password || channel.password === '') {
-      return true;
-    }
+    //if (!channel.password) return false;
+    if (channel.password === '' && password === '') return true;
     return await bcrypt.compare(password, channel.password);
   }
 

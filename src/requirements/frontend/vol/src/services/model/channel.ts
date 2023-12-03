@@ -1,15 +1,14 @@
 import {
     User,
     ChannelUser,
-    ChannelTopic,
     Event,
     ChannelTopic,
     Event,
 } from '.';
 
 import {
-    ChannelDTO,
-} from '../dto';
+    ChannelPayload,
+} from '../interface';
 
 import {
     readonly,
@@ -22,9 +21,12 @@ export class Channel {
 
     public readonly id: string;
     public readonly name: string;
-    public readonly owner: User;
+    public owner: User;
     public readonly createdDate: Date;
     public password: boolean;
+	public topicUser: User;
+	public topicSetDate: Date;
+	public topic: string;
     public readonly users = reactive(new Map<string, ChannelUser>());
     public readonly events_ = reactive(new Map<string, Event>());
 
@@ -34,13 +36,15 @@ export class Channel {
       this.owner = channelPayload.owner;
       this.createdDate = channelPayload.createdDate;
       this.password = channelPayload.password ?? false;
-      this.addUsers(channelPayload.users);
-      this.addEvents(channelPayload.events);
+	  if (channelPayload.users)
+      	this.addUsers(channelPayload.users);
+	  if (channelPayload.events)
+        this.addEvents(channelPayload.events);
     }
 
     addUsers(channelUsers: ChannelUser[]) {
       if (channelUsers) {
-        channelUsers.map((channelUser: User) => {
+        channelUsers.map((channelUser: ChannelUser) => {
           this.users.set(channelUser.id, channelUser);
           channelUser.user.addChannel(this);
         });
@@ -52,7 +56,7 @@ export class Channel {
         events.map((event: Event) => this.events_.set(event.id, event));
     }
 
-    clear() { 
+    clear() {
       for (const channelUser of this.users.values()) {
           channelUser.user.delChannel(this);
       }
@@ -98,7 +102,6 @@ export class Channel {
             channelUser.isMuted = changes.muted;
         if (changes.banned !== undefined)
             channelUser.isBanned = changes.banned;
-        console.log("channel.update", channelUser);
     }
 
     get events(): Map<string, Event> {

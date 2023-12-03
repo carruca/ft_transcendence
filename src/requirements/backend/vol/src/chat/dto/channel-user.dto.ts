@@ -16,12 +16,12 @@ export class ChannelUserDTO {
   userDTO: UserDTO;
   channelId: string;
 
-  constructor(channel: Channel, user: User) {
+  constructor(channel: Channel, user: User, targetUser?: User) {
     this.owner = (channel.owner == user);
     this.admin = channel.isAdmin(user);
     this.muted = channel.isMuted(user);
     this.banned = channel.isBanned(user);
-    this.userDTO = user.DTO;
+    this.userDTO = user.DTO(targetUser);
     this.channelId = channel.id;
   }
 }

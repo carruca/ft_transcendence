@@ -22,6 +22,7 @@ import {
   ChannelUserDTO,
   ChannelSummaryDTO,
   ConversationDTO,
+  EventDTO,
 } from '../dto';
 
 import {
@@ -184,18 +185,17 @@ export class ChatManager {
   }
 
   public getUsersDTO(): UserDTO[] {
-    return this.getUsers().map((user) => user.DTO);
+    return this.getUsers().map((user) => user.DTO());
   }
 
   public getChannelsDTO(): ChannelDTO[] {
-    return this.getChannels().map((channel) => channel.DTO);
+    return this.getChannels().map((channel) => channel.DTO());
   }
 
   public getConversations(): Conversation[] {
     return Array.from(this.conversationsById_.values());
   }
 
-  //TODO Esto es realmente necesario? si ya tengo el usuario creado usando userFromDB....
   public addUserDB(userDB: UserDB ): User {
     let sourceUser = this.userFromDB_(userDB);
 
@@ -349,7 +349,7 @@ export class ChatManager {
 
     if (!targetUser) return Response.UserNotExists();
     //if (targetUser.hasWatcher(sourceUser)) return Response.Success();
-    sourceUser.addWatcher(targetUser);
+    targetUser.addWatcher(sourceUser);
     
     this.raise_<void>('onUserWatchUser', { sourceUser, targetUser });
     return Response.Success();
@@ -390,8 +390,9 @@ export class ChatManager {
     const channelDB = await this.channelsService_.create({
       name: channelName,
       ownerId: sourceUser.id,
-      password: password,
+      password: password ?? "",
     });
+
     channel = this.addChannelDB(channelDB);
     channel.createEventGeneric(EventTypeEnum.CREATE, sourceUser);
     //this.raise_<void>('onChannelCreated', { channel, sourceUser });
@@ -417,7 +418,8 @@ export class ChatManager {
 
     if (!channel) return Response.ChannelNotExists();
     if (channel.hasUser(sourceUser)) return Response.AlreadyInChannel();
-    if (channel.password !== password) return Response.InvalidPassword();
+    if (password == undefined) password = "";
+    if (!await this.channelsService_.verifyChannelPassword(channel.id, password)) return Response.BadChannelPassword();
     if (channel.isBanned(sourceUser)) return Response.BannedFromChannel();
 
     //this.raise_<void>('onUserJoined', { channel, sourceUser });
@@ -451,7 +453,9 @@ export class ChatManager {
     let channelsSummaryDTO: ChannelSummaryDTO[] = [];
 
     for (const channel of this.getChannels()) {
-      channelsSummaryDTO.push(channel.summaryDTO);
+      if (!channel.hasUser(sourceUser) && !channel.isBanned(sourceUser)) {
+        channelsSummaryDTO.push(channel.summaryDTO);
+      }
     }
 
     this.raise_<void>('onUserChannelsSummarized', { sourceUser, channelsSummaryDTO })
@@ -461,6 +465,10 @@ export class ChatManager {
   adminListChannels(sourceUser: User): void {
     let channelsDTO: ChannelDTO[] = [];
 
+  }
+
+  getAdminWatchers(): User[] {
+    return Array.from(this.adminWatchers_.values());
   }
 
   public async spectateChallengeUserId(sourceUser: User, targetUserid: string): Promise<Response> {
@@ -488,21 +496,45 @@ export class ChatManager {
     return Response.Success();
   }
 
-  public async passwordChannelId(sourceUser: User, channelId: string, newPassword: string): Promise<Response> {
+  public async passwordChannelId(sourceUser: User, channelId: string, password?: string): Promise<Response> {
     const channel = this.getChannelById(channelId);
 
-    //TODO: newPassword se debería verificar los caracteres?
+    //TODO: password debe permitir caracteres extraños?
     if (!channel)
       return Response.ChannelNotExists();
+    if (password)
+      console.log(await this.channelsService_.verifyChannelPassword(channel.id, password));
     if (!channel.hasPrivileges(sourceUser))
       return Response.InsufficientPrivileges();
-    if (channel.password === newPassword) return Response.Success();
+    if (!password) {
+      if (channel.password === false) return Response.SameChannelPassword();
+    } else {
+      if (await this.channelsService_.verifyChannelPassword(channel.id, password)) return Response.SameChannelPassword();
+    }
 
     //if (this.raise_<boolean>("onChannelPasswordChanging", { channel, sourceUser, newPassword }).includes(true))
     //  return Response.Denied();
     //this.raise_<void>("onChannelPasswordChanged", { channel, sourceUser, newPassword });
-    channel.password = newPassword;
+    
+    channel.password = password ? true : false;
+    if (password == undefined) {
+      await this.channelsService_.removeChannelPassword(channel.id);
+    } else {
+      await this.channelsService_.setChannelPassword(channel.id, password);
+    }
     channel.createEventGeneric(EventTypeEnum.PASSWORD, sourceUser);
+    return Response.Success();
+  }
+
+  public async banListChannelId(sourceUser: User, channelId: string): Promise<Response> {
+    const channel = this.getChannelById(channelId);
+    
+    if (!channel) return Response.ChannelNotExists();
+    if (!channel.hasUser(sourceUser)) return Response.NotInChannel();
+    if (!channel.hasPrivileges(sourceUser)) return Response.InsufficientPrivileges();
+    
+    console.log("banlist");
+    this.raise_<void>('onUserChannelBanListed', { sourceUser, channel });
     return Response.Success();
   }
 
@@ -593,7 +625,8 @@ export class ChatManager {
     //this.raise_<void>("onUserBanned", { channel, sourceUser, targetUser });
     channel.banUser(targetUser);
     channel.createEventAction(EventTypeEnum.BAN, sourceUser, targetUser);
-    await this.usersService_.createBan({ userId: sourceUser.id, channelId: channel.id });
+    this.removeUserFromChannel_(targetUser, channel);
+    await this.usersService_.createBan({ userId: targetUser.id, channelId: channel.id });
     return Response.Success();
   }
 
@@ -608,17 +641,16 @@ export class ChatManager {
     if (!channel.hasPrivileges(sourceUser)) return Response.InsufficientPrivileges();
     if (!targetUser) return Response.UserNotExists();
     if (!channel.hasUser(sourceUser)) return Response.NotInChannel();
-    if (!channel.hasUser(targetUser)) return Response.NotInChannel();
     if (channel.owner === targetUser) return Response.InsufficientPrivileges();
     if (!channel.isBanned(targetUser)) return Response.UserNotBanned();
 
     //if (this.raise_<boolean>("onUserUnbanning", { channel, sourceUser, targetUser }).includes(true))
     //    return Response.Denied();
 
-    //this.raise_<void>("onUserUnbanned", { channel, sourceUser, targetUser });
+    this.raise_<void>("onUserUnbanned", { channel, sourceUser, targetUser });
     channel.unbanUser(targetUser);
     channel.createEventAction(EventTypeEnum.UNBAN, sourceUser, targetUser);
-    await this.usersService_.removeBan(sourceUser.id, channel.id);
+    await this.usersService_.removeBan(targetUser.id, channel.id);
     return Response.Success();
   }
 
@@ -737,8 +769,8 @@ export class ChatManager {
     const targetUser = this.getUserById(targetUserid);
 
     if (!targetUser) return Response.UserNotExists();
-    if (sourceUser === targetUser) return Response.Success();
-    if (sourceUser.hasBlocked(targetUser)) return Response.Success();
+    if (sourceUser === targetUser) return Response.SameUser();
+    if (sourceUser.hasBlocked(targetUser)) return Response.UserAlreadyBlocked();
 
 //    if (this.raise_<boolean>('onUserBlocking', { sourceUser, targetUser }).includes(true))
   //    return Response.Denied();
@@ -765,8 +797,8 @@ export class ChatManager {
     const targetUser = this.getUserById(targetUserid);
 
     if (!targetUser) return Response.UserNotExists();
-    if (sourceUser === targetUser) return Response.Success();
-    if (!sourceUser.hasBlocked(targetUser)) return Response.Success();
+    if (sourceUser === targetUser) return Response.SameUser();
+    if (!sourceUser.hasBlocked(targetUser)) return Response.UserNotBlocked();
 
  //   if (this.raise_<boolean>('onUserUnblocking', { sourceUser, targetUser }).includes(true))
    //   return Response.Denied();
@@ -819,8 +851,8 @@ export class ChatManager {
     if (!sourceUser.hasPrivileges()) return Response.InsufficientPrivileges();
     if (!targetUser) return Response.UserNotExists();
     if (targetUser.isSiteBanned) return Response.UserAlreadyBanned();
-    if (sourceUser.is(targetUser)) return Response.Success();
-    if (targetUser.isSiteOwner) return Response.Denied();
+    if (sourceUser.is(targetUser)) return Response.SameUser();
+    if (targetUser.isSiteOwner) return Response.InsufficientPrivileges();
 
     //if (this.raise_<boolean>('onUserBanning', { sourceUser, targetUser }).includes(true))
     //  return Response.Denied();
@@ -831,13 +863,13 @@ export class ChatManager {
     return Response.Success();
   }
 
-  public async siteUnbanUserid(sourceUser: User, targetUserid: string): Promise<Response> {
+  public async siteUnbanUserId(sourceUser: User, targetUserid: string): Promise<Response> {
     const targetUser = this.getUserById(targetUserid);
 
     if (!sourceUser.hasPrivileges()) return Response.InsufficientPrivileges();
     if (!targetUser) return Response.UserNotExists();
     if (!targetUser.isSiteBanned) return Response.UserNotBanned();
-    if (sourceUser.is(targetUser)) return Response.Success();
+    if (sourceUser.is(targetUser)) return Response.SameUser();
 
     //if (this.raise_<boolean>('onUserUnbanning', { sourceUser, targetUser }).includes(true))
     //  return Response.Denied();
@@ -848,7 +880,7 @@ export class ChatManager {
     return Response.Success();
   }
 
-  public async messageChannelId(sourceUser: User, channelId: string, message: string): Promise<Response> {
+  public async sendMessageChannelId(sourceUser: User, channelId: string, message: string): Promise<Response> {
     const channel = this.getChannelById(channelId);
 
     if (!channel) return Response.ChannelNotExists();
@@ -869,9 +901,19 @@ export class ChatManager {
     const targetUser = this.getUserById(targetUserId);
 
     if (!targetUser) return Response.UserNotExists();
-    if (targetUser.hasBlocked(targetUser)) return Response.Success();
-    
-    this.raise_<void>("onUserMessageSended", { sourceUser, targetUser, message });
+
+    const event = new Event({
+      type: EventTypeEnum.MESSAGE,
+      sourceUser: sourceUser,
+      targetUser: targetUser,
+      value: message,
+    });
+
+    this.raise_<void>("onUserMessageSended", { targetUser: sourceUser, event });
+
+    if (!targetUser.hasBlocked(sourceUser)) {
+      this.raise_<void>("onUserMessageSended", { targetUser, event });
+    }
     return Response.Success();
   }
 
@@ -1000,19 +1042,19 @@ export class ChatManager {
   }
   */
 
-  private getObserversOf(object: any): Set<any> {
+  private getObserversOf_(object: any): Set<any> {
     if (object instanceof User) {
-      return new Set([...object.getCommonUsersOnline(), ...this.adminWatchers_]);
+      return new Set([...object.getCommonUsersOnline()]);
     }
     else if (object instanceof Channel) {
-      return new Set([...object.getUsersOnline(), ...this.adminWatchers_]);
+      return new Set([...object.getUsersOnline()]);
     }
     return new Set();
   }
 
   private notifyUser_(objects: any[], type: NotifyEventTypeEnum, changes: any) {
     const [ sourceUser ] = objects;
-	  const targetUsers = this.getObserversOf(sourceUser);
+	  const targetUsers = this.getObserversOf_(sourceUser);
 	  console.log(`notifyUser ${type}: ${sourceUser.name} ${changes}`);
 
     if (type === NotifyEventTypeEnum.UPDATE) {
@@ -1033,7 +1075,8 @@ export class ChatManager {
 
   private notifyChannel_(objects: any[], type: NotifyEventTypeEnum, changes: {}) {
     const [ channel ] = objects;
-	  const targetUsers = this.getObserversOf(channel);
+	  const targetUsers = this.getObserversOf_(channel);
+	  //const targetAdmins = this.
 	  console.log(`notifyChannel ${type}: ${channel.name} ${changes}`);
 
     if (type === NotifyEventTypeEnum.UPDATE) {
@@ -1100,19 +1143,28 @@ export class ChatManager {
 
   private userFromDB_(userDB: UserDB): User {
     //console.log("userFromDB_: ", userDB) ;
+    const blockUsers: string[] = [];
     if (!userDB.nickname)
       throw new PropertyUndefinedError("userFromDB: nickname is not set");
+
+    if (userDB.blocks) {
+      for (const block of userDB.blocks) {
+          blockUsers.push(block.blockId);
+      }
+    }
 
     return new User(this.notify_.bind(this), {
       intraId: userDB.intraId,
       id: userDB.id,
       nickname: userDB.nickname,
       siteRole: userDB.mode as number,
+      blocks: blockUsers,
     });
   }
 
   private channelFromDB_(channelDB: ChannelDB): Channel {
     const owner = this.getUserById(channelDB.ownerId);
+    const banUsers: User[] = [];
     let topicUser: User | undefined;
 
     if (!owner) {
@@ -1127,6 +1179,17 @@ export class ChatManager {
       }
     }
 
+    if (channelDB.bans) {
+      for (const ban of channelDB.bans) {
+        const banUser = this.getUserById(ban.user.id);
+
+        if (banUser)
+          banUsers.push(banUser);
+        else
+          throw new UserNotFoundError("channelFromDB: banUser not found on memory.");
+      }
+    }
+
     const channel = new Channel(this.notify_.bind(this), {
       id: channelDB.id,
       name: channelDB.name,
@@ -1135,7 +1198,8 @@ export class ChatManager {
       topicSetDate: channelDB.topicSetDate!,
       topic: channelDB.topic!,
       createdDate: channelDB.createdDate,
-      password: channelDB.password,
+      password: channelDB.password !== "",
+      bans: banUsers,
     });
 
     if (channelDB.users) {

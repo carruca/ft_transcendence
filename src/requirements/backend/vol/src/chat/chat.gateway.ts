@@ -26,7 +26,11 @@ import {
 } from './util';
 
 import {
+  EventTypeEnum,
+  UserStatusEnum,
   ReturnCodeEnum,
+  AdminDataTypeEnum,
+  AdminObjectTypeEnum,
 } from './enum';
 
 import {
@@ -43,6 +47,8 @@ import {
   WebSocketGateway,
   WebSocketServer,
   SubscribeMessage,
+  OnGatewayConnection,
+  OnGatewayDisconnect,
 } from '@nestjs/websockets';
 
 import {
@@ -72,7 +78,7 @@ import {
     origin: process.env.NEST_FRONT_URL
   },
 })
-export class ChatGateway {
+export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   private readonly logger_ = new Logger("ChatGateway");
 
   @WebSocketServer()
@@ -146,7 +152,7 @@ export class ChatGateway {
     }
   }
 
-  async handleDisconnect(client: Socket) {
+  handleDisconnect(client: Socket) {
     if (client.data.user)
       this.chat_.disconnectUser(client.data.user);
   }
@@ -310,6 +316,58 @@ export class ChatGateway {
             .send();
   }
 
+  @SubscribeMessage('siteban')
+  async handleClientSiteBan(client: Socket, dataJSON: string): Promise<void> {
+    if (!client.data.user) return;
+
+    const [ userId ] = JSON.parse(dataJSON);
+    const sourceUser = client.data.user;
+    const response = await this.chat_.siteBanUserId(sourceUser, userId);
+
+    response.setSourceUser(sourceUser)
+            .setEvent('siteban')
+            .send();
+  }
+
+
+  @SubscribeMessage('siteunban')
+  async handleClientSiteUnban(client: Socket, dataJSON: string): Promise<void> {
+    if (!client.data.user) return;
+
+    const [ userId ] = JSON.parse(dataJSON);
+    const sourceUser = client.data.user;
+    const response = await this.chat_.siteUnbanUserId(sourceUser, userId);
+
+    response.setSourceUser(sourceUser)
+            .setEvent('siteunban')
+            .send();
+  }
+
+  @SubscribeMessage('sitepromote')
+  async handleClientSitePromote(client: Socket, dataJSON: string): Promise<void> {
+    if (!client.data.user) return;
+
+    const [ userId ] = JSON.parse(dataJSON);
+    const sourceUser = client.data.user;
+    const response = await this.chat_.sitePromoteUserId(sourceUser, userId);
+
+    response.setSourceUser(sourceUser)
+            .setEvent('sitepromote')
+            .send();
+  }
+
+  @SubscribeMessage('sitedemote')
+  async handleClientSiteDemote(client: Socket, dataJSON: string): Promise<void> {
+    if (!client.data.user) return;
+
+    const [ userId ] = JSON.parse(dataJSON);
+    const sourceUser = client.data.user;
+    const response = await this.chat_.siteDemoteUserId(sourceUser, userId);
+
+    response.setSourceUser(sourceUser)
+            .setEvent('sitedemote')
+            .send();
+  }
 
   @SubscribeMessage('topic')
   async handleClientTopic(client: Socket, dataJSON: string): Promise<void> {
@@ -447,7 +505,7 @@ export class ChatGateway {
 
     const [ channelId, message ] = JSON.parse(dataJSON);
     const sourceUser = client.data.user;
-    const response = await this.chat_.messageChannelId(sourceUser, channelId, message);
+    const response = await this.chat_.sendMessageChannelId(sourceUser, channelId, message);
 
 
     response.setSourceUser(sourceUser)
@@ -483,27 +541,32 @@ export class ChatGateway {
             .send();
   }
 
-  /*
-  @SubscribeMessage('convmsg')
-  async onClientConversationMessage(client: Socket, dataJSON: string): Promise<void> {
+  @SubscribeMessage('channelbanlist')
+  async onClientChannelBanList(client: Socket, dataJSON: string): Promise<void> {
+    if (!client.data.user) return;
+
+    const sourceUser = client.data.user;
+    const [ channelId ] = JSON.parse(dataJSON);
+    const response = await this.chat_.banListChannelId(sourceUser, channelId);
+
+    response.setSourceUser(sourceUser)
+            .setEvent('channelbanlist')
+            .send();
+  }
+
+  @SubscribeMessage('privmsg')
+  async onPrivateMessage(client: Socket, dataJSON: string): Promise<void> {
     if (!client.data.user) return
 
     const [ targetUserId, message ] = JSON.parse(dataJSON);
     const sourceUser = client.data.user;
-    const response = await this.chat_.messageConversationId(sourceUser, targetUserId, message);
+    const response = await this.chat_.sendMessageUserId(sourceUser, targetUserId, message);
 
-    //TODO: Si yo mando un mensaje pero la conversación no se ha creado, se me ha de enviar conversationDetails
-    //si ya existe, sólo se enviara messageEventDetails
-
-    response.data.conversationDetails = response.data.conversation.getDTO();
-    response.data.messageDetails = response.data.messageEvent.getDTO();
-
-    delete response.data.conversation;
-    delete response.data.messageEvent;
-
-    console.log("convmsg:", response);
+    response.setSourceUser(sourceUser)
+            .setEvent('privmsg')
+            .send();
   }
-  */
+
   /*
   ** ChatService events handle
   */
@@ -524,15 +587,20 @@ export class ChatGateway {
     return true;
   }
 
-  @ChatManagerSubscribe('onUserMessageSended')
-  onUserMessageSended(event: any): void {
-    const { sourceUser, targetUser, message } = event;
+  @ChatManagerSubscribe('onUserUnbanned')
+  onUseUnbanned(data: any): void {
+    const { channel, sourceUser, targetUser } = data;
 
-    targetUser.socket?.emit('privMessage', JSON.stringify({
-      sourceUserId: sourceUser.id,
-      sourceUserNickname: sourceUser.nickname,
-      message,
-    }));
+    if (sourceUser.status !== UserStatusEnum.OFFLINE)
+      sourceUser.socket.emit('unBan', JSON.stringify([ channel.id, targetUser.id ]));
+  }
+
+  @ChatManagerSubscribe('onUserMessageSended')
+  onUserMessageSended(data: any): void {
+    const { targetUser, event } = data;
+
+    if (targetUser.status !== UserStatusEnum.OFFLINE)
+      targetUser.socket?.emit('privMessage', JSON.stringify([ event.DTO() ]));
   }
  
   @ChatManagerSubscribe('onUserChallengeSpectated')
@@ -571,6 +639,18 @@ export class ChatGateway {
     sourceUser.socket.emit('list', JSON.stringify(channelsSummaryDTO)); 
   }
 
+  @ChatManagerSubscribe('onUserChannelBanListed')
+  onUserChannelBanListed(event: any): void {
+    const { sourceUser, channel } = event;
+    const banUsers: User[] = [];
+    
+    for (const user of channel.getBans()) {
+      banUsers.push(user.DTO());
+    }
+
+    sourceUser.socket.emit('channelBanList', JSON.stringify([ channel.id, banUsers ]));
+  }
+
   @ChatManagerSubscribe('onUserAdminData')
   onUserAdminChannels(event: any): void {
     const { sourceUser, channelsDTO, usersDTO } = event;
@@ -583,15 +663,15 @@ export class ChatGateway {
   onUserWatchUser(event: any): void {
     const { sourceUser, targetUser } = event;
 
-    sourceUser.socket.emit('watch', JSON.stringify([ targetUser.DTO ]));
+    sourceUser.socket.emit('watch', JSON.stringify([ targetUser.DTO() ]));
   }
 
   @ChatManagerSubscribe('onUserConnected')
   onUserConnected(event: any): void {
     const { sourceUser } = event;
-    const sourceUserDTO = sourceUser.DTO;
+    const sourceUserDTO = sourceUser.DTO();
 
-    sourceUserDTO.channels = sourceUser.getChannels().map((channel: Channel) => channel.DTO);
+    sourceUserDTO.channelsDTO = sourceUser.getChannels().map((channel: Channel) => channel.DTO(sourceUser));
 
     console.log("onUserConnected:", sourceUserDTO);
     sourceUser.socket.emit('registered', JSON.stringify(sourceUserDTO));
@@ -607,6 +687,14 @@ export class ChatGateway {
     for (const targetUser of targetUsers) {
       targetUser.socket?.emit('userCreated', createJSON);
     }
+
+    for (const targetUser of this.chat_.getAdminWatchers()) {
+      targetUser.socket.emit('adminUpdated', JSON.stringify([
+        AdminObjectTypeEnum.USER,
+        AdminDataTypeEnum.CREATED,
+        sourceUser.DTO(targetUser),
+      ]));
+    }
   }
 
   @ChatManagerSubscribe('onUserUpdated')
@@ -621,6 +709,16 @@ export class ChatGateway {
     for (const targetUser of targetUsers) {
       targetUser.socket?.emit('userUpdated', changesJSON);
     }
+
+    changes.id = sourceUser.id;
+
+    for (const targetUser of this.chat_.getAdminWatchers()) {
+      targetUser.socket.emit('adminUpdated', JSON.stringify([
+        AdminObjectTypeEnum.USER,
+        AdminDataTypeEnum.UPDATED,
+        changes,
+      ]));
+    }
   }
 
   @ChatManagerSubscribe('onUserDeleted')
@@ -631,18 +729,36 @@ export class ChatGateway {
     for (const targetUser of targetUsers) {
       targetUser.socket?.emit('userDeleted', deleteJSON);
     }
+
+    for (const targetUser of this.chat_.getAdminWatchers()) {
+      targetUser.socket.emit('adminUpdated', JSON.stringify([
+        AdminObjectTypeEnum.USER,
+        AdminDataTypeEnum.DELETED,
+        sourceUser.id,
+      ]));
+    }
   }
 
   @ChatManagerSubscribe('onUserJoined')
   onUserJoined(data: any): void {
     const { channel, sourceUser, targetUsers } = data;
-    const joinedJSON = JSON.stringify({
-      channelId: channel.id,
-      sourceChannelUserDTO: channel.channelUserDTO(sourceUser),
-    });
 
+    //TODO: revisar que un usuario bloqueado del que el cliente no tiene conocimiento es marcado como bloqueado
+    //      Forma de probar:
+    //      Crear un canal, bloquear a cualquier usuario, salir del canal. Reiniciar el navegador y volver a entrar al canal.
     for (const targetUser of targetUsers) {
-      targetUser.socket?.emit('userJoined', joinedJSON);
+      targetUser.socket.emit('userJoined', JSON.stringify({
+        channelId: channel.id,
+        sourceChannelUserDTO: channel.channelUserDTO(sourceUser, targetUser),
+      }));
+    }
+
+    for (const targetUser of this.chat_.getAdminWatchers()) {
+      targetUser.socket.emit('adminUpdated', JSON.stringify([
+        AdminObjectTypeEnum.CHANNEL_USER,
+        AdminDataTypeEnum.CREATED,
+        channel.channelUserDTO(sourceUser, targetUser),
+      ]));
     }
   }
 
@@ -657,16 +773,33 @@ export class ChatGateway {
     for (const targetUser of targetUsers) {
       targetUser.socket?.emit('userParted', partedJSON);
     }
+
+    for (const targetUser of this.chat_.getAdminWatchers()) {
+      targetUser.socket.emit('adminUpdated', JSON.stringify([
+        AdminObjectTypeEnum.CHANNEL_USER,
+        AdminDataTypeEnum.DELETED, {
+          channelId: channel.id,
+          sourceUserId: sourceUser.id,
+        },
+      ]));
+    }
   }
 
 
   @ChatManagerSubscribe('onChannelCreated')
   onChannelCreated(data: any): void {
     const { channel, targetUsers } = data;
-    const createJSON = JSON.stringify(channel.DTO);
 
     for (const targetUser of targetUsers) {
-      targetUser.socket?.emit('channelCreated', createJSON);
+      targetUser.socket?.emit('channelCreated', JSON.stringify(channel.DTO(targetUser)));
+    }
+    
+    for (const targetUser of this.chat_.getAdminWatchers()) {
+      targetUser.socket.emit('adminUpdated', JSON.stringify([
+        AdminObjectTypeEnum.CHANNEL,
+        AdminDataTypeEnum.CREATED,
+        channel.DTO(targetUser),
+      ]));
     }
   }
 
@@ -678,9 +811,16 @@ export class ChatGateway {
       ...changes,
     });
 
-    console.log("Channel UPDATE:", changes);
     for (const targetUser of targetUsers) {
       targetUser.socket?.emit('channelUpdated', changesJSON);
+    }
+
+    for (const targetUser of this.chat_.getAdminWatchers()) {
+      targetUser.socket.emit('adminUpdated', JSON.stringify([
+        AdminObjectTypeEnum.CHANNEL,
+        AdminDataTypeEnum.UPDATED,
+        channel.DTO(targetUser),
+      ]));
     }
   }
 
@@ -690,8 +830,18 @@ export class ChatGateway {
     const deleteJSON = JSON.stringify(channel.id);
 
     for (const targetUser of targetUsers) {
-      targetUser.socket?.emit('channelDeleted', deleteJSON);
+      if (targetUser.status !== UserStatusEnum.OFFLINE)
+        targetUser.socket.emit('channelDeleted', deleteJSON);
     }
+/*
+    for (const targetUser of this.chat_.getAdminWatchers()) {
+      targetUser.socket.emit('adminUpdated', JSON.stringify([
+        AdminObjectTypeEnum.CHANNEL,
+        AdminDataTypeEnum.DELETED,
+        channel.id,
+      ]));
+    }
+*/
   }
 
   @ChatManagerSubscribe('onEventCreated')
@@ -723,12 +873,12 @@ export class ChatGateway {
 
     const changesJSON = JSON.stringify({
       channelId: channel.id,
-      eventDTO: event.DTO,
+      eventDTO: event.DTO(),
     });
 
     for (const targetUser of targetUsers) {
-      console.log("onChannelEventCreated", changesJSON);
-      targetUser.socket?.emit('channelEventCreated', changesJSON);
+      if (!targetUser.hasBlocked(event.sourceUser))
+        targetUser.socket?.emit('channelEventCreated', changesJSON);
     }
   }
 }

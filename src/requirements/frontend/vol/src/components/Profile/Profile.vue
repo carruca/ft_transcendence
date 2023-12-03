@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue';
+import { onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import md5 from 'md5';
 import router from '@/router';
@@ -106,7 +106,18 @@ async function loadProfile() {
   // Watch user status
   userStatus.value = userInfo.status;
 };
-  
+
+const stopWatch = watch(
+  () => router.currentRoute.value.params.username,
+  () => {
+    setTimeout(() => {
+      if (unmounted.value) return;
+      loadProfile();
+    }, 10);
+    if (!itsMe.value) client.userUnwatch(ID.value[1]);
+  }
+);
+
 onMounted(async () => {
   await route.isReady();
   loadProfile();

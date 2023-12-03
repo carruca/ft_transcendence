@@ -8,13 +8,13 @@ import {
 } from '.';
 
 export interface UserDTO {
-    id?: string,
+    id: string,
     nickname: string,
-    status?: UserStatusEnum,
-    siteRole?: UserSiteRoleEnum,
-    siteDisabled: boolean,
-    siteBanned: boolean,
-    blocked?: boolean,
-    friend?: boolean,
-    channelsDTO: ChannelDTO[],
+    status: UserStatusEnum,
+    siteRole: UserSiteRoleEnum,
+    siteDisabled?: boolean,
+    siteBanned?: boolean,
+    blocked: boolean,
+    friend: boolean,
+    channelsDTO?: ChannelDTO[],
 }

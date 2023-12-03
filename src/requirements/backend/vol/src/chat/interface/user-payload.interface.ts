@@ -7,6 +7,10 @@ import {
   UserSiteRoleEnum,
 } from '../enum';
 
+import {
+  User,
+} from '../model';
+
 export interface UserPayload {
   id?: string,
   name?: string,
@@ -17,6 +21,6 @@ export interface UserPayload {
   siteRole?: UserSiteRoleEnum,
   siteBanned?: boolean,
   siteDisabled?: boolean,
-  friends?: UserPayload[],
-  blocks?: UserPayload[],
+  friends?: string[],
+  blocks?: string[],
 }

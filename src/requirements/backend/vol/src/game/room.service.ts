@@ -95,8 +95,6 @@ export class RoomService {
   }
 
   disconnect(socket: Socket) {
-    // change user status
-    socket!.data.user.status = UserStatusEnum.ONLINE;
     // remove from queue
     this.leave_queue(socket);
     // remove from room
@@ -221,8 +219,8 @@ export class RoomService {
     }
 
     // change user status
-    socket!.data.user.status = UserStatusEnum.IN_GAME;
-
+    if (socket!.data.user.status === UserStatusEnum.ONLINE)
+      socket!.data.user.status = UserStatusEnum.IN_GAME;
   }
   leave(client: Socket) {
     this.disconnect(client);
@@ -307,6 +305,12 @@ export class RoomService {
       return;
     room.state = State.END;
 
+    // change user status
+    for (const player of room.players) {
+      if (player.socket!.data.user.status === UserStatusEnum.IN_GAME)
+        player.socket!.data.user.status = UserStatusEnum.ONLINE;
+    }
+
     // change users status
     this.change_user_status(room, UserStatusEnum.ONLINE);
 
@@ -363,9 +367,6 @@ export class RoomService {
 
   fatal(room: Room) : void {
     room.state = State.END;
-
-    // change users status
-    this.change_user_status(room, UserStatusEnum.ONLINE);
 
     let winText: string = "Rival disconnected!";
     RoomService.update(room, 'stop', winText);
