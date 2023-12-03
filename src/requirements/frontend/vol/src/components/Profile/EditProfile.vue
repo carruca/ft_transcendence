@@ -2,20 +2,21 @@
 import { defineEmits, onMounted, ref } from 'vue';
 
 const props = defineProps({
-  user: {
+  profilePicture: {
     type: String,
     required: true
   },
-  login: {
+  nickname: {
     type: String,
     required: true
-  },
+  }
 });
 
 const emit = defineEmits(['close']);
 
 let selectedImage : File;
-const profilePicture = ref();
+const userNickname = ref(props.nickname);
+const profilePicture = ref(props.profilePicture);
 
 const imageSet = ref(false);
 
@@ -73,7 +74,7 @@ onMounted(() => {
   imageInput.addEventListener('change', () => {
     submitButton.disabled = false;
   });
-})
+});
 
 function handleImageUpload(event : Event) {
   const file = (event.target as HTMLInputElement).files[0];
@@ -100,8 +101,9 @@ const hidePopup = () => {
     <div class="popup" v-if="!failedFetch">
       <div class="popup-box">
         <form>
-          <div v-if="!imageSet" class="profile-picture"></div>
-          <img v-else :src="profilePicture" class="profile-picture">
+          <h2 class="profile-nickname">{{ userNickname }}</h2>
+          <img v-if="!imageSet" :src="profilePicture" class="profile-picture" alt="photo">
+          <img v-else :src="profilePicture" class="profile-picture" alt="photo">
           <label for="imageInput" class="custom-file-upload">
             <i class="fas fa-cloud-upload-alt"></i> Change Profile Picture
           </label>
@@ -139,10 +141,16 @@ const hidePopup = () => {
   margin-right: 5px;
 }
 
+h2.profile-nickname {
+  align-content: center;
+  text-align: center;
+}
+
 .profile-picture {
-  background: v-bind('profilePicture');
   width: 150px;
   height: 150px;
+  align-content: center;
+  text-align: center;
   padding: .7em;
   background-position: 50% 10px;
   background-size: cover;

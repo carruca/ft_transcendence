@@ -164,9 +164,9 @@ const closeEditPage = async () => {
           <span ref="stat-value">{{ losses }}</span>
         </div>
       </div>
-      <div v-if="itsMe && profilePictureRef">
+      <div v-if="itsMe">
         <button class="fancy-button-green" @click="launchEditPage">Edit profile</button>
-        <EditProfile v-if="editPage" @close="closeEditPage" :user="user.nickname" :login="user.login"></EditProfile>
+        <EditProfile v-if="editPage && profilePictureRef" @close="closeEditPage" :nickname="usernameRef" :profilePicture="profilePictureRef"></EditProfile>
       </div>
       <div v-if="!itsMe">
         <friendsBotton :users="ID"></friendsBotton>
