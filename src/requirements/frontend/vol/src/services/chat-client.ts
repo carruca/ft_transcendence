@@ -437,11 +437,13 @@ export class ChatClient {
     const { channelId, sourceChannelUserDTO } = JSON.parse(responseJSON);
     const channel = this.getChannelById(channelId);
     let user = this.getUserById(sourceChannelUserDTO.userDTO.id);
-	if (!channel)
-		throw new Error(`Channel ${channelId} not found`);
+    if (!channel)
+      throw new Error(`Channel ${channelId} not found`);
     if (!user) {
       user = this.userFromDTO_(sourceChannelUserDTO.userDTO);
       this.addUser_(user);
+    } else {
+      user.update(sourceChannelUserDTO.userDTO);
     }
     const sourceChannelUser = this.channelUserFromDTO_(sourceChannelUserDTO, user);
 
@@ -453,10 +455,10 @@ export class ChatClient {
     const channel = this.getChannelById(channelId);
     const sourceUser = this.getUserById(sourceUserId);
 
-	if (!channel)
-	  throw new Error(`Channel ${channelId} not found`);
-	if (!sourceUser)
-	  throw new Error(`User ${sourceUserId} not found`);
+    if (!channel)
+      throw new Error(`Channel ${channelId} not found`);
+    if (!sourceUser)
+      throw new Error(`User ${sourceUserId} not found`);
     this.delUserFromChannel_(channel, sourceUser);
   }
 
@@ -478,6 +480,8 @@ export class ChatClient {
 
     //TODO: Aquí lo que llega es la información de nuestro usuario, eso contempla
     //todos los canales y de estos, los usuarios y los eventos.
+    this.users_.clear();
+    this.channels_.clear();
     this.me_.value = this.addUserFromDTO_(meUserDTO);
     //meUserDTO.channels.map((channelDTO: ChannelDTO) => this.me_.channels.set(channelDTO.id, this.addChannel_(this.channelFromDTO_(channelDTO))));
 

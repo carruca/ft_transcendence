@@ -222,7 +222,6 @@ export class ChatManager {
   public addChannelDB(channelDB: ChannelDB ): Channel {
     const channel = this.channelFromDB_(channelDB);
 
-    console.log(channelDB);
     this.addChannel_(channel);
     return channel;
   }
@@ -256,7 +255,6 @@ export class ChatManager {
     //TODO falta la gestión de más de una conexión simultánea con el mismo usuario
     //this.usersBySocket_.set(sourceUser.socket, sourceUser);
     sourceUser.status = UserStatusEnum.ONLINE;
-    //console.log(sourceUser);
     this.raise_<void>('onUserConnected', { sourceUser });
     return Response.Success();
   }
@@ -502,8 +500,6 @@ export class ChatManager {
     //TODO: password debe permitir caracteres extraños?
     if (!channel)
       return Response.ChannelNotExists();
-    if (password)
-      console.log(await this.channelsService_.verifyChannelPassword(channel.id, password));
     if (!channel.hasPrivileges(sourceUser))
       return Response.InsufficientPrivileges();
     if (!password) {
@@ -512,10 +508,6 @@ export class ChatManager {
       if (await this.channelsService_.verifyChannelPassword(channel.id, password)) return Response.SameChannelPassword();
     }
 
-    //if (this.raise_<boolean>("onChannelPasswordChanging", { channel, sourceUser, newPassword }).includes(true))
-    //  return Response.Denied();
-    //this.raise_<void>("onChannelPasswordChanged", { channel, sourceUser, newPassword });
-    
     channel.password = password ? true : false;
     if (password == undefined) {
       await this.channelsService_.removeChannelPassword(channel.id);
@@ -533,7 +525,6 @@ export class ChatManager {
     if (!channel.hasUser(sourceUser)) return Response.NotInChannel();
     if (!channel.hasPrivileges(sourceUser)) return Response.InsufficientPrivileges();
     
-    console.log("banlist");
     this.raise_<void>('onUserChannelBanListed', { sourceUser, channel });
     return Response.Success();
   }
@@ -772,13 +763,8 @@ export class ChatManager {
     if (sourceUser === targetUser) return Response.SameUser();
     if (sourceUser.hasBlocked(targetUser)) return Response.UserAlreadyBlocked();
 
-//    if (this.raise_<boolean>('onUserBlocking', { sourceUser, targetUser }).includes(true))
-  //    return Response.Denied();
-
-  //  this.raise_<void>('onUserBlocked', { sourceUser, targetUser });
     sourceUser.addBlock(targetUser);
 
-    console.log("blockUserId");
     this.raise_<void>('onUserUpdated', {
       sourceUser: targetUser,
       targetUsers: [ sourceUser ],
@@ -1055,7 +1041,6 @@ export class ChatManager {
   private notifyUser_(objects: any[], type: NotifyEventTypeEnum, changes: any) {
     const [ sourceUser ] = objects;
 	  const targetUsers = this.getObserversOf_(sourceUser);
-	  console.log(`notifyUser ${type}: ${sourceUser.name} ${changes}`);
 
     if (type === NotifyEventTypeEnum.UPDATE) {
       if (changes.status !== undefined) {
@@ -1076,14 +1061,11 @@ export class ChatManager {
   private notifyChannel_(objects: any[], type: NotifyEventTypeEnum, changes: {}) {
     const [ channel ] = objects;
 	  const targetUsers = this.getObserversOf_(channel);
-	  //const targetAdmins = this.
-	  console.log(`notifyChannel ${type}: ${channel.name} ${changes}`);
 
     if (type === NotifyEventTypeEnum.UPDATE) {
 	    this.raise_<void>('onChannelUpdated', { channel, targetUsers, changes });
 	  }
 	  else if (type === NotifyEventTypeEnum.CREATE) {
-      console.log("notifyChannel_", targetUsers);
       this.raise_<void>('onChannelCreated', { channel, targetUsers });
 	  }
 	  else if (type === NotifyEventTypeEnum.DELETE) {
@@ -1094,7 +1076,6 @@ export class ChatManager {
   private notifyConversation_(objects: any[], type: NotifyEventTypeEnum, changes: {}) {
     const [ conversation ] = objects;
 	  const targetUsers = conversation.getUsers();
-	  console.log(`notifyConversation ${type}: ${conversation.id} ${changes}`);
 
     if (type === NotifyEventTypeEnum.UPDATE) {
 	    this.raise_<void>('onConversationUpdated', { conversation, targetUsers, changes });
@@ -1111,7 +1092,7 @@ export class ChatManager {
 	private notifyEvent_(objects: any[], type: NotifyEventTypeEnum, changes: {}) {
 	  const [ event, object ] = objects;
 	  const targetUsers = object.getUsersOnline();
-	 // console.log(`notifyEvent ${type}: ${object.id} ${event.id} ${changes}`);
+
     if (type === NotifyEventTypeEnum.UPDATE) {
       if (object instanceof Channel)
 	      this.raise_<void>('onChannelEventUpdated', { channel: object, event, targetUsers, changes });
@@ -1142,7 +1123,6 @@ export class ChatManager {
   }
 
   private userFromDB_(userDB: UserDB): User {
-    //console.log("userFromDB_: ", userDB) ;
     const blockUsers: string[] = [];
     if (!userDB.nickname)
       throw new PropertyUndefinedError("userFromDB: nickname is not set");
@@ -1212,7 +1192,6 @@ export class ChatManager {
   private addChannelUserFromDB_(channel: Channel, channelUserDB: ChannelUserDB) {
     const user = this.getUserById(channelUserDB.user.id);
 
-    //console.log("addChannelUserFromDB", channelUserDB);
     if (!user) {
       throw new UserNotFoundError("addChannelUserFromDB_: getUserById not found in memory");
     }

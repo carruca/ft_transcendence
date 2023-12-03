@@ -34,7 +34,6 @@ export class UserDTO {
     if (targetUser) {
       this.blocked = targetUser.hasBlocked(user);
       this.friend = targetUser.hasFriend(user);
-      console.log("UserDTO::constructor: from:", this.nickname, this.blocked, this.friend, targetUser.nickname);
       if (targetUser.siteRole === UserSiteRoleEnum.OWNER || targetUser.siteRole === UserSiteRoleEnum.MODERATOR) {
         this.siteDisabled = user.siteDisabled;
         this.siteBanned = user.siteBanned;

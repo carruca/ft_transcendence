@@ -295,8 +295,6 @@ export class User {
   }
 
   DTO(targetUser?: User): UserDTO {
-    if (targetUser)
-      console.log("DTO from User. list blocks", targetUser.blockUsers_);
     return new UserDTO(this, targetUser);
   }
 

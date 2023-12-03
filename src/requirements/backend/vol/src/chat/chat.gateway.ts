@@ -674,8 +674,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     const sourceUserDTO = sourceUser.DTO();
 
     sourceUserDTO.channelsDTO = sourceUser.getChannels().map((channel: Channel) => channel.DTO(sourceUser));
-
-    console.log("onUserConnected:", sourceUserDTO);
     sourceUser.socket.emit('registered', JSON.stringify(sourceUserDTO));
 
     //this.logger_.debug(`onUserConnected: user ${event.sourceUser.name}`);
@@ -710,7 +708,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       sourceUserId: sourceUser.id,
       changes,
     });
-    console.log("ChatGateway: onUserUpdated", changesJSON);
     for (const targetUser of targetUsers) {
       if (targetUser.socket)
         targetUser.socket.emit('userUpdated', changesJSON);
@@ -753,9 +750,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   onUserJoined(data: any): void {
     const { channel, sourceUser, targetUsers } = data;
 
-    //TODO: revisar que un usuario bloqueado del que el cliente no tiene conocimiento es marcado como bloqueado
-    //      Forma de probar:
-    //      Crear un canal, bloquear a cualquier usuario, salir del canal. Reiniciar el navegador y volver a entrar al canal.
     for (const targetUser of targetUsers) {
       targetUser.socket.emit('userJoined', JSON.stringify({
         channelId: channel.id,

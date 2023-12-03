@@ -111,7 +111,6 @@ export class Channel {
   }
 
   public createEventGeneric(type: EventTypeEnum, sourceUser: User, value?: string): Event {
-    console.log("createEventGeneric:", type);
     return this.createEvent({
       type: type,
       sourceUser: sourceUser,
@@ -324,8 +323,8 @@ export class Channel {
     return this.password_;
   }
 
-  channelUserDTO(user: User): ChannelUserDTO {
-    return new ChannelUserDTO(this, user);
+  channelUserDTO(user: User, targetUser?: User): ChannelUserDTO {
+    return new ChannelUserDTO(this, user, targetUser);
   }
 
   DTO(targetUser?: User): ChannelDTO {
