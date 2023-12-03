@@ -206,7 +206,6 @@ async function unblockIt() {
 }
 
 onMounted(async () => {
-  // debugger;
   users.value = props.users;
   Promise.all([takeFriendStatus(), takeBlockStatus()]);
   checkedFriend.value = true;

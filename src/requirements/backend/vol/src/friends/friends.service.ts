@@ -67,7 +67,7 @@ export class FriendsService {
     if (!friend) {
       throw new HttpException('Friend not found', HttpStatus.NOT_FOUND);
     }
-    if (updateFriendDto.status === FriendStatus.rejected) {
+    if (Number(updateFriendDto.status) === FriendStatus.rejected) {
       return this.remove(updateFriendDto.id);
     }
     friend.status = updateFriendDto.status;

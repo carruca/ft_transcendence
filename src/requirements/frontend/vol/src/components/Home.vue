@@ -80,7 +80,6 @@ const clearError = () => {
   toastError.value = undefined
 };
 
-const friends = ref<APIResponseFriends[]>([]);
 const friendPetition = ref<APIResponseFriends[]>([]);
 
 function* nextFriend(friends : APIResponseFriends[]) {
@@ -107,7 +106,8 @@ async function takeFriendStatus() {
     {
       throw new Error("Could not get friends");
     }
-    friendPetition.value = await response.json();
+    const friends = await response.json();
+    friendPetition.value = friends.filter((friend: APIResponseFriends) => friend.receiverId === me.value.id)
   } catch (error) {
     console.error(error);
   }
@@ -115,18 +115,16 @@ async function takeFriendStatus() {
 
 async function handlePetition(friend : APIResponseFriends, status : FriendStatus) {
   try {
+    const url = new URL(`${import.meta.env.VITE_BACKEND_URL}/friends/${friend.id}`);
+    url.searchParams.append("status", status.toString());
     const response = await fetch(
-      `${import.meta.env.VITE_BACKEND_URL}/friends`,
+      url,
       {
         method: "PUT",
         headers: {
         "Content-Type": "application/json",
         },
-        credentials: "include",
-        body: JSON.stringify({
-          "friendId": friend.id,
-          status,
-        }),
+        credentials: "include"
       });
     if (!response.ok)
     {
@@ -156,7 +154,7 @@ async function handlePetition(friend : APIResponseFriends, status : FriendStatus
     </Modal>
     <Modal v-if="currentFriendPetition" :title="'Friend request'" :on-accept="() => handlePetition(currentFriendPetition, FriendStatus.accepted)"
       :on-reject="() => handlePetition(currentFriendPetition, FriendStatus.rejected)">
-      <p>{{ currentFriendPetition.nickname }} wants to be your friend</p>
+      <p>{{ currentFriendPetition.user[0].nickname }} wants to be your friend</p>
     </Modal>
     <main>
       <router-view :user="props.user" />

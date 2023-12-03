@@ -19,13 +19,11 @@ export class Friend {
     receiverId: string,
     senderId: string,
     status: FriendStatus,
-    nickname?: string,
   ) {
     this.users = users;
     this.receiverId = receiverId;
     this.senderId = senderId;
     this.status = status;
-    this.nickname = nickname;
   }
 
   @PrimaryGeneratedColumn('uuid')
@@ -44,7 +42,4 @@ export class Friend {
 
   @Column()
   status: FriendStatus;
-
-  @Column({ nullable: true })
-  nickname?: string;
 }

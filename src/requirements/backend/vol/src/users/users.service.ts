@@ -398,43 +398,6 @@ export class UsersService {
     return user.achievements;
   }
 
-  async findFriendsUser(userId: string, status?: FriendStatus) : Promise<Friend[]> {
-    const user = await this.usersRepository.findOne({
-      relations: [
-        'friends'
-      ],
-      where: {
-        id: userId,
-      },
-    });
-    console.log({user});
-    if (!user) {
-      throw new HttpException('User not found', HttpStatus.NOT_FOUND);
-    }
-    let friends = user.friends;
-    if (status !== undefined) {
-      friends = user.friends.filter(friend => friend.status === status);
-      if (status === FriendStatus.requested)
-        friends = friends.filter(friend => friend.senderId !== userId);
-    }
-    // Find all friends of user to get their nicknames
-    const friendIds = friends.map(friend => friend.receiverId == userId ? friend.senderId : friend.receiverId).flat();
-    const friendUsers = await this.usersRepository.find({
-      where: {
-        id: In(friendIds),
-      },
-    });
-    // Add nickname to friend
-    friends = friends.map(friend => {
-      const friendUser = friendUsers.find(user => user.id === friend.senderId || user.id === friend.receiverId);
-      if (friendUser) {
-        friend.nickname = friendUser.nickname;
-      }
-      return friend;
-    });
-    return friends;
-  }
-
   async getLeaderboard() : Promise<RatingUserDto[]> {
     let users = await this.usersRepository.find({
       select: [
