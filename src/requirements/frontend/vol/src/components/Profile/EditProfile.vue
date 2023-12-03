@@ -12,7 +12,7 @@ const props = defineProps({
   }
 });
 
-const emit = defineEmits(['close']);
+const emit = defineEmits(['close', 'userUpdated']);
 
 let selectedImage : File;
 const userNickname = ref(props.nickname);
@@ -32,7 +32,7 @@ function sendChanges() {
     if (formData.get('nickname') === "") {
       formData.delete('nickname');
     }
-    
+
     try {
       const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/users/me`, {
         method: "PUT",
@@ -46,6 +46,9 @@ function sendChanges() {
     }
     catch (error) {
       console.error(error);
+    }
+    if (formData.get('nickname')) {
+      emit('userUpdated');
     }
     emit('close');
   })();
