@@ -71,7 +71,6 @@ export class ChatClient {
   private adminUsers_: Map<string, User> = reactive(new Map());
   private adminChannels_: Map<string, Channel> = reactive(new Map());
 
-  private userWatchCallback_?: Function;
   private isConnected_ = ref<boolean>(false);
   public isConnected = readonly(this.isConnected_);
 
@@ -424,9 +423,6 @@ export class ChatClient {
     const [ targetUser ] = JSON.parse(responseJSON);
 
     this.addUserFromDTO_(targetUser);
-	if (this.userWatchCallback_) {
-	  this.userWatchCallback_(targetUser);
-	}
   }
 
   private onPrivMessage_(responseJSON: string): void {
@@ -894,9 +890,8 @@ export class ChatClient {
     this.admin_ = false;
   }
 
-  public userWatch(userId: string, callback?: Function) {
+  public userWatch(userId: string) {
     socket.emit('userwatch', JSON.stringify([ userId ]));
-    this.userWatchCallback_ =  callback;
   }
 
   public userUnwatch(userId: string) {

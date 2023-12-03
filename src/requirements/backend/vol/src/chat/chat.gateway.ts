@@ -685,9 +685,10 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   onUserCreated(data: any): void {
     const { sourceUser, targetUsers } = data;
     const createJSON = JSON.stringify(sourceUser);
-
+   
     for (const targetUser of targetUsers) {
-      targetUser.socket?.emit('userCreated', createJSON);
+      if (targetUser.socket)
+        targetUser.socket.emit('userCreated', JSON.stringify(sourceUser.DTO(targetUser)));
     }
 
     for (const targetUser of this.chat_.getAdminWatchers()) {
@@ -711,12 +712,13 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     });
     console.log("ChatGateway: onUserUpdated", changesJSON);
     for (const targetUser of targetUsers) {
-      targetUser.socket?.emit('userUpdated', changesJSON);
+      if (targetUser.socket)
+        targetUser.socket.emit('userUpdated', changesJSON);
     }
 
     changes.id = sourceUser.id;
 
-    for (const targetUser of this.chat_.getAdminWatchers()) {
+   for (const targetUser of this.chat_.getAdminWatchers()) {
       if (targetUser.socket) {
         targetUser.socket.emit('adminUpdated', JSON.stringify([
           AdminObjectTypeEnum.USER,

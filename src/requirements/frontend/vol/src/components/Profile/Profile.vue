@@ -8,6 +8,7 @@ import AchivementsCard from './achivementsCard.vue';
 import EditProfile from './EditProfile.vue';
 import friendsBotton from './friendsBotton.vue';
 import { connectionStatus } from './ConnectionStatus'
+import socket from '@/services/ws';
 
 const props = defineProps({
 	user: {
@@ -105,6 +106,9 @@ async function loadProfile() {
 
   // Watch user status
   userStatus.value = userInfo.status;
+  //TODO hacer que esto se actualice con client
+  if (!itsMe)
+    client.userWatch([ ID.value[1] ]);
 
   loadedProfile.value = true;
 };
@@ -114,20 +118,30 @@ const stopWatch = watch(
   () => {
     if (unmounted.value) return;
     loadedProfile.value = false;
+    if (!itsMe)
+      client.userUnwatch([ ID.value[1] ]);
     loadProfile();
-  }
-  );
+});
   
 onMounted(async () => {
   await route.isReady();
   loadProfile();
+  socket.on('watch', handleStatus);
 });
 
 onBeforeUnmount(() => {
   unmounted.value = true;
+  if (!itsMe) client.userUnwatch([ ID.value[1] ]);
   stopWatch();
+  socket.off('watch', handleStatus);
 });
 
+const handleStatus = (responseJSON) => {
+  const userDTO = JSON.parse(responseJSON);
+
+  if (userDTO.id === ID.value[1])
+    userStatus.value = JSON.parse(userDTO).id;
+};
 
 const launchEditPage = () => {
   editPage.value = true;
