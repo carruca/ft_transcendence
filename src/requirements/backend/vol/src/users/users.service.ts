@@ -133,6 +133,15 @@ export class UsersService {
     return this.usersRepository.save(user);
   }
 
+  async isDisabled(id: string) : Promise<boolean> {
+    const user = await this.findOne(id);
+    if (!user) {
+      throw new HttpException('User not found', HttpStatus.NOT_FOUND);
+    }
+
+    return user.disabled;
+  }
+
   async setBanned(id: string, value: boolean) {
     const user = await this.findOne(id);
     if (!user) {
@@ -141,6 +150,15 @@ export class UsersService {
 
     user.banned = value;
     return this.usersRepository.save(user);
+  }
+
+  async isBanned(id: string) : Promise<boolean> {
+    const user = await this.findOne(id);
+    if (!user) {
+      throw new HttpException('User not found', HttpStatus.NOT_FOUND);
+    }
+
+    return user.banned;
   }
 
   async createBan(createBanDto: CreateBanDto) : Promise<ReturnBanDto> {
