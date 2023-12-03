@@ -98,13 +98,13 @@ onMounted(async () => {
 
   isLoading.value = false;
 
-  socket.on('onUserUpdated', handleUserChange);
+  socket.on('userUpdated', handleUserChange);
   client.userWatch(usersList.value.map(user => user.id));
 });
 
 onBeforeUnmount(() => {
   client.userUnwatch(usersList.value.map(user => user.id));
-  socket.off('onUserUpdated', handleUserChange);
+  socket.off('userUpdated', handleUserChange);
 });
 
 const handleUserChange = (responseJSON) => {

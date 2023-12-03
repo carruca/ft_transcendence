@@ -232,9 +232,9 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   async handleWatch(client: Socket, dataJSON: string): Promise<void> {
     if (!client.data.user) return;
 
-    const [ targetUserId ] = JSON.parse(dataJSON);
+    const targetUsersId = JSON.parse(dataJSON);
     const sourceUser = client.data.user;
-    const response = await this.chat_.userWatchUserId(sourceUser, targetUserId);
+    const response = await this.chat_.userWatchUserId(sourceUser, targetUsersId);
 
     response.setSourceUser(sourceUser)
             .setEvent('userwatch')
@@ -245,7 +245,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   async handleUnwatch(client: Socket, dataJSON: string): Promise<void> {
     if (!client.data.user) return;
 
-    const [ targetUserId ] = JSON.parse(dataJSON);
+    const targetUserId = JSON.parse(dataJSON);
     const sourceUser = client.data.user;
     const response = await this.chat_.userUnwatchUserId(sourceUser, targetUserId);
 
@@ -586,7 +586,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       }, 5000);
     });
 
-    console.log("Fin de test");
+     console.log("Fin de test");
     return true;
   }
 
@@ -713,10 +713,9 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       if (targetUser.socket)
         targetUser.socket.emit('userUpdated', changesJSON);
     }
-
     changes.id = sourceUser.id;
 
-   for (const targetUser of this.chat_.getAdminWatchers()) {
+    for (const targetUser of this.chat_.getAdminWatchers()) {
       if (targetUser.socket) {
         targetUser.socket.emit('adminUpdated', JSON.stringify([
           AdminObjectTypeEnum.USER,
