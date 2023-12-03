@@ -110,13 +110,11 @@ onBeforeUnmount(() => {
 const handleUserChange = (responseJSON) => {
   const userDTO = JSON.parse(responseJSON);
 
-  console.log("handleUserChange: " + JSON.stringify(userDTO));
   const userIndex = usersList.value.findIndex(user => user.id === userDTO.sourceUserId);
   if (userIndex !== -1) {
-    let user = { ...usersList.value[userIndex] };
-
-    if (userDTO.changes.status != undefined)
-      user.userStatus = userDTO.changes.status;
+    if (userDTO.changes.status != undefined) {
+      usersList.value[userIndex].userStatus = userDTO.changes.status;
+    }
 
     /*if (userDTO.nickname !== user.nickname) {
       user.nickname = userDTO.nickname;
@@ -131,9 +129,11 @@ const handleUserChange = (responseJSON) => {
       client.userUnwatch([user.id]);
       usersList.value.splice(userIndex, 1);
     }
-*/
-    usersList.value = [...usersList.value];
+
+    usersList.value = [...usersList.value];*/
   }
+
+  console.log("usersList: " + JSON.stringify(usersList.value));
 };
 
 function getSelectedTabList() {

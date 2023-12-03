@@ -134,21 +134,25 @@ const stopWatch = watch(
 onMounted(async () => {
   await route.isReady();
   loadProfile();
-  socket.on('watch', handleStatus);
+  socket.on('userUpdated', handleStatus);
 });
 
 onBeforeUnmount(() => {
   unmounted.value = true;
   if (!itsMe) client.userUnwatch([ ID.value[1] ]);
   stopWatch();
-  socket.off('watch', handleStatus);
+  socket.off('userUpdated', handleStatus);
 });
 
 const handleStatus = (responseJSON) => {
   const userDTO = JSON.parse(responseJSON);
 
-  if (userDTO.id === ID.value[1])
-    userStatus.value = JSON.parse(userDTO).id;
+  console.log("AAAAAAAAAAAAAAAAA");
+  if (userDTO.sourceUserId === ID.value[1]) {
+    console.log("BBBBBBBBBBBBBBBBBBB");
+    if (userDTO.changes.status != undefined)
+      userStatus.value = userDTO.changes.status;
+  }
 };
 
 const launchEditPage = () => {
