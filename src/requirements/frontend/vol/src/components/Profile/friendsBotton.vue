@@ -136,13 +136,14 @@ async function takeBlockStatus() {
     {
       throw new Error("Could not get blocks");
     }
+
     blocks = await response.json();
-    blocks.forEach((block: APIResponseBlocks) => {
-      if (block.blockId === users.value[1])
+    for (let block: APIResponseBlocks of blocks) {
+      if (block.id === users.value[1])
       {
         blockState.value = true;
       }
-    });
+    }
   } catch (error) {
     console.error(error);
   }

@@ -70,6 +70,9 @@ onMounted(async () => {
     iterator = undefined
     currentFriendPetition.value = undefined
   })
+  watch(client.friendPetition, (newVal: APIResponseFriends, _oldVal) => {
+    friendPetition.value = [newVal]
+  })
   await takeFriendStatus();
   setTimeout(() => {
     stopMe()

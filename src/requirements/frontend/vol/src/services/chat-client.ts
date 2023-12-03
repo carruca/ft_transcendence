@@ -111,6 +111,9 @@ export class ChatClient {
   private toastMessage_ = ref<string>(undefined);
   public toastMessage = readonly(this.toastMessage_);
 
+  private friendPetition_ = ref<Object>(undefined);
+  public friendPetition = readonly(this.friendPetition_);
+
   private modalProps_ = ref({
     title: undefined,
     onAccept: undefined,
@@ -197,6 +200,8 @@ export class ChatClient {
     socket.on('userChannelCreated', this.onUserChannelCreated_.bind(this));
     socket.on('userChannelUpdated', this.onUserChannelUpdated_.bind(this));
     socket.on('userChannelDeleted', this.onUserChannelDeleted_.bind(this));
+
+    socket.on('friendship', this.onFriendship_.bind(this));
   }
 
   private onError_(data: any): void {
@@ -600,6 +605,13 @@ export class ChatClient {
     const data = JSON.parse(dataJSON);
 
     console.log('onUserChannelDeleted', data);
+  }
+
+  private onFriendship_(dataJSON: string) {
+    const data = JSON.parse(dataJSON);
+
+    this.friendPetition_.value = data;
+    console.log('onFriendship', data);
   }
 
   private onChannelEventCreated_(dataJSON: string) {

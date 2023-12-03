@@ -60,7 +60,7 @@ export class FriendsService {
     if (chatUser && chatUser.socket)
       chatUser.socket.emit('friendship', JSON.stringify({
         user: users
-          .filter(user => user.id !== createFriendDto.senderId)
+          .filter(user => user.id !== createFriendDto.receiverId)
           .map(({ id, nickname, login, status }) => ({ id, nickname, login, status })),
         receiverId: newFriend.receiverId,
         status: newFriend.status,
