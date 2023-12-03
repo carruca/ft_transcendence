@@ -1,6 +1,14 @@
 import router from "@/router";
 import socket from "../services/ws";
 
+const clearCookies = () => {
+  const cookies = document.cookie.split("; ");
+  for (const cookie of cookies) {
+    const [name, value] = cookie.split("=");
+    document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT`;
+  }
+}
+
 export const loggedInFn = async (): Promise<Object | undefined> => {
   try {
     const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/users/me`, {
@@ -20,11 +28,18 @@ export const loggedInFn = async (): Promise<Object | undefined> => {
           case 'No 2FA token passed':
             router.replace("/2fa");
             break;
+          case 'User disabled':
+            break;
+          case 'User banned':
+            break;
           default:
+            clearCookies();
             router.replace("/login");
             break;
         }
-        return undefined;
+        router.replace(`/login?error=access_denied&error_description=${data.message}`);
+        clearCookies();
+        return data.message;
       }
     }
     if (response.ok) {

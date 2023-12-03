@@ -18,6 +18,18 @@ class No2FAError extends UnauthorizedException {
     }
 }
 
+class userDisabledError extends UnauthorizedException {
+    constructor() {
+        super('User disabled');
+    }
+}
+
+class userBannedError extends UnauthorizedException {
+    constructor() {
+        super('User banned');
+    }
+}
+
 @Injectable()
 export class AuthMiddleware implements NestMiddleware {
     constructor (private usersService: UsersService,
@@ -77,11 +89,24 @@ export class AuthMiddleware implements NestMiddleware {
                     user = await this.usersService.create(data);
                 }
                 req.user = user;
+                debugger
+                if (await this.usersService.isDisabled(user.id)) {
+                    throw new userDisabledError();
+                }
+                if (await this.usersService.isBanned(user.id)) {
+                    throw new userBannedError();
+                }
                 this.checkUserNickname(req, _res, next);
                 await this.check2FA(req, _res, next);
                 return next();
             }
         } catch (error) {
+            if (await this.usersService.isDisabled(req.user.id)) {
+                throw new userDisabledError();
+            }
+            if (await this.usersService.isBanned(req.user.id)) {
+                throw new userBannedError();
+            }
             this.checkUserNickname(req, _res, next);
             await this.check2FA(req, _res, next);
             console.error(error)
