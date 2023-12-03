@@ -10,6 +10,8 @@ import friendsBotton from './friendsBotton.vue';
 import { connectionStatus } from './ConnectionStatus'
 import socket from '@/services/ws';
 
+import { client } from '@/services/chat-client';
+
 const props = defineProps({
 	user: {
 		type: Object,
