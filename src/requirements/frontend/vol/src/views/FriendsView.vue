@@ -98,25 +98,26 @@ onMounted(async () => {
 
   isLoading.value = false;
 
-  socket.on('watch', handleUserChange);
+  socket.on('onUserUpdated', handleUserChange);
   client.userWatch(usersList.value.map(user => user.id));
 });
 
 onBeforeUnmount(() => {
   client.userUnwatch(usersList.value.map(user => user.id));
-  socket.off('watch', handleUserChange);
+  socket.off('onUserUpdated', handleUserChange);
 });
 
 const handleUserChange = (responseJSON) => {
   const userDTO = JSON.parse(responseJSON);
 
+  console.log("handleUserChange: " + JSON.stringify(userDTO));
   const userIndex = usersList.value.findIndex(user => user.id === userDTO.id);
   if (userIndex !== -1) {
     let user = { ...usersList.value[userIndex] };
 
     user.userStatus = userDTO.status;
 
-    if (userDTO.nickname !== user.nickname) {
+    /*if (userDTO.nickname !== user.nickname) {
       user.nickname = userDTO.nickname;
       user.userProfile = getProfilePictureUrl(userDTO.nickname, userDTO.login);
     }
@@ -130,7 +131,7 @@ const handleUserChange = (responseJSON) => {
       usersList.value.splice(userIndex, 1);
     }
 
-    usersList.value = [...usersList.value];
+    usersList.value = [...usersList.value];*/
   }
 };
 
