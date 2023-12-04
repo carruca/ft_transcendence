@@ -85,8 +85,8 @@ export class MatchesService {
           id: id,
         },
       },
-      take: options.limit,
-      skip: options.page * options.limit,
+//      take: options.limit,
+//      skip: options.page * options.limit,
       order: {
         match: {
           start: "DESC",
