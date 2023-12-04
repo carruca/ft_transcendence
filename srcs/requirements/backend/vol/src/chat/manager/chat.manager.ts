@@ -877,7 +877,7 @@ export class ChatManager {
           JSON.stringify({
           event: 'connection',
           code: 4,
-          message: "You has been banned from this site",
+          message: "You have been banned from this site",
       }));
       targetUser.socket.disconnect();
     }

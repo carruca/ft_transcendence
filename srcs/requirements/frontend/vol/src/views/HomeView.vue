@@ -43,7 +43,7 @@ const onUserUpdated = async (c) => {
       <i class="material-icons">error</i>
     </Toast>
     <Splash v-if="!loggedIn" />
-    <HomeVue :user="user" @userUpdated="onUserUpdated" v-else/>
+    <HomeVue :user="user" @userUpdated="onUserUpdated" @userBanned="onUserUpdated" v-else/>
   </main>
 </template>
 

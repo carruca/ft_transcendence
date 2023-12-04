@@ -6,7 +6,7 @@ import { onMounted, defineProps, watch, ref, defineEmits } from 'vue';
 import { ChatClient } from '@/services/chat-client'
 import Toast from './Toast.vue'
 
-const emit = defineEmits(['userUpdated']);
+const emit = defineEmits(['userUpdated', 'userBanned']);
 
 const onUserUpdated = () => {
   emit('userUpdated');
@@ -58,6 +58,9 @@ onMounted(async () => {
   })
   watch(client.showToast, (newVal, _oldVal) => {
     toastError.value = newVal ? client.toastMessage.value : undefined
+    if (toastError.value && toastError.value === "You have been banned from this site") {
+      emit('userBanned')
+    }
   })
   watch(client.showModal, (newVal, _oldVal) => {
     showPopup.value = newVal
