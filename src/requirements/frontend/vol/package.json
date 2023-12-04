@@ -8,7 +8,7 @@
     "preview": "vite preview",
     "type-check": "vue-tsc --noEmit",
     "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts --fix --ignore-path .gitignore",
-    "serve": "serve -s dist -l 3030"
+	"serve": "serve -s dist -l 3030"
   },
   "dependencies": {
     "@vitejs/plugin-vue": "^4.0.0",
