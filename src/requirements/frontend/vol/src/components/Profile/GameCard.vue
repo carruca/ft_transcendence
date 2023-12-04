@@ -53,6 +53,7 @@ function winStatus(didWon : Boolean) {
 }
 
 async function askHistorial() {
+	console.log(userID)
   try{
     const response = await fetch(
       `${import.meta.env.VITE_BACKEND_URL}` + `/matches/history/` + userID + `?page=` + currentPage,
@@ -83,7 +84,7 @@ async function askHistorial() {
         }
         else {
           const me = match.users.find(user => user.user.id === userID);
-          const ally = match.users.find(user => user.score === me?.score);
+          const ally = match.users.find(user => user.score === me?.score && user.user !== me?.user);
           const opponent1 = match.users.find(user => user.score !== me?.score);
           const opponent2 = match.users.find(user => user.score !== me?.score && user.user !== opponent1?.user);
           return {
@@ -211,7 +212,7 @@ li {
 }
 
 .type-section {
-	font-size: 1ch;
+	font-size: 2ch;
 	font-family: 'Audiowide';
 }
 

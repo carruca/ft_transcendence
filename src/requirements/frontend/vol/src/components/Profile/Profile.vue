@@ -118,7 +118,7 @@ async function loadProfile() {
   // Watch user status
   userStatus.value = userInfo.status;
   //TODO hacer que esto se actualice con client
-  if (itsMe)
+  if (!itsMe.value)
     client.userWatch([ ID.value[1] ]);
 
   loadedProfile.value = true;
@@ -129,7 +129,7 @@ const stopWatch = watch(
   () => {
     if (unmounted.value) return;
     loadedProfile.value = false;
-    if (itsMe)
+    if (!itsMe.value)
       client.userUnwatch([ ID.value[1] ]);
     loadProfile();
 });
