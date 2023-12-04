@@ -2,10 +2,9 @@ import {
     User,
     ChannelUser,
     Event,
-    ChannelTopic,
 } from '.';
 
-import {
+import type {
     ChannelPayload,
 } from '../interface';
 

@@ -7,7 +7,7 @@ import {
     UserSiteRoleEnum,
 } from '../enum';
 
-import {
+import type {
     ChannelUserPayload,
 } from '../interface';
 

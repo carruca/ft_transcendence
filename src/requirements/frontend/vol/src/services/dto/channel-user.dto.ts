@@ -2,7 +2,7 @@ import {
     UserStatusEnum,
 } from '../enum';
 
-import {
+import type {
 	UserDTO,
 } from '.';
 

@@ -9,7 +9,7 @@ import {
     EventTypeEnum,
 } from '../enum';
 
-import {
+import type {
   EventPayload,
 } from '../interface';
 
