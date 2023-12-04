@@ -3,7 +3,6 @@ import {
     ChannelUser,
     Event,
     ChannelTopic,
-    Event,
 } from '.';
 
 import {

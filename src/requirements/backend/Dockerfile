@@ -14,7 +14,4 @@ COPY entrypoint.sh ./
 
 WORKDIR /backend
 
-#EXPOSE 3000
-
-#ENTRYPOINT ["sh"]
 ENTRYPOINT ["/entrypoint.sh"]

@@ -212,7 +212,7 @@ li {
 
 .type-section {
 	font-size: 1ch;
-	font-family: 'Retro Stereo Wide';
+	font-family: 'Audiowide';
 }
 
 </style>

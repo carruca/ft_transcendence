@@ -8,7 +8,7 @@ import vue from "@vitejs/plugin-vue";
 export default defineConfig(({ mode }) => {
   process.env = { ...process.env, ...loadEnv(mode, process.cwd()) };
   return {
-    base: './',
+    base: '/',
     server: {
       port: Number(process.env.VITE_PORT) || 3030,
     },
@@ -26,5 +26,8 @@ export default defineConfig(({ mode }) => {
         "@": fileURLToPath(new URL("./src", import.meta.url)),
       },
     },
+	build: {
+		assetsInlineLimit: 0,
+	}
   }
 });
