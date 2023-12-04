@@ -3,7 +3,7 @@ export UID			=	$(shell id -u)
 
 MKDIR				=	mkdir -p
 
-SRC_PATH			=	./src
+SRC_PATH			=	./srcs
 
 VOLUMES_PATH		=	vol
 
@@ -37,7 +37,7 @@ POSTGRES_PATH		= 	$(SRC_PATH)/$(REQUIREMENTS_PATH)/$(POSTGRESQL)/vol/db/
 POSTGRES_DIRS		= 	pg_notify pg_replslot pg_tblspc pg_twophase pg_commit_ts pg_stat_tmp pg_logical/snapshots pg_logical/mappings
 POSTGRES_DIRS		:= 	$(addprefix $(POSTGRES_PATH), $(POSTGRES_DIRS))
 
-DATABASE 			= 	$(shell cat src/.env 2> /dev/null | grep "POSTGRES_DATABASE" | awk -F"POSTGRES_DATABASE=" '{print $$2;}')
+DATABASE 			= 	$(shell cat srcs/.env 2> /dev/null | grep "POSTGRES_DATABASE" | awk -F"POSTGRES_DATABASE=" '{print $$2;}')
 
 all:			build
 
