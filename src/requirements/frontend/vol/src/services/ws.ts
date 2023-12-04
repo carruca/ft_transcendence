@@ -17,7 +17,7 @@ export function socketSend(event: string, value: any) {
   if (socket.connected) {
     socket.emit(event, value);
   } else {
-    pendinMessages.push({ eventName, data });
+    pendingMessages.push({ eventName, data });
   }
 }
 
