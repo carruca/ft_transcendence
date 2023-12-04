@@ -53,7 +53,6 @@ function winStatus(didWon : Boolean) {
 }
 
 async function askHistorial() {
-	console.log(userID)
   try{
     const response = await fetch(
       `${import.meta.env.VITE_BACKEND_URL}` + `/matches/history/` + userID + `?page=` + currentPage,
