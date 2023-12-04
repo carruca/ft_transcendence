@@ -263,7 +263,7 @@ const closeEditPage = async () => {
   max-width: 200px;
   margin-left: auto;
   margin-right: auto;
-  font-family: 'Retro Stereo Wide', sans-serif;
+  font-family: 'Audiowide', sans-serif;
 }
 
 .stat {

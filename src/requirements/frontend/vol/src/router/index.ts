@@ -58,11 +58,11 @@ const routes = [
         path: 'profile',
         name: 'Profile',
         component: Profile,
-      },
-      {
-        path: 'profile/:username',
-        name: 'ProfileUser',
-        component: Profile,
+		children: [{
+			path: ":username",
+			name: 'Profile',
+			component: Profile,
+		}]
       },
       // TODO: Add routes that must display the navbar and sidebar here
     ],

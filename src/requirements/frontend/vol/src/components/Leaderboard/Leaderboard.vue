@@ -44,7 +44,7 @@
 
 <template>
   <div class="leaderboard-container">
-    <h1 style="font-family: 'Retro Stereo Wide';">Leaderboard</h1>
+    <h1 style="font-family: 'Audiowide';">Leaderboard</h1>
 
     <div v-if="rankingUsers" class="leaderboard-cardscont">
       <div class="leaderboard-card-table">
