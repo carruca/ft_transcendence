@@ -93,8 +93,8 @@ async function askHistorial() {
             date: new Date(match.start).toLocaleString(),
             win: me?.score !== undefined && opponent1?.score !== undefined ? me.score >= opponent1.score : false,
             who: [ ally?.user.nickname, opponent1?.user.nickname, opponent2?.user.nickname ],
-            myPoints: match.users[0].score,
-            hisPoints: match.users[1].score,
+            myPoints: me?.score,
+            hisPoints: opponent1?.score,
             duration: `${Math.floor((new Date(match.end).getTime() - new Date(match.start).getTime()) / 1000)}s`
           };
 
