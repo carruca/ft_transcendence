@@ -69,7 +69,7 @@ print:
 	echo $(DATABASE)
 
 logs:
-	$(DOCKER_COMPOSE) $@ -f -n 1000
+	$(DOCKER_COMPOSE) $@ -f
 
 import:
 	$(DOCKER_COMPOSE) exec -u root -t $(POSTGRESQL) pg_restore -d $(DATABASE)

@@ -1,10 +1,10 @@
-import {
+import type {
   EvenTypeEnum,
   UserSiteRoleEnum,
   UserStatusEnum,
 } from '../enum';
 
-import {
+import type {
   UserDTO,
   ChannelDTO,
 } from '../dto';

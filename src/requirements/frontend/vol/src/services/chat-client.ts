@@ -20,7 +20,7 @@ import {
   AdminObjectTypeEnum,
 } from './enum';
 
-import {
+import type {
   UserDTO,
   EventDTO,
   ChannelDTO,
@@ -28,7 +28,7 @@ import {
   ChannelSummaryDTO,
 } from './dto';
 
-import {
+import type {
   UserPayload,
   ChannelPayload,
 } from './interface';

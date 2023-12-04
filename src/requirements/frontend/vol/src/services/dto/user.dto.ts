@@ -3,7 +3,7 @@ import {
     UserSiteRoleEnum,
 } from '../enum';
 
-import {
+import type {
     ChannelDTO,
 } from '.';
 
