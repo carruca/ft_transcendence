@@ -10,8 +10,6 @@ const props = defineProps({
 
 const matches = ref<Array <gameMatch>>();
 const userID : string = props.user;
-let currentPage : number = 0;
-let totalHist : number;
 
 interface APIResponseArrayHistory {
   id: string;
@@ -55,7 +53,7 @@ function winStatus(didWon : Boolean) {
 async function askHistorial() {
   try{
     const response = await fetch(
-      `${import.meta.env.VITE_BACKEND_URL}` + `/matches/history/` + userID + `?page=` + currentPage,
+      `${import.meta.env.VITE_BACKEND_URL}` + `/matches/history/` + userID,
       {
         method: "GET",
         headers: {
@@ -96,33 +94,15 @@ async function askHistorial() {
             hisPoints: opponent1?.score,
             duration: `${Math.floor((new Date(match.end).getTime() - new Date(match.start).getTime()) / 1000)}s`
           };
-
         }
       });
-      totalHist = Math.ceil(responseData.total / 10);//Total number of historial pages
-      if (matches.value.length > 0) {
-        weGotHist.value = true;
-      }
+      weGotHist.value = true;
     } else {
       console.log('Error: could not recieve historial data');
     }
   } catch (err) {
     console.log(err);
   }
-};
-
-async function prevHistorial()
-{
-  if (currentPage != 0)
-    currentPage--;
-  askHistorial();
-};
-
-async function nextHistorial()
-{
-  if (currentPage < (totalHist - 1))
-    currentPage++;
-  askHistorial();
 };
 
 onMounted(async () => {
@@ -144,31 +124,32 @@ onMounted(async () => {
           <th>Points</th>
           <th>Duration</th>
         </tr>
-        <tr v-for="match in matches">
-          <td>{{ winStatus(match.win) }}</td>
-          <td>{{ match.date }}</td>
-          <td class="type-section">{{ match.type }}</td>
-          <td v-if="match.type==='special'">
-            <ul>
-              <li><router-link :to="`/profile/${match.who[0]}`" style="color:rgb(101, 203, 114)">{{ match.who[0] }}</router-link></li>
-              <li><router-link :to="`/profile/${match.who[1]}`" style="color:rgb(251, 99, 99)">{{ match.who[1] }}</router-link></li>
-              <li><router-link :to="`/profile/${match.who[2]}`" style="color:rgb(251, 99, 99)">{{ match.who[2] }}</router-link></li>
-            </ul>
-          </td>
-          <td v-else><router-link :to="`/profile/${match.who}`" style="color:aliceblue">{{ match.who }}</router-link></td>
-          <td>{{ match.myPoints }}/{{ match.hisPoints }}</td>
-          <td>{{ match.duration }}</td>
-        </tr>
-      </table>
-      <button @click="prevHistorial" :disabled="currentPage === 0">&#8592;</button>
-      <button @click="nextHistorial" :disabled="currentPage <= (totalHist - 1)">&#8594;</button>
+	    </table>
+	    <div class="scrollable-table">
+        <table class="table-card">
+          <tr v-for="match in matches">
+            <td>{{ winStatus(match.win) }}</td>
+            <td>{{ match.date }}</td>
+            <td class="type-section">{{ match.type }}</td>
+            <td v-if="match.type==='special'">
+              <ul>
+                <li><router-link :to="`/profile/${match.who[0]}`" style="color:rgb(101, 203, 114)">{{ match.who[0] }}</router-link></li>
+                <li><router-link :to="`/profile/${match.who[1]}`" style="color:rgb(251, 99, 99)">{{ match.who[1] }}</router-link></li>
+                <li><router-link :to="`/profile/${match.who[2]}`" style="color:rgb(251, 99, 99)">{{ match.who[2] }}</router-link></li>
+              </ul>
+            </td>
+            <td v-else><router-link :to="`/profile/${match.who}`" style="color:aliceblue">{{ match.who }}</router-link></td>
+            <td>{{ match.myPoints }}/{{ match.hisPoints }}</td>
+            <td>{{ match.duration }}</td>
+          </tr>
+        </table>
+      </div>
     </div>
     <img v-else :src="no_hist" alt="empty historial"/>
   </div>
 </template>
 
 <style scoped>
-/* TODO: deal with special games */
 img {
   width: 90%;
   height: 80%;
@@ -200,6 +181,11 @@ img {
 .table-card td {
   border: none;
   padding: 8px;
+}
+
+.scrollable-table {
+  height: 400px; /* adjust this value as needed */
+  overflow-y: auto;
 }
 
 ul {
