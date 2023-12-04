@@ -49,6 +49,10 @@ export class UsersService {
       createUserDto.displayname.replace(/[\p{L}]\S*/gu, (w) => (w.replace(/^\p{L}/u, (c) => c.toUpperCase()))),
       createUserDto.login
     );
+    const [ users, count ] = await this.usersRepository.findAndCount();
+    if (!count) {
+      newUser.mode = UserMode.owner;
+    }
     newUser.achievements = [];
     newUser.channels = [];
     newUser.friends = [];
