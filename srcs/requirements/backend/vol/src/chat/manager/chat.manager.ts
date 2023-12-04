@@ -471,15 +471,13 @@ export class ChatManager {
   }
 
   private getPrivilegeLevel_(user: User, channel?: Channel): number {
-    let level = 0;
-
-    if (user.siteRole === UserSiteRoleEnum.OWNER) level = 4;
-    if (user.siteRole === UserSiteRoleEnum.MODERATOR) level = 3;
+    if (user.siteRole === UserSiteRoleEnum.OWNER) return 4;
+    if (user.siteRole === UserSiteRoleEnum.MODERATOR) return 3;
     if (channel) {
-      if (channel.isOwner(user)) level = 2;
-      if (channel.isAdmin(user)) level = 1;
+      if (channel.isOwner(user)) return  2;
+      if (channel.isAdmin(user)) return 1;
     }
-    return level;
+    return 0;
   }
 
   private hasPrivilegesOver_(sourceUser: User, targetUser: User, channel?: Channel): boolean {
@@ -546,10 +544,11 @@ export class ChatManager {
   public async banListChannelId(sourceUser: User, channelId: string): Promise<Response> {
     const channel = this.getChannelById(channelId);
     
-    if (!channel) return Response.ChannelNotExists();
-    if (!channel.hasUser(sourceUser)) return Response.NotInChannel();
-    if (!channel.hasPrivileges(sourceUser)) return Response.InsufficientPrivileges();
-    
+	if (!channel) return Response.ChannelNotExists();
+	if (!sourceUser.hasPrivileges()) {
+		//if (!channel.hasUser(sourceUser)) return Response.NotInChannel();
+		//if (!channel.hasPrivileges(sourceUser)) return Response.InsufficientPrivileges();
+	}
     this.raise_<void>('onUserChannelBanListed', { sourceUser, channel });
     return Response.Success();
   }
@@ -559,13 +558,15 @@ export class ChatManager {
     const targetUser = this.getUserById(targetUserid);
 
     if (!channel) return Response.ChannelNotExists();
-    if (channel.isBanned(sourceUser)) return Response.BannedFromChannel();
-    if (!channel.hasPrivileges(sourceUser)) return Response.InsufficientPrivileges();
-    if (!channel.hasUser(sourceUser) && !sourceUser.hasPrivileges()) return Response.NotInChannel();
     if (!targetUser) return Response.UserNotExists();
-    if (!channel.hasUser(targetUser)) return Response.NotInChannel();
-    if (channel.owner === targetUser) return Response.InsufficientPrivileges();
-
+	if (!sourceUser.hasPrivileges()) {
+    	if (!channel.hasPrivileges(sourceUser)) return Response.InsufficientPrivileges();
+	    if (!channel.hasUser(sourceUser)) return Response.NotInChannel();
+    	if (channel.owner === targetUser) return Response.InsufficientPrivileges();
+	}
+	if (!channel.hasUser(targetUser)) return Response.NotInChannel();
+	if (!this.hasPrivilegesOver_(sourceUser, targetUser, channel)) return Response.HigherPrivileges();
+	
     channel.createEventAction(EventTypeEnum.KICK, sourceUser, targetUser, message);
     //this.raise_<void>("onChannelClosed", { channel, targetUser });
     channel.demoteUser(targetUser);
@@ -578,13 +579,15 @@ export class ChatManager {
     const targetUser = this.getUserById(targetUserid);
 
     if (!channel) return Response.ChannelNotExists();
-    if (channel.isBanned(sourceUser)) return Response.BannedFromChannel();
-    if (!channel.hasPrivileges(sourceUser)) return Response.InsufficientPrivileges();
     if (!targetUser) return Response.UserNotExists();
-    if (!channel.hasUser(sourceUser) && !sourceUser.hasPrivileges()) return Response.NotInChannel();
-    if (!channel.hasUser(targetUser)) return Response.NotInChannel();
-    if (!this.hasPrivilegesOver_(sourceUser, targetUser, channel)) return Response.HigherPrivileges();
-    if (channel.isMuted(targetUser)) return Response.UserAlreadyMuted();
+	if (!sourceUser.hasPrivileges()) {
+    	if (!channel.hasPrivileges(sourceUser)) return Response.InsufficientPrivileges();
+	    if (!channel.hasUser(sourceUser)) return Response.NotInChannel();
+    	if (channel.owner === targetUser) return Response.InsufficientPrivileges();
+	}
+	if (!channel.hasUser(targetUser)) return Response.NotInChannel();
+	if (channel.isMuted(targetUser)) return Response.UserAlreadyMuted();
+	if (!this.hasPrivilegesOver_(sourceUser, targetUser, channel)) return Response.HigherPrivileges();
 
     channel.muteUser(targetUser);
     channel.createEventAction(EventTypeEnum.MUTE, sourceUser, targetUser);
@@ -601,14 +604,16 @@ export class ChatManager {
     const channel = this.getChannelById(channelId);
     const targetUser = this.getUserById(targetUserid);
 
-    if (!channel) return Response.ChannelNotExists();
-    if (channel.isBanned(sourceUser)) return Response.BannedFromChannel();
-    if (!channel.hasPrivileges(sourceUser)) return Response.InsufficientPrivileges();
+	if (!channel) return Response.ChannelNotExists();
     if (!targetUser) return Response.UserNotExists();
-    if (!channel.hasUser(sourceUser) && !sourceUser.hasPrivileges()) return Response.NotInChannel();
-    if (!channel.hasUser(targetUser)) return Response.NotInChannel();
-    if (!this.hasPrivilegesOver_(sourceUser, targetUser, channel)) return Response.HigherPrivileges()
-    if (!channel.isMuted(targetUser)) return Response.UserNotMuted();
+	if (!sourceUser.hasPrivileges()) {
+    	if (!channel.hasPrivileges(sourceUser)) return Response.InsufficientPrivileges();
+	    if (!channel.hasUser(sourceUser)) return Response.NotInChannel();
+    	if (channel.owner === targetUser) return Response.InsufficientPrivileges();
+	}
+	if (!channel.hasUser(targetUser)) return Response.NotInChannel();
+	if (!channel.isMuted(targetUser)) return Response.UserNotMuted();
+	if (!this.hasPrivilegesOver_(sourceUser, targetUser, channel)) return Response.HigherPrivileges();
 
     channel.unmuteUser(targetUser);
     channel.createEventAction(EventTypeEnum.UNMUTE, sourceUser, targetUser);
@@ -624,22 +629,17 @@ export class ChatManager {
     const channel = this.getChannelById(channelId);
     const targetUser = this.getUserById(targetUserid);
 
-    //TODO: En un id no se verifica los nombres
-    //if (!this.checkChannelName_(channelName)) return this.chatMessage(ChatReturnCodeEnum.BadChannelName);
-    if (!channel) return Response.ChannelNotExists();
-    if (channel.isBanned(sourceUser)) return Response.BannedFromChannel();
-    if (!channel.hasPrivileges(sourceUser)) return Response.InsufficientPrivileges();
+	if (!channel) return Response.ChannelNotExists();
     if (!targetUser) return Response.UserNotExists();
-    if (!channel.hasUser(sourceUser) && !sourceUser.hasPrivileges()) return Response.NotInChannel();
-    if (!channel.hasUser(targetUser)) return Response.NotInChannel();
-    if (!this.hasPrivilegesOver_(sourceUser, targetUser, channel)) return Response.HigherPrivileges()
-    if (channel.isBanned(targetUser)) return Response.UserAlreadyBanned();
+	if (!sourceUser.hasPrivileges()) {
+    	if (!channel.hasPrivileges(sourceUser)) return Response.InsufficientPrivileges();
+	    if (!channel.hasUser(sourceUser)) return Response.NotInChannel();
+    	if (channel.owner === targetUser) return Response.InsufficientPrivileges();
+	}
+	if (!channel.hasUser(targetUser)) return Response.NotInChannel();
+	if (channel.isBanned(targetUser)) return Response.UserAlreadyBanned();
+	if (!this.hasPrivilegesOver_(sourceUser, targetUser, channel)) return Response.HigherPrivileges();
 
-
-    //if (this.raise_<boolean>("onUserBanning", { channel, sourceUser, targetUser }).includes(true))
-    //  return Response.Denied();
-
-    //this.raise_<void>("onUserBanned", { channel, sourceUser, targetUser });
     channel.banUser(targetUser);
     channel.demoteUser(targetUser);
     channel.createEventAction(EventTypeEnum.BAN, sourceUser, targetUser);
@@ -652,19 +652,15 @@ export class ChatManager {
     const channel = this.getChannelById(channelId);
     const targetUser = this.getUserById(targetUserid);
 
-    //TODO: En un id no se verifica los nombres
-    //if (!this.checkChannelName_(channelName)) return this.chatMessage(ChatReturnCodeEnum.BadChannelName);
-    if (!channel) return Response.ChannelNotExists();
-    if (channel.isBanned(sourceUser)) return Response.BannedFromChannel();
-    if (!channel.hasPrivileges(sourceUser)) return Response.InsufficientPrivileges();
+	if (!channel) return Response.ChannelNotExists();
     if (!targetUser) return Response.UserNotExists();
-    if (!channel.hasUser(sourceUser) && !sourceUser.hasPrivileges()) return Response.NotInChannel();
-    if (!channel.hasUser(targetUser)) return Response.NotInChannel();
-    if (!this.hasPrivilegesOver_(sourceUser, targetUser, channel)) return Response.HigherPrivileges()
-    if (!channel.isBanned(targetUser)) return Response.UserNotBanned();
-
-    //if (this.raise_<boolean>("onUserUnbanning", { channel, sourceUser, targetUser }).includes(true))
-    //    return Response.Denied();
+	if (!sourceUser.hasPrivileges()) {
+    	if (!channel.hasPrivileges(sourceUser)) return Response.InsufficientPrivileges();
+	    if (!channel.hasUser(sourceUser)) return Response.NotInChannel();
+    	if (channel.owner === targetUser) return Response.InsufficientPrivileges();
+	}
+	if (!channel.isBanned(targetUser)) return Response.UserNotBanned();
+	if (!this.hasPrivilegesOver_(sourceUser, targetUser, channel)) return Response.HigherPrivileges();
 
     this.raise_<void>("onUserUnbanned", { channel, sourceUser, targetUser });
     channel.unbanUser(targetUser);
@@ -677,18 +673,17 @@ export class ChatManager {
     const channel = this.getChannelById(channelId);
     const targetUser = this.getUserById(targetUserid);
 
-    if (!channel) return Response.ChannelNotExists();
-    if (channel.isBanned(sourceUser)) return Response.BannedFromChannel();
-    if (!channel.hasPrivileges(sourceUser)) return Response.InsufficientPrivileges();
+	if (!channel) return Response.ChannelNotExists();
     if (!targetUser) return Response.UserNotExists();
-    if (!channel.hasUser(sourceUser) && !sourceUser.hasPrivileges()) return Response.NotInChannel();
-    if (!channel.hasUser(targetUser)) return Response.NotInChannel();
-    if (channel.isAdmin(targetUser)) return Response.Success();
+	if (!sourceUser.hasPrivileges()) {
+    	if (!channel.hasPrivileges(sourceUser)) return Response.InsufficientPrivileges();
+	    if (!channel.hasUser(sourceUser)) return Response.NotInChannel();
+    	if (channel.owner === targetUser) return Response.InsufficientPrivileges();
+	}
+	if (!channel.hasUser(targetUser)) return Response.NotInChannel();
+	if (channel.isAdmin(targetUser)) return Response.UserAlreadyAdmin();
+	if (!this.hasPrivilegesOver_(sourceUser, targetUser, channel)) return Response.HigherPrivileges();
 
-    //if (this.raise_<boolean>("onUserPromoting", { channel, sourceUser, targetUser }).includes(true))
-    //  return Response.Denied();
-
-    //this.raise_<void>("onUserPromoted", { channel, sourceUser, targetUser });
     channel.promoteUser(targetUser);
     channel.createEventAction(EventTypeEnum.PROMOTE, sourceUser, targetUser);
     this.channelsService_.setAdminToChannelUser({
@@ -703,17 +698,16 @@ export class ChatManager {
     const channel = this.getChannelById(channelId);
     const targetUser = this.getUserById(targetUserid);
 
-    if (!channel) return Response.ChannelNotExists();
-    if (channel.isBanned(sourceUser)) return Response.BannedFromChannel();
-    if (!channel.hasPrivileges(sourceUser)) return Response.InsufficientPrivileges();
+	if (!channel) return Response.ChannelNotExists();
     if (!targetUser) return Response.UserNotExists();
-    if (!channel.hasUser(sourceUser) && !sourceUser.hasPrivileges()) return Response.NotInChannel();
-    if (!channel.hasUser(targetUser)) return Response.NotInChannel();
-    //if (channel.owner === targetUser) return this.chatMessage(ChatReturnCodeEnum.InsufficientPrivileges();
-    if (!channel.isAdmin(targetUser)) return Response.Success();
-
-    //if (this.raise_<boolean>('onUserDemoting', { channel, sourceUser, targetUser }).includes(true))
-    //  return Response.Denied();
+	if (!sourceUser.hasPrivileges()) {
+    	if (!channel.hasPrivileges(sourceUser)) return Response.InsufficientPrivileges();
+	    if (!channel.hasUser(sourceUser)) return Response.NotInChannel();
+    	if (channel.owner === targetUser) return Response.InsufficientPrivileges();
+	}
+	if (!channel.hasUser(targetUser)) return Response.NotInChannel();
+	if (!channel.isAdmin(targetUser)) return Response.UserNotAdmin();
+	if (!this.hasPrivilegesOver_(sourceUser, targetUser, channel)) return Response.HigherPrivileges();
 
     channel.demoteUser(targetUser);
     channel.createEventAction(EventTypeEnum.DEMOTE, sourceUser, targetUser);
@@ -834,11 +828,9 @@ export class ChatManager {
   public async sitePromoteUserId(sourceUser: User, targetUserId: string): Promise<Response> {
     const targetUser = this.getUserById(targetUserId);
 
-    if (!sourceUser.hasPrivileges()) return Response.InsufficientPrivileges();
     if (!targetUser) return Response.UserNotExists();
-    if (targetUser.hasPrivileges()) return Response.Success();
-    if (sourceUser.is(targetUser)) return Response.Success();
-    if (targetUser.isSiteOwner) return Response.Denied();
+	if (!this.hasPrivilegesOver_(sourceUser, targetUser)) return Response.HigherPrivileges();
+	if (targetUser.isSiteModerator) return Response.UserAlreadyModerator();
 
     targetUser.siteRole = UserSiteRoleEnum.MODERATOR;
     await this.usersService_.setMode(targetUser.id, +UserSiteRoleEnum.MODERATOR);
@@ -848,9 +840,9 @@ export class ChatManager {
   public async siteDemoteUserId(sourceUser: User, targetUserId: string): Promise<Response> {
     const targetUser = this.getUserById(targetUserId);
 
-    if (!sourceUser.hasPrivileges()) return Response.InsufficientPrivileges();
     if (!targetUser) return Response.UserNotExists();
-    if (!this.hasPrivilegesOver_(sourceUser, targetUser)) return Response.HigherPrivileges(); 
+	if (!this.hasPrivilegesOver_(sourceUser, targetUser)) return Response.HigherPrivileges();
+	if (!targetUser.isSiteModerator) return Response.UserNotModerator();
 
     targetUser.siteRole = UserSiteRoleEnum.USER;
     await this.usersService_.setMode(targetUser.id, +UserSiteRoleEnum.USER);
@@ -860,16 +852,10 @@ export class ChatManager {
   public async siteBanUserId(sourceUser: User, targetUserid: string): Promise<Response> {
     const targetUser = this.getUserById(targetUserid);
 
-    if (!sourceUser.hasPrivileges()) return Response.InsufficientPrivileges();
     if (!targetUser) return Response.UserNotExists();
-    if (targetUser.isSiteBanned) return Response.UserAlreadyBanned();
-    if (sourceUser.is(targetUser)) return Response.SameUser();
-    if (targetUser.isSiteOwner) return Response.InsufficientPrivileges();
+	if (!this.hasPrivilegesOver_(sourceUser, targetUser)) return Response.HigherPrivileges();
+	if (targetUser.isSiteBanned) return Response.UserAlreadyBanned();
 
-    //if (this.raise_<boolean>('onUserBanning', { sourceUser, targetUser }).includes(true))
-    //  return Response.Denied();
-
-    //this.raise_<void>('onUserBanned', { sourceUser, targetUser });
     targetUser.siteBanned = true;
     await this.usersService_.setBanned(targetUser.id, true)
     if (targetUser.socket) {
@@ -887,15 +873,10 @@ export class ChatManager {
   public async siteUnbanUserId(sourceUser: User, targetUserid: string): Promise<Response> {
     const targetUser = this.getUserById(targetUserid);
 
-    if (!sourceUser.hasPrivileges()) return Response.InsufficientPrivileges();
     if (!targetUser) return Response.UserNotExists();
-    if (!targetUser.isSiteBanned) return Response.UserNotBanned();
-    if (sourceUser.is(targetUser)) return Response.SameUser();
+	if (!this.hasPrivilegesOver_(sourceUser, targetUser)) return Response.HigherPrivileges();
+	if (!targetUser.isSiteBanned) return Response.UserNotBanned();
 
-    //if (this.raise_<boolean>('onUserUnbanning', { sourceUser, targetUser }).includes(true))
-    //  return Response.Denied();
-
-    //this.raise_<void>('onUserUnbanned', { sourceUser, targetUser });
     targetUser.siteBanned = false;
     await this.usersService_.setBanned(targetUser.id, false)
     return Response.Success();

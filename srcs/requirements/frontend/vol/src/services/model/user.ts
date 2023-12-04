@@ -1,5 +1,5 @@
-import type {
-  EvenTypeEnum,
+import {
+  EventTypeEnum,
   UserSiteRoleEnum,
   UserStatusEnum,
 } from '../enum';

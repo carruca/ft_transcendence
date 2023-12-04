@@ -34,6 +34,8 @@ enum ResponseCode {
   HIGHER_PRIVILEGES,
   USER_ALREADY_MUTED,
   USER_NOT_MUTED,
+  USER_ALREADY_ADMIN,
+  USER_NOT_ADMIN,
 }
 
 export class Response {
@@ -217,5 +219,13 @@ export class Response {
 
   static UserNotMuted(): Response {
     return new Response(ResponseCode.USER_NOT_MUTED, "User not muted");
+  }
+  
+  static UserNotAdmin(): Response {
+  	return new Response(ResponseCode.USER_NOT_ADMIN, "User not admin");
+  }
+
+  static UserAlreadyAdmin(): Response {
+	return new Response(ResponseCode.USER_ALREADY_ADMIN, "User already admin");
   }
 }
