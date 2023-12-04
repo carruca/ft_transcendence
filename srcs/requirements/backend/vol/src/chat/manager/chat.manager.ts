@@ -872,6 +872,13 @@ export class ChatManager {
     //this.raise_<void>('onUserBanned', { sourceUser, targetUser });
     targetUser.siteBanned = true;
     await this.usersService_.setBanned(targetUser.id, true)
+    targetUser.socket.emit('reterror',
+          JSON.stringify({
+          event: 'connection',
+          code: 4,
+          message: "You has been banned from this site",
+    }));
+    targetUser.socket.disconnect();
     return Response.Success();
   }
 
