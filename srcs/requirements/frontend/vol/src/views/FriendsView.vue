@@ -135,7 +135,7 @@ const handleUserChange = (responseJSON) => {
     usersList.value = [...usersList.value];*/
   }
 
-  console.log("usersList: " + JSON.stringify(usersList.value));
+  //console.log("usersList: " + JSON.stringify(usersList.value));
 };
 
 function getSelectedTabList() {
@@ -186,7 +186,7 @@ async function fetchFriends(): Promise<RelationUser[]> {
       throw new Error('Failed to fetch friends');
     }
     let data = await response.json();
-    console.log(`FRIEND data: ${JSON.stringify(data)}`);
+    //console.log(`FRIEND data: ${JSON.stringify(data)}`);
     return await Promise.all(data.map(async (item) => {
       const userProfile = await getProfilePictureUrl(item.user[0].nickname, item.user[0].login);
       const userStatus = new RelationUser(item.user[0], item.status);
@@ -212,7 +212,7 @@ async function fetchBlocks(): Promise<RelationUser[]> {
       throw new Error('Failed to fetch blocks');
     }
     let data = await response.json();
-    console.log(`BLOCK data: ${JSON.stringify(data)}`);
+    //console.log(`BLOCK data: ${JSON.stringify(data)}`);
     return await Promise.all(data.map(async (item) => {
       const userProfile = await getProfilePictureUrl(item.nickname, item.login);
       const userStatus = new RelationUser(item, RelationStatusEnum.BLOCKED);

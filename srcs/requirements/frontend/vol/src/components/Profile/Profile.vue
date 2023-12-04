@@ -119,7 +119,7 @@ async function loadProfile() {
   userStatus.value = userInfo.status;
   //TODO hacer que esto se actualice con client
   if (!itsMe.value)
-    client.userWatch([ ID.value[1] ]);
+  client.userWatch([ ID.value[1] ]);
 
   loadedProfile.value = true;
 };
