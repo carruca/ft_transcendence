@@ -815,8 +815,10 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       if (targetUser.socket) {
         targetUser.socket.emit('adminUpdated', JSON.stringify([
           AdminObjectTypeEnum.CHANNEL,
-          AdminDataTypeEnum.UPDATED,
-          channel.DTO(targetUser),
+          AdminDataTypeEnum.UPDATED, {
+            channelId: channel.id,
+            ...changes,
+          },
         ]));
       }
     }

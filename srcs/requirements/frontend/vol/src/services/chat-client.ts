@@ -350,9 +350,17 @@ export class ChatClient {
       if (this.adminCurrentChannel_.value == undefined)
         this.adminCurrentChannel_.value = this.adminChannelList_.value[0];
     } else if (type === AdminDataTypeEnum.UPDATED) {
-      channel = this.adminChannels_.get(data.id);
-      if (channel)
-        channel.update(data);
+      channel = this.adminChannels_.get(data.channelId);
+      const user = this.adminUsers_.get(data.userId);
+      let channelUser: ChannelUser | undefined;
+
+      if (channel) {
+        channelUser = channel.user(user);
+
+        if (channelUser) {
+          channel.update(channelUser, data);
+        }
+      }
     } else if (type === AdminDataTypeEnum.DELETED) {
       if (this.adminCurrentChannel_.value.id === data) {
         this.adminCurrentChannel_.value = this.adminChannelList_.value[0]

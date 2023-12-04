@@ -94,8 +94,11 @@ export class Channel {
             this.topicSetDate = changes.topicSetDate;
         if (changes.topic !== undefined)
             this.topic = changes.topic;
-        if (changes.admin !== undefined)
+        if (changes.admin !== undefined) {
+            //console.log("aqui", channelUser.id, changes);
             channelUser.isAdmin = changes.admin;
+            //console.log("isadmin", channelUser.isAdmin);
+        }
         if (changes.muted !== undefined)
             channelUser.isMuted = changes.muted;
         if (changes.banned !== undefined)
