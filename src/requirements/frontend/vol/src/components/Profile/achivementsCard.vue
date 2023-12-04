@@ -104,13 +104,11 @@ onMounted(async () => {
         <th></th>
         <th>Name</th>
         <th>Description</th>
-        <th>Time</th>
       </tr>
       <tr v-for="achiv in achievements">
         <td><img :src="achiv.image" alt="achivement image" style="height: 40px;"></td>
         <td>{{ achiv.name }}</td>
         <td style="font-size: 12px;">{{ achiv.description }}</td>
-        <td>{{ achiv.createDate }}</td>
       </tr>
     </table>
     <img v-else :src="no_achiv" alt="empty achivements"/>
