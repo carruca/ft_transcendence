@@ -243,9 +243,11 @@ export class RoomService {
   get_user_roomcode(id: string): string | null {
     for (let [code, room] of this.rooms) {
       const userInRoom = room.players.some(player => player.socket!.data.user.id === id);
-      if (userInRoom) {
+      if (userInRoom)
         return code; // Return the code of the room containing the user
-      }
+      const userInSpectators = room.spectators.some(spectator => spectator!.data.user.id === id);
+      if (userInSpectators)
+        return code; // Return the code of the room containing the spectator
     }
     return null; // Return null if no room is found with the user
   }
@@ -291,13 +293,20 @@ export class RoomService {
     startCountdown();
   }
 
-  change_user_status(room: Room, status: UserStatusEnum): void {
+  change_room_status(room: Room, status: UserStatusEnum): void {
     for (const player of room.players) {
-      player.socket!.data.user.status = status;
+      if (player.socket!.data.user.status === UserStatusEnum.IN_GAME)
+        player.socket!.data.user.status = status;
     }
     for (const spectator of room.spectators) {
-      spectator!.data.user.status = status;
+      if (spectator!.data.user.status === UserStatusEnum.IN_GAME)
+        spectator!.data.user.status = status;
     }
+  }
+
+  change_user_status(client: Socket, status: UserStatusEnum): void {
+    if (client!.data.user.status === UserStatusEnum.IN_GAME)
+      client!.data.user.status = status;
   }
 
   stop(room: Room, winners: Player[], losers: Player[]): void {
@@ -305,14 +314,8 @@ export class RoomService {
       return;
     room.state = State.END;
 
-    // change user status
-    for (const player of room.players) {
-      if (player.socket!.data.user.status === UserStatusEnum.IN_GAME)
-        player.socket!.data.user.status = UserStatusEnum.ONLINE;
-    }
-
     // change users status
-    this.change_user_status(room, UserStatusEnum.ONLINE);
+    this.change_room_status(room, UserStatusEnum.ONLINE);
 
     // send score, winners and losers to API
     function createUserStats(players: Player[]): UserStats[] {

@@ -54,6 +54,9 @@ import {
   onMounted,
   onBeforeUnmount,
   ref,
+  nextTick,
+  watch,
+  computed,
 } from 'vue';
 
 import { socket } from "../services/ws.ts";
@@ -91,6 +94,9 @@ const bottomButtonWrapperStyle = ref({});
 const container = ref<HTMLElement>();
 const canvas = ref<HTMLCanvasElement>();
 let ctx: CanvasRenderingContext2D | null;
+
+const isLoaded = ref(false);
+const dispatchEvents = ref(false);
 
 /** CLASS  ------------------------------------- */
 
@@ -370,6 +376,13 @@ window.addEventListener('resize', resize_canvas);
 
 /** SOCKETS ------------------------------------ */
 
+socket.on('events-dispatch', async () => {
+  await nextTick(); // Wait for the next DOM update cycle
+  if (isLoaded.value) {
+    socket.emit('events');
+  }
+});
+
 socket.on('error', (msg: string) => {
   connected = false;
   console.log("Fatal error: " + msg);
@@ -401,12 +414,12 @@ socket.on('score', (p1: number, p2: number) => {
 });
 
 socket.on('position', () => {
-	console.log("game socket.id = " + socket.id);
+	//console.log("game socket.id = " + socket.id);
 });
 
 socket.on('ready', (room_code: string, is_right: boolean, started: boolean = false) => {
-	console.log("game socket.id = " + socket.id);
-  console.log("ready - game code: " + room_code);
+  //console.log("game socket.id = " + socket.id);
+  //console.log("ready - game code: " + room_code);
   Engine.is_right = is_right;
   Engine.reset();
   game.changeStatus(Status.GAME);
@@ -497,6 +510,7 @@ window.addEventListener('keydown', onKeyDown);
 /** COMPOSITION API  --------------------------- */
 
 onMounted(() => {
+  isLoaded.value = false;
   // load context
   if (canvas && canvas.value) {
     ctx = canvas.value!.getContext("2d");
@@ -508,16 +522,20 @@ onMounted(() => {
   const pixel = new FontFace('pixel', 'url(https://dl.dropboxusercontent.com/s/hsdwvz761xqphhb/pixel.ttf)');
   pixel.load().then((font) => {
     document.fonts.add(font);
-    console.log('Font loaded');
+    //console.log('Font loaded');
     // game loop
     displayMenu();
     game.changeStatus(Status.MENU);
-    // tell backend to check for queued events
+    // tell backend to check for queued events if not dispatched already
+    isLoaded.value = true;
     socket.emit('events');
   });
 });
 
 onBeforeUnmount(() => {
+  // set to false
+  isLoaded.value = false;
+
   // disconnect
   socket.emit('leave');
 

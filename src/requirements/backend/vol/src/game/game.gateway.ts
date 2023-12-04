@@ -58,6 +58,7 @@ export class GameGateway implements OnGatewayDisconnect {
     if (!client.data.user)
       return;
     this.room_service.disconnect(client);
+    this.room_service.change_user_status(client, UserStatusEnum.ONLINE);
   }
 
   @SubscribeMessage('leave_game')
@@ -65,6 +66,7 @@ export class GameGateway implements OnGatewayDisconnect {
     if (!client.data.user)
       return;
     this.room_service.disconnect(client);
+    this.room_service.change_user_status(client, UserStatusEnum.ONLINE);
   }
 
   @SubscribeMessage('join_queue')
@@ -171,6 +173,9 @@ export class GameGateway implements OnGatewayDisconnect {
           console.log("Processed challenge event for: " + client.data.user?.nickname);
           // User can accept challenge while in queue so we need to leave queue first
           this.room_service.leave_queue(client);
+          // User can accapt challenge while in room
+          this.room_service.disconnect(client);
+
           this.room_service.join_room(queuedEvent.data.room, client);
           break;
         case EventType.Spectate:
@@ -182,15 +187,6 @@ export class GameGateway implements OnGatewayDisconnect {
       this.eventQueue.delete(userId);
     }
   }
-
-  // FIXME THIS IS JUST REFERENCE FOR CHALLENGE EVENT
-  /*new_room(client: Socket, mode: string) {
-    if (!client.data.user)
-      return;
-    let room: Room | undefined = this.room_service.new_room(mode);
-    if (room === undefined) return;
-    this.room_service.join_room(room, client);
-  }*/
 
   @SubscribeMessage('events')
   handleEvents(client: Socket): void {
@@ -207,6 +203,9 @@ export class GameGateway implements OnGatewayDisconnect {
 
     this.queueEvent(event.sourceUser.id, EventType.Challenge, { room });
     this.queueEvent(event.targetUser.id, EventType.Challenge, { room });
+
+    event.sourceUser.socket.emit('events-dispatch');
+    event.targetUser.socket.emit('events-dispatch');
   }
   @ChatManagerSubscribe('onUserChallengeSpectated')
   onUserChallengeSpectated(event: any): void {
@@ -216,6 +215,8 @@ export class GameGateway implements OnGatewayDisconnect {
     if (room === undefined) return;
 
     this.queueEvent(event.sourceUser.id, EventType.Spectate, { room });
+
+    event.sourceUser.socket.emit('events-dispatch');
   }
   @ChatManagerSubscribe('onUserConnected')
   onUserConnected(event: any): void {
